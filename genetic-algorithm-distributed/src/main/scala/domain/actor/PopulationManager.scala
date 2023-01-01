@@ -1,11 +1,10 @@
 package domain.actor
 
 import akka.actor.*
+import akka.cluster.ClusterEvent.*
+import akka.cluster.{Cluster, Member}
 import domain.Operators.*
 import domain.SolutionDescription.*
-import akka.actor.{Actor, ActorIdentity, ActorLogging, ActorRef, ActorSystem, Address, Identify, Props}
-import akka.cluster.{Cluster, Member}
-import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, MemberRemoved, MemberUp, UnreachableMember}
 
 object PopulationManager {
   def props(populationSize: Int): Props = Props(new PopulationManager(populationSize))
@@ -29,5 +28,6 @@ class PopulationManager(populationSize: Int) extends Actor with ActorLogging {
   override def receive: Receive = {
     case message: String =>
       log.info(message)
+    case shardRegion: ActorRef => shardRegion ! "Te recibí shard region!!"
   }
 }

@@ -1,14 +1,13 @@
 package app
 
 import akka.actor.*
-import com.typesafe.config.ConfigFactory
-import domain.actor.Nature
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, ReceiveTimeout}
+import akka.cluster.ClusterEvent.*
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
-import domain.SolutionDescription.SURVIVAL_LIKELIHOOD
-import domain.SolutionDescription.CROSSOVER_LIKELIHOOD
-import domain.SolutionDescription.MUTATION_LIKELIHOOD
+import akka.cluster.{Cluster, Member}
+import com.typesafe.config.ConfigFactory
+import domain.SolutionDescription.{CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD, SURVIVAL_LIKELIHOOD}
+import domain.actor.Nature
 
 object NatureEvolutionSettings {
   val numberOfShards = 10 // use 10x number of nodes in your cluster
@@ -32,11 +31,9 @@ object NatureEvolutionSettings {
 class Evolution(port: Int) extends App {
   val config = ConfigFactory.parseString(
     s"""
-      |akka.actor.provider = cluster
-      |akka.remote.artery.canonical.hostname = localhost
       |akka.remote.artery.canonical.port = $port
       |""".stripMargin)
-    .withFallback(ConfigFactory.load("application.conf"))
+    .withFallback(ConfigFactory.load("resources/application.conf"))
 
   val system = ActorSystem("EvolutionSystem", config)
 
@@ -48,8 +45,10 @@ class Evolution(port: Int) extends App {
     extractShardId = NatureEvolutionSettings.extractShardId
   )
 
+  // TODO: crear actor intermediario que se registre al cluster, y que medie entre population y sharding
+
   system.actorSelection("akka://PopulationSystem@localhost:2551/user/populationManager") ! "HOLA DESDE EL MÄS ALLA"
-  system.actorSelection("akka://PopulationSystem@localhost:2551/user/populationManager") ! natureShardRegionRef.toString
+  system.actorSelection("akka://PopulationSystem@localhost:2551/user/populationManager") ! natureShardRegionRef
 }
 
 object Universe1 extends Evolution(2561)

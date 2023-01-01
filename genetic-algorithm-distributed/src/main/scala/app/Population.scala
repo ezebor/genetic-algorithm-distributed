@@ -2,17 +2,19 @@ package app
 
 import akka.actor.*
 import com.typesafe.config.ConfigFactory
-import domain.actor._
 import domain.SolutionDescription.*
+import domain.actor.*
+
+/**
+ * TODO: AGREGAR MAILBOX
+ */
 
 object Population extends App {
   val config = ConfigFactory.parseString(
     """
-      |akka.actor.provider = cluster
-      |akka.remote.artery.canonical.hostname = localhost
       |akka.remote.artery.canonical.port = 2551
       |""".stripMargin)
-    .withFallback(ConfigFactory.load("application.conf"))
+    .withFallback(ConfigFactory.load("resources/application.conf"))
 
   val system = ActorSystem("PopulationSystem", config)
 
