@@ -3,11 +3,14 @@ package domain.actor
 import akka.actor.*
 import domain.Operators.*
 import domain.SolutionDescription.*
+import akka.actor.{Actor, ActorIdentity, ActorLogging, ActorRef, ActorSystem, Address, Identify, Props}
+import akka.cluster.{Cluster, Member}
+import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, MemberRemoved, MemberUp, UnreachableMember}
 
 object Nature {
   def props(survivalLikelihood: Double,
             crossoverLikelihood: Double,
-            mutationLikelihood: Double) = Props(new Nature(survivalLikelihood, crossoverLikelihood, mutationLikelihood))
+            mutationLikelihood: Double): Props = Props(new Nature(survivalLikelihood, crossoverLikelihood, mutationLikelihood))
 }
 
 class Nature(
