@@ -4,14 +4,16 @@ import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.cluster.{Cluster, Member}
+import app.PopulationNode.system
 import com.typesafe.config.ConfigFactory
 import domain.SolutionDescription.{CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD, SURVIVAL_LIKELIHOOD}
-import domain.actor.Nature
+import domain.actor.{EvolutionActor, PopulationActor}
 
-object NatureEvolutionSettings {
-  val numberOfShards = 10 // use 10x number of nodes in your cluster
-  val numberOfEntities = 100 // 10x number of shards
+object EvolutionNodeSettings {
+  val numberOfShards = 20 // use 10x number of nodes in your cluster
+  val numberOfEntities = 200 // 10x number of shards
 
   val extractEntityId: ShardRegion.ExtractEntityId = {
     case operator @ _ =>
@@ -28,28 +30,30 @@ object NatureEvolutionSettings {
   }
 }
 
-class Evolution(port: Int) extends App {
+class EvolutionNode(port: Int) extends App {
   val config = ConfigFactory.parseString(
     s"""
       |akka.remote.artery.canonical.port = $port
       |""".stripMargin)
     .withFallback(ConfigFactory.load("resources/application.conf"))
 
-  val system = ActorSystem("EvolutionSystem", config)
+  val system = ActorSystem("GeneticAlgorithmSystem", config)
 
-  val natureShardRegionRef: ActorRef = ClusterSharding(system).start(
-    typeName = "NatureEvolution",
-    entityProps = Nature.props(SURVIVAL_LIKELIHOOD, CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD),
+  val evolutionShardRegionRef: ActorRef = ClusterSharding(system).start(
+    typeName = "evolutionShardingRegion",
+    entityProps = EvolutionActor.props(),
     settings = ClusterShardingSettings(system).withRememberEntities(true),
-    extractEntityId = NatureEvolutionSettings.extractEntityId,
-    extractShardId = NatureEvolutionSettings.extractShardId
+    extractEntityId = EvolutionNodeSettings.extractEntityId,
+    extractShardId = EvolutionNodeSettings.extractShardId
   )
 
-  // TODO: crear actor intermediario que se registre al cluster, y que medie entre population y sharding
+  if(port == 2552) {
+    val populationActorProxy = system.actorOf(PopulationActor.props(evolutionShardRegionRef))
 
-  system.actorSelection("akka://PopulationSystem@localhost:2551/user/populationManager") ! "HOLA DESDE EL MÄS ALLA"
-  system.actorSelection("akka://PopulationSystem@localhost:2551/user/populationManager") ! natureShardRegionRef
+    Thread.sleep(10000)
+    (1 to 11).foreach(i => populationActorProxy ! s"$i")
+  }
 }
 
-object Universe1 extends Evolution(2561)
-object Universe2 extends Evolution(2562)
+object EvolutionNode1 extends EvolutionNode(2551)
+object EvolutionNode2 extends EvolutionNode(2552)
