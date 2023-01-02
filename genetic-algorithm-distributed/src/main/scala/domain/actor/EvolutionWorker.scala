@@ -6,11 +6,11 @@ import akka.cluster.{Cluster, Member}
 import domain.Operators.*
 import domain.SolutionDescription.*
 
-object EvolutionActor {
-  def props(): Props = Props(new EvolutionActor())
+object EvolutionWorker {
+  def props(): Props = Props(new EvolutionWorker())
 }
 
-class EvolutionActor() extends Actor with ActorLogging {
+class EvolutionWorker() extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case message: String => log.info(s"llegó mensaje al Evolution actor: $message")
