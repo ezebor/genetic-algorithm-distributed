@@ -1,14 +1,15 @@
 package domain
 
 import domain.SolutionDescription.*
+import domain.individuals.GenericIndividual
 
 object Operators {
-  trait Operator
-  case class NaturalSelection(candidates: Population) extends Operator
-  case class EndedSelection(population: Population)
-  case class FinalPopulationSelection(quantity: Int, candidates: Population) extends Operator
-  case class Crossover(leftParent: Individual, candidates: Population) extends Operator
-  case class EndedCrossover(leftParent: Individual, rightParent: Individual)
-  case class Mutation(candidates: Population) extends Operator
-  case class EndedMutation(mutatedIndividual: Individual)
+  val NATURAL_SELECTION = "natural-selection"
+  val CROSSOVER = "crossover"
+  val MUTATION = "mutation"
+  val ADD_POPULATION = "add-population"
+  val UPDATE_POPULATION = "update-population"
+
+  case class Evolve[T](populationSize: Population[T])
+  case class Execute[T](operator: String, population: Population[T])
 }

@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
   "io.aeron" % "aeron-driver" % "1.39.0",
   "io.aeron" % "aeron-client" % "1.39.0",
+  "io.spray" %%  "spray-json" % "1.3.6",
 
   // serialization
   "com.google.protobuf" % "protobuf-java" % protobufVersion,

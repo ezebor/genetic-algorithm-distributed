@@ -7,8 +7,7 @@ import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardReg
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.cluster.{Cluster, Member}
 import com.typesafe.config.ConfigFactory
-import domain.SolutionDescription.{CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD, SURVIVAL_LIKELIHOOD}
-import domain.actor.EvolutionWorker
+import domain.actors.EvolutionWorker
 
 class EvolutionWorkersNode(port: Int) extends App {
   val config = ConfigFactory.parseString(

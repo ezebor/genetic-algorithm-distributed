@@ -1,4 +1,4 @@
-package domain.actor
+package domain.actors
 
 import akka.actor.*
 import akka.cluster.ClusterEvent.*
@@ -7,14 +7,15 @@ import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
 import domain.Operators.*
 import domain.SolutionDescription.*
+import domain.individuals.GenericIndividual
 
 object EvolutionMaster {
-  def props(router: ActorRef): Props = Props(new PopulationActor(router))
+  def props(router: ActorRef): Props = Props(new EvolutionMaster(router))
 }
 
-class PopulationActor(router: ActorRef) extends Actor with ActorLogging {
+class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case message: String =>
-      router ! message
+    case Evolve(population) =>
+      println(population)
   }
 }

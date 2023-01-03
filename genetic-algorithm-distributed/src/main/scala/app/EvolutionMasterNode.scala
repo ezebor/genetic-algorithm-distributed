@@ -4,8 +4,10 @@ import akka.actor.*
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
+import domain.Operators.*
 import domain.SolutionDescription.*
-import domain.actor.*
+import domain.actors.*
+import domain.individuals.{Basket, GenericIndividual, Item}
 
 class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
@@ -25,7 +27,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val master = system.actorOf(EvolutionMaster.props(system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
 
   Thread.sleep(10000)
-  (1 to 10).map(i => master ! s"HALAAAAAAA $i")
+  master ! Evolve(Basket.generateRandomPopulation(500))
 }
 
 object MasterNode extends EvolutionMasterNode(1)
