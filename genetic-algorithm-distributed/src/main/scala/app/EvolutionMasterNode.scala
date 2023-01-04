@@ -6,7 +6,7 @@ import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
 import domain.Operators.*
 import domain.actors.*
-import domain.individuals.{Basket, BasketGenerator, Individual, Item}
+import domain.individuals.*
 
 class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
@@ -26,7 +26,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val master = system.actorOf(EvolutionMaster.props(system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
 
   Thread.sleep(10000)
-  master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(500))
+  master ! ExecuteBasket(EVOLUTION, BasketGenerator.generateRandomPopulation(500))
 }
 
 object MasterNode extends EvolutionMasterNode(1)

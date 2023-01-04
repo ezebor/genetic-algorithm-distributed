@@ -1,6 +1,7 @@
 package domain
 
 import domain.individuals.{Individual, Population}
+import spray.json.*
 
 object Operators {
   val EVOLUTION = "evolution"
@@ -10,5 +11,5 @@ object Operators {
   val ADD_POPULATION = "add-population"
   val UPDATE_POPULATION = "update-population"
 
-  case class Execute(operatorName: String, population: Population)
+  trait Execute(operatorName: String, population: Population)
 }
