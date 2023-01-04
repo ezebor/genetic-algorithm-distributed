@@ -10,10 +10,7 @@ trait BasketJsonProtocol extends DefaultJsonProtocol {
   implicit val itemFormatter: JsonFormat[Item] = jsonFormat3(Item)
   implicit val itemsListFormatter: JsonFormat[ItemsList] = jsonFormat1(ItemsList)
   implicit val individualFormatter: JsonFormat[Basket] = jsonFormat1(Basket)
-  implicit val executeFormatter: JsonFormat[ExecuteBasket] = jsonFormat2(ExecuteBasket)
 }
-
-case class ExecuteBasket(operatorName: String, population: List[Basket]) extends Execute(operatorName, population)
 
 case class Item(name: String, price: Double, satisfaction: Double) extends Gen
 

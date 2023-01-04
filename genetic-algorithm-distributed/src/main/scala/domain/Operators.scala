@@ -11,5 +11,5 @@ object Operators {
   val ADD_POPULATION = "add-population"
   val UPDATE_POPULATION = "update-population"
 
-  trait Execute(operatorName: String, population: Population)
+  case class Execute(operatorName: String, population: Population)
 }

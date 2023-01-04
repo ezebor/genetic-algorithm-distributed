@@ -6,7 +6,7 @@ import akka.cluster.{Cluster, Member}
 import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
 import domain.Operators.*
-import domain.individuals.{ExecuteBasket, Individual}
+import domain.individuals.{Individual, Population}
 
 object EvolutionMaster {
   def props(router: ActorRef): Props = Props(new EvolutionMaster(router))
@@ -14,7 +14,7 @@ object EvolutionMaster {
 
 class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case ExecuteBasket(EVOLUTION, population) =>
+    case Execute(EVOLUTION, population: Population) =>
       println(population)
   }
 }

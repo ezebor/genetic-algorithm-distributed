@@ -2,14 +2,14 @@ package domain.serializers
 
 import akka.serialization.Serializer
 import domain.Operators.*
-import domain.individuals.{BasketJsonProtocol, ExecuteBasket, Item}
+import domain.individuals.{BasketJsonProtocol, Item}
 import spray.json.*
 
-class BasketJsonSerializer extends Serializer with BasketJsonProtocol {
-  override def identifier: Int = 1712
+class BasketJsonSerializer {
+  /*override def identifier: Int = 1712
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case operator: ExecuteBasket =>
+    case operator: Execute =>
       println(s"Serializing json operator $operator")
       operator.toJson.prettyPrint.getBytes()
     case _ => throw new Exception("Only Person is supported to be serialized")
@@ -22,5 +22,5 @@ class BasketJsonSerializer extends Serializer with BasketJsonProtocol {
     operator
   }
 
-  override def includeManifest: Boolean = false
+  override def includeManifest: Boolean = false*/
 }
