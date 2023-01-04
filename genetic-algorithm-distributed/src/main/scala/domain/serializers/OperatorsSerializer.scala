@@ -1,10 +1,9 @@
 package domain.serializers
 
 import akka.serialization.Serializer
-import spray.json.*
 import domain.Operators.*
-import domain.SolutionDescription.*
 import domain.individuals.Item
+import spray.json.*
 
 class BasketJsonSerializer /*extends Serializer with DefaultJsonProtocol */{
 /*

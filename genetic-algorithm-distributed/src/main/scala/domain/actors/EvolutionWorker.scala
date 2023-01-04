@@ -4,7 +4,6 @@ import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import domain.Operators.*
-import domain.SolutionDescription.*
 import domain.individuals.Basket
 
 object EvolutionWorker {

@@ -1,7 +1,6 @@
 package domain
 
-import SolutionDescription.*
-import individuals.GenericIndividual
+import domain.individuals.{Individual, Population}
 
 object Operators {
   val EVOLUTION = "evolution"
@@ -11,5 +10,5 @@ object Operators {
   val ADD_POPULATION = "add-population"
   val UPDATE_POPULATION = "update-population"
 
-  case class Execute[T](operatorName: String, population: List[Individual[T]])
+  case class Execute(operatorName: String, population: Population)
 }

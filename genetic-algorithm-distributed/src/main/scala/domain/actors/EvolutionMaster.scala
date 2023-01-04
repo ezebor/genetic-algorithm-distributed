@@ -6,8 +6,7 @@ import akka.cluster.{Cluster, Member}
 import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
 import domain.Operators.*
-import domain.SolutionDescription.*
-import domain.individuals.GenericIndividual
+import domain.individuals.Individual
 
 object EvolutionMaster {
   def props(router: ActorRef): Props = Props(new EvolutionMaster(router))
