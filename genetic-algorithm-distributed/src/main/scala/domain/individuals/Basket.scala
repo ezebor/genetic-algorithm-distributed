@@ -1,7 +1,7 @@
 package domain.individuals
 
 import domain.Operators.Execute
-import domain.individuals.{Chromosome, Gen, IndividualGenerator}
+import domain.individuals.{Chromosome, IndividualGenerator}
 import spray.json.*
 
 import scala.util.Random
@@ -12,7 +12,7 @@ trait BasketJsonProtocol extends DefaultJsonProtocol {
   implicit val individualFormatter: JsonFormat[Basket] = jsonFormat1(Basket)
 }
 
-case class Item(name: String, price: Double, satisfaction: Double) extends Gen
+case class Item(name: String, price: Double, satisfaction: Double)
 
 case class ItemsList(items: List[Item]) extends Chromosome
 
