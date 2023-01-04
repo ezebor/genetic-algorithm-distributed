@@ -9,6 +9,7 @@ lazy val root = (project in file("."))
 
 val akkaVersion = "2.7.0"
 val scalaTestVersion = "3.2.14"
+val akkaHttpVersion = "10.4.0"
 
 // https://github.com/protocolbuffers/protobuf/releases
 // protoc-21.12-osx-x86_64.zip
@@ -24,10 +25,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-  "io.aeron" % "aeron-driver" % "1.39.0",
-  "io.aeron" % "aeron-client" % "1.39.0",
-  "io.spray" %%  "spray-json" % "1.3.6",
-
-  // serialization
-  "com.google.protobuf" % "protobuf-java" % protobufVersion,
+  "io.aeron" % "aeron-driver" % "1.40.0",
+  "io.aeron" % "aeron-client" % "1.40.0",
+  "io.spray" %%  "spray-json" % "1.3.6"
 )

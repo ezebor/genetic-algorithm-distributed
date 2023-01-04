@@ -15,7 +15,7 @@ object EvolutionMaster {
 
 class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case Evolve(population) =>
+    case Execute(EVOLUTION, population) =>
       println(population)
   }
 }
