@@ -27,8 +27,8 @@ object BasketGenerator extends IndividualGenerator {
   }
 }
 
-case class Basket(chromosome: ItemsList) extends Individual(chromosome) {
-  override def calculateFitness: Double = chromosome match {
+case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
+  override def calculateFitness: Double = itemsList match {
     case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => satisfaction - price}.sum
   }
 }
