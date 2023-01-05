@@ -5,6 +5,7 @@ import domain.Operators.Execute
 import domain.individuals.{Basket, Item, ItemsList}
 import spray.json.*
 
+//TODO: llevar código a IndividualJsonSerializer, y overridear acá
 class BasketJsonSerializer extends Serializer with DefaultJsonProtocol {
   implicit def itemFormatter: JsonFormat[Item] = jsonFormat3(Item)
   implicit def itemListFormatter: JsonFormat[ItemsList] = jsonFormat1(ItemsList)
