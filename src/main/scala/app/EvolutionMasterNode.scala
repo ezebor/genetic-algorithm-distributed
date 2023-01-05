@@ -4,8 +4,9 @@ import akka.actor.*
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
-import domain.actors.*
 import domain.Operators.*
+import domain.Execute
+import domain.actors.*
 import domain.individuals.*
 
 class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
@@ -27,7 +28,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
 
   Thread.sleep(10000)
 
-  master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(500))
+  (1 to 10).foreach(_ => master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(500)))
 }
 
-object MasterNode extends EvolutionMasterNode(1)
+object MasterNode extends EvolutionMasterNode(3)

@@ -1,8 +1,9 @@
 package domain.serializers
 
 import akka.serialization.Serializer
-import domain.Operators.Execute
-import domain.individuals.{Basket, Item, ItemsList}
+import domain.Operators.*
+import domain.Execute
+import domain.individuals.*
 import spray.json.*
 
 //TODO: llevar código a IndividualJsonSerializer, y overridear acá

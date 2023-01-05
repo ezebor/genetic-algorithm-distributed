@@ -6,6 +6,7 @@ import akka.cluster.{Cluster, Member}
 import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
 import domain.Operators.*
+import domain.Execute
 import domain.individuals.{Individual, Population}
 
 object EvolutionMaster {
@@ -14,7 +15,9 @@ object EvolutionMaster {
 
 class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case Execute(EVOLUTION, population: Population) =>
-      println(population)
+    case message @ Execute(EVOLUTION, population: Population) =>
+        log.info("Llegó mensaje al master")
+        println(message)
+        router ! message
   }
 }
