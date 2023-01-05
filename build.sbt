@@ -27,4 +27,5 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
   "io.aeron" % "aeron-driver" % "1.40.0",
   "io.aeron" % "aeron-client" % "1.40.0",
+  "io.spray" %%  "spray-json" % "1.3.6",
 )
