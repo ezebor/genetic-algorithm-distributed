@@ -4,8 +4,8 @@ import akka.actor.*
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
-import domain.Operators.*
 import domain.Execute
+import domain.Operators.*
 import domain.actors.*
 import domain.individuals.*
 

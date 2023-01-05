@@ -3,8 +3,8 @@ package domain.actors
 import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
-import domain.Operators.*
 import domain.Execute
+import domain.Operators.*
 import domain.individuals.Basket
 
 object EvolutionWorker {

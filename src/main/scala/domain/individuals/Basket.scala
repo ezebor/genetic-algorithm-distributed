@@ -1,7 +1,7 @@
 package domain.individuals
 
-import domain.Operators.*
 import domain.Execute
+import domain.Operators.*
 import domain.individuals.{Chromosome, IndividualGenerator}
 
 import scala.util.Random

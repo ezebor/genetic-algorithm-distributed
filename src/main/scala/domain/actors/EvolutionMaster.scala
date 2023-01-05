@@ -5,8 +5,8 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
-import domain.Operators.*
 import domain.Execute
+import domain.Operators.*
 import domain.individuals.{Individual, Population}
 
 object EvolutionMaster {
