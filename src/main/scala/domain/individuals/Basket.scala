@@ -3,11 +3,11 @@ package domain.individuals
 import akka.remote.DaemonMsgCreate
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.{Chromosome, IndividualGenerator}
+import domain.individuals.{Chromosome, Gene, IndividualGenerator}
 
 import scala.util.Random
 
-case class Item(name: String, price: Double, satisfaction: Double)
+case class Item(name: String, price: Double, satisfaction: Double) extends Gene
 
 case class ItemsList(items: List[Item]) extends Chromosome
 

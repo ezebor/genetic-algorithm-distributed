@@ -2,6 +2,7 @@ package domain.individuals
 
 type Population = List[Individual]
 trait Chromosome
+trait Gene
 
 trait Individual(chromosome: Chromosome) {
   def calculateFitness: Double
