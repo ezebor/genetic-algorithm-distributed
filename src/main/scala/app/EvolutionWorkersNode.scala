@@ -10,11 +10,16 @@ import com.typesafe.config.ConfigFactory
 import domain.actors.EvolutionWorker
 
 class EvolutionWorkersNode(port: Int) extends App {
+  val configSource = ConfigFactory.load("resources/application.conf")
+  val serializationConfig = configSource.getConfig("executeBasketSerializationConfig")
+  val mainConfig = configSource.getConfig("mainConfig")
+
   val config = ConfigFactory.parseString(
     s"""
       |akka.remote.artery.canonical.port = $port
       |""".stripMargin)
-    .withFallback(ConfigFactory.load("resources/application.conf").getConfig("mainConfig"))
+    .withFallback(serializationConfig)
+    .withFallback(mainConfig)
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
 }

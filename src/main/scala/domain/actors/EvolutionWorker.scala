@@ -5,7 +5,7 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.Basket
+import domain.individuals.*
 
 object EvolutionWorker {
   def props(): Props = Props(new EvolutionWorker())
@@ -17,7 +17,7 @@ class EvolutionWorker() extends Actor with ActorLogging {
   val MUTATION_LIKELIHOOD = 0.1
 
   override def receive: Receive = {
-    case message: Execute =>
+    case execute @ Execute(EVOLUTION, population: Population) =>
       log.info("Llegó mensaje al worker")
   }
 }

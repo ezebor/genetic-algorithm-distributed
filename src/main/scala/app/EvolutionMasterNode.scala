@@ -11,6 +11,7 @@ import domain.individuals.*
 
 class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
+  val serializationConfig = configSource.getConfig("executeBasketSerializationConfig")
   val mainConfig = configSource.getConfig("mainConfig")
   val masterRouterConfig = configSource.getConfig("masterRouterConfig")
 
@@ -19,6 +20,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
       |akka.remote.artery.canonical.port = 2551
       |akka.actor.deployment./evolutionRouter.cluster.max-nr-of-instances-per-node = $quantityOfChildrenPerNode
       |""".stripMargin)
+    .withFallback(serializationConfig)
     .withFallback(masterRouterConfig)
     .withFallback(mainConfig)
 
