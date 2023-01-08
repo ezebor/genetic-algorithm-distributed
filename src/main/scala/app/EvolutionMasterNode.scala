@@ -26,7 +26,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
 
   val master = system.actorOf(EvolutionMaster.props(system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
 
-  Thread.sleep(20000)
+  Thread.sleep(10000)
 
   (1 to 10).foreach(_ => master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(10)))
 }

@@ -17,8 +17,10 @@ object BasketGenerator extends IndividualGenerator {
   override def generateRandomPopulation(populationSize: Int): List[Basket] = {
     val random = new Random()
     (1 to populationSize).map(i => Basket(
-      ItemsList(List(Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1))))
-    ).toList
+      ItemsList(List(
+        Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1),
+        Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1)
+      )))).toList
   }
 }
 
