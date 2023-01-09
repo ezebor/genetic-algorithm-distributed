@@ -7,11 +7,11 @@ import domain.individuals.*
 import spray.json.{RootJsonFormat, *}
 
 trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with RootJsonFormat[Execute] {
-  def chromosomeOf: Individual => List[Gene]
-  def serializeGene: Gene => JsValue
-  def deserializeIndividual: List[JsValue] => Individual
+  protected def chromosomeOf: Individual => List[Gene]
+  protected def serializeGene: Gene => JsValue
+  protected def deserializeIndividual: List[JsValue] => Individual
 
-  def write(message: Execute) = message match {
+  def write(command: Execute) = command match {
     case Execute(operatorName: String, population: Population) =>
       val formattedPopulation = JsArray(
         for {
@@ -49,16 +49,16 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
   override def identifier: Int = 1712
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case executeMessage: Execute =>
-      println(s"Serializing Execute message to json: $executeMessage")
-      executeMessage.toJson(write).prettyPrint.getBytes()
+    case command: Execute =>
+      println(s"Serializing Execute message to json: $command")
+      command.toJson(write).prettyPrint.getBytes()
     case _ => throw new Exception("Only Basket is supported to be serialized")
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
-    val executeMessage = new String(bytes).parseJson.convertTo[Execute](read)
-    println(s"Deserializing Execute message from json: $executeMessage")
-    executeMessage
+    val command = new String(bytes).parseJson.convertTo[Execute](read)
+    println(s"Deserializing Execute message from json: $command")
+    command
   }
 
   override def includeManifest: Boolean = false

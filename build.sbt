@@ -19,6 +19,7 @@ libraryDependencies ++= Seq(
   // testing
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
   "org.scalatest" %% "scalatest" % scalaTestVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
 
   // clustering and remoting
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,

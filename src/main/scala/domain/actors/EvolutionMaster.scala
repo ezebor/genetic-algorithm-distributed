@@ -15,8 +15,8 @@ object EvolutionMaster {
 
 class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case message @ Execute(EVOLUTION, population: Population) =>
+    case command @ Execute(EVOLUTION, population: Population) =>
         log.info("Llegó mensaje al master")
-        router ! message
+        router ! command
   }
 }
