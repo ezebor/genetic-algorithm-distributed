@@ -10,13 +10,30 @@ import domain.Operators.*
 import domain.individuals.{Individual, Population}
 
 object EvolutionMaster {
-  def props(router: ActorRef): Props = Props(new EvolutionMaster(router))
+  def props(quantityOfWorkers: Int, router: ActorRef): Props = Props(new EvolutionMaster(quantityOfWorkers, router))
 }
 
-class EvolutionMaster(router: ActorRef) extends Actor with ActorLogging {
+class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
     case command @ Execute(EVOLUTION, population: Population) =>
-        log.info("Llegó mensaje al master")
-        router ! command
+      val chunkSize = population.size / quantityOfWorkers
+      context.become(evolving(chunkSize))
+      self ! command
+  }
+
+  def evolving(chunkSize: Int): Receive = {
+    case command @ Execute(EVOLUTION, population: Population) =>
+      population
+        .grouped(chunkSize)
+        .foreach(populationChunk => router ! Execute(NATURAL_SELECTION, populationChunk))
+      context.become(waitingWorkers(List(), quantityOfWorkers))
+    case command @ Execute(CROSSOVER, population: Population) => ???
+    case command @ Execute(MUTATION, population: Population) => ???
+    case command @ Execute(STOP, population: Population) => ???
+  }
+
+  def waitingWorkers(pendingPopulation: Population, pendingWorkers: Int): Receive = {
+    case Execute(ADD_POPULATION, population: Population) => ???
+    case Execute(UPDATE_POPULATION, population: Population) => ???
   }
 }

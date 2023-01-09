@@ -6,7 +6,7 @@ import domain.individuals.BasketGenerator
 
 object Test extends App {
 
-  val population = BasketGenerator.generateRandomPopulation(10)
+  val population = BasketGenerator.generateRandomPopulation(500)
 
   val serializer = new ExecuteBasketJsonSerializer
 

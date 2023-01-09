@@ -9,6 +9,7 @@ object Operators {
   val MUTATION = "mutation"
   val ADD_POPULATION = "add-population"
   val UPDATE_POPULATION = "update-population"
+  val STOP = "stop"
 }
 
 case class Execute(operatorName: String, population: Population)
