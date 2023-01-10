@@ -7,6 +7,8 @@ import domain.Execute
 import domain.Operators.*
 import domain.individuals.*
 
+import scala.util.Random
+
 object EvolutionWorker {
   def props(): Props = Props(new EvolutionWorker())
 }
@@ -17,7 +19,13 @@ class EvolutionWorker() extends Actor with ActorLogging {
   val MUTATION_LIKELIHOOD = 0.1
 
   override def receive: Receive = {
-    case execute @ Execute(EVOLUTION, population: Population) =>
-      log.info("Llegó mensaje al worker")
+    case Execute(NATURAL_SELECTION, population: Population) =>
+      val random = new Random()
+      val strongerPopulation = population.filter { _ =>
+        val chromosomeLikelihood = random.nextInt(100) + 1
+        chromosomeLikelihood <= (SURVIVAL_LIKELIHOOD * 100)
+      }
+      log.info(s"Population got through natural selection. The leftover population has ${strongerPopulation.size} members: $strongerPopulation")
+      sender() ! Execute(ADD_POPULATION, strongerPopulation)
   }
 }
