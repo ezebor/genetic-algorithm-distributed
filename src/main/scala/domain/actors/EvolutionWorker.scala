@@ -20,12 +20,18 @@ class EvolutionWorker() extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
-      val random = new Random()
       val strongerPopulation = population.filter { _ =>
-        val chromosomeLikelihood = random.nextInt(100) + 1
-        chromosomeLikelihood <= (SURVIVAL_LIKELIHOOD * 100)
+        likelihood <= (SURVIVAL_LIKELIHOOD * 100)
       }
       log.info(s"Population got through natural selection. The leftover population has ${strongerPopulation.size} members: $strongerPopulation")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
+    case Execute(CROSSOVER, population: Population) =>
+
+
+  }
+
+  def likelihood: Int = {
+    val random = new Random()
+    random.nextInt(100) + 1
   }
 }

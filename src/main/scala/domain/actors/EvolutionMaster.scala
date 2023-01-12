@@ -15,29 +15,30 @@ object EvolutionMaster {
 
 class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
-    case command @ Execute(EVOLUTION, population: Population) =>
+    case command@Execute(EVOLUTION, population: Population) =>
       val chunkSize = population.size / quantityOfWorkers
       context.become(evolving(chunkSize))
       self ! command
   }
 
   def evolving(chunkSize: Int): Receive = {
-    case Execute(EVOLUTION, population: Population) =>
+    case Execute(operatorName, population: Population) =>
+      val nextOperatorName = operatorName match
+        case EVOLUTION => NATURAL_SELECTION
+        case STOP => ???
+        case operatorName => operatorName
+
       context.become(waitingWorkers(List(), quantityOfWorkers))
       population
         .grouped(chunkSize)
-        .foreach(populationChunk => router ! Execute(NATURAL_SELECTION, populationChunk))
-    case command @ Execute(CROSSOVER, population: Population) =>
-      log.info(s"CROSSOVER")
-    case command @ Execute(MUTATION, population: Population) => ???
-    case command @ Execute(STOP, population: Population) => ???
+        .foreach(populationChunk => router ! Execute(nextOperatorName, populationChunk))
   }
 
   def waitingWorkers(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
     case Execute(ADD_POPULATION, newPopulation: Population) =>
       log.info(s"Adding ${newPopulation.size} new members: $newPopulation")
       val finalPopulation = evolvedPopulation ++ newPopulation
-      if(pendingWorkers == 1) {
+      if (pendingWorkers == 1) {
         log.info(s"Population has evolved with ${finalPopulation.size} members: $finalPopulation")
         context.become(evolving(finalPopulation.size / quantityOfWorkers))
         self ! Execute(CROSSOVER, finalPopulation)
