@@ -26,8 +26,7 @@ class EvolutionWorker() extends Actor with ActorLogging {
       log.info(s"Population got through natural selection. The leftover population has ${strongerPopulation.size} members: $strongerPopulation")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
-
-
+      log.info("LLEGO CROSS OVER")
   }
 
   def likelihood: Int = {

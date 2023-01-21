@@ -23,27 +23,29 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
 
   def evolving(chunkSize: Int): Receive = {
     case Execute(operatorName, population: Population) =>
-      val nextOperatorName = operatorName match
+      val currentOperatorName = operatorName match
         case EVOLUTION => NATURAL_SELECTION
-        case STOP => ???
+        case NATURAL_SELECTION => CROSSOVER
+        case CROSSOVER => MUTATION
+        case MUTATION => STOP
         case operatorName => operatorName
 
-      context.become(waitingWorkers(List(), quantityOfWorkers))
+      context.become(waitingWorkers(List(), currentOperatorName, quantityOfWorkers))
       population
         .grouped(chunkSize)
-        .foreach(populationChunk => router ! Execute(nextOperatorName, populationChunk))
+        .foreach(populationChunk => router ! Execute(currentOperatorName, populationChunk))
   }
 
-  def waitingWorkers(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
+  def waitingWorkers(evolvedPopulation: Population, currentOperatorName: String, pendingWorkers: Int): Receive = {
     case Execute(ADD_POPULATION, newPopulation: Population) =>
       log.info(s"Adding ${newPopulation.size} new members: $newPopulation")
       val finalPopulation = evolvedPopulation ++ newPopulation
       if (pendingWorkers == 1) {
         log.info(s"Population has evolved with ${finalPopulation.size} members: $finalPopulation")
         context.become(evolving(finalPopulation.size / quantityOfWorkers))
-        self ! Execute(CROSSOVER, finalPopulation)
+        self ! Execute(currentOperatorName, finalPopulation)
       } else {
-        context.become(waitingWorkers(finalPopulation, pendingWorkers - 1))
+        context.become(waitingWorkers(finalPopulation, currentOperatorName, pendingWorkers - 1))
       }
     case Execute(UPDATE_POPULATION, population: Population) => ???
   }

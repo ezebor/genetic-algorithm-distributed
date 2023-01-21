@@ -25,8 +25,8 @@ object BasketGenerator extends IndividualGenerator {
 }
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
-  override def calculateFitness: Double = itemsList match {
-    case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => satisfaction - price}.sum
+  protected override def calculateFitness: Double = itemsList match {
+    case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.max(price, satisfaction) - Math.min(price, satisfaction)}.sum
   }
 }
 
