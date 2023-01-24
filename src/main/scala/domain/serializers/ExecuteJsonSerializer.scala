@@ -15,7 +15,7 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
     case Execute(operatorName: String, population: Population) =>
       val formattedPopulation = JsArray(
         for {
-          case individual: Individual <- population.toVector
+          case individual: Individual <- population.individuals.toVector
           chromosome = chromosomeOf(individual).toVector
         } yield {
           JsObject(
@@ -37,10 +37,12 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
     value.asJsObject.getFields("operatorName", "population") match {
       case Seq(JsString(operatorName), JsArray(population)) =>
         Execute(operatorName,
-          for {
-            case chromosome: JsValue <- population.toList
-            case JsArray(genes) <- chromosome.asJsObject.getFields("chromosome")
-          } yield deserializeIndividual(genes.toList)
+          Population(
+            for {
+              case chromosome: JsValue <- population.toList
+              case JsArray(genes) <- chromosome.asJsObject.getFields("chromosome")
+            } yield deserializeIndividual(genes.toList)
+          )
         )
       case _ => throw new DeserializationException("Execute message expected")
     }

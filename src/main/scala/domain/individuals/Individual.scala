@@ -3,7 +3,7 @@ package domain.individuals
 trait Chromosome
 trait Gene
 
-trait Population(individuals: List[Individual]) {
+case class Population(individuals: List[Individual]) {
   lazy val accumulatedFitness: List[(Individual, Double)] = individuals
     .zipWithIndex
     .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>

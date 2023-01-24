@@ -8,13 +8,13 @@ import scala.annotation.tailrec
 
 object Test extends App {
 
-  val population: BasketsPopulation = BasketsPopulation.randomPopulation(500)
+  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(500)
 
   // TODO: USAR TAIL RECURSION
   // TODO: QUE EL MASTER AL ARMAR LA NUEVA POBLACIÓN PARA EL NUEVO OPERADOR LOS ORDENE POR FITNESS, Y LE PASE A CADA WORKER UNA POBLACIÓN, DONDE EL PRIMER INDIVIDUO ES EL QUE HAY QUE CRUZAR Y EL RESTO LA POBLACIÓN ORIGINAL
   // TODO: USAR BÚSQUEDA BINARIA EN LA LISTA PARA SABER CON CUÁL CRUZAR (NO TRANSFORMAR A TREE)
 
-  println(population.baskets.map(_.fitness))
+  println(population.individuals.map(_.fitness))
   println(population.accumulatedFitness.map(_._2))
 
 

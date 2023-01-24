@@ -16,7 +16,7 @@ object EvolutionMaster {
 class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
     case command@Execute(EVOLUTION, population: Population) =>
-      val chunkSize = population.size / quantityOfWorkers
+      val chunkSize = population.individuals.size / quantityOfWorkers
       context.become(evolving(chunkSize))
       self ! command
   }
@@ -30,19 +30,19 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
         case MUTATION => STOP
         case operatorName => operatorName
 
-      context.become(waitingWorkers(List(), currentOperatorName, quantityOfWorkers))
-      population
+      context.become(waitingWorkers(Population(List()), currentOperatorName, quantityOfWorkers))
+      population.individuals
         .grouped(chunkSize)
-        .foreach(populationChunk => router ! Execute(currentOperatorName, populationChunk))
+        .foreach(individualsChunk => router ! Execute(currentOperatorName, Population(individualsChunk)))
   }
 
   def waitingWorkers(evolvedPopulation: Population, currentOperatorName: String, pendingWorkers: Int): Receive = {
     case Execute(ADD_POPULATION, newPopulation: Population) =>
-      log.info(s"Adding ${newPopulation.size} new members: $newPopulation")
-      val finalPopulation = evolvedPopulation ++ newPopulation
+      log.info(s"Adding ${newPopulation.individuals.size} new members: ${newPopulation.individuals}")
+      val finalPopulation = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
       if (pendingWorkers == 1) {
-        log.info(s"Population has evolved with ${finalPopulation.size} members: $finalPopulation")
-        context.become(evolving(finalPopulation.size / quantityOfWorkers))
+        log.info(s"Population has evolved with ${finalPopulation.individuals.size} members: $finalPopulation")
+        context.become(evolving(finalPopulation.individuals.size / quantityOfWorkers))
         self ! Execute(currentOperatorName, finalPopulation)
       } else {
         context.become(waitingWorkers(finalPopulation, currentOperatorName, pendingWorkers - 1))

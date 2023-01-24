@@ -17,12 +17,10 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   }
 }
 
-case class BasketsPopulation(baskets: List[Basket]) extends Population(baskets)
-
-object BasketsPopulation {
-  def randomPopulation(populationSize: Int): BasketsPopulation = {
+object BasketsPopulationRandomGenerator {
+  def randomPopulation(populationSize: Int): Population = {
     val random = new Random()
-    new BasketsPopulation(
+    Population(
       (1 to populationSize).map(i => Basket(
         ItemsList(List(
           Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1),
