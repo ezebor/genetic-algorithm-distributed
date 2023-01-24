@@ -30,7 +30,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
 
   Thread.sleep(10000)
 
-  master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(500))
+  //master ! Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(500))
 }
 
 object MasterNode extends EvolutionMasterNode(3)

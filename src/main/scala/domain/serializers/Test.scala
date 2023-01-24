@@ -8,55 +8,14 @@ import scala.annotation.tailrec
 
 object Test extends App {
 
-  val population = BasketGenerator.generateRandomPopulation(500)
+  val population: BasketsPopulation = BasketGenerator.generateRandomPopulation(500)
 
   // TODO: USAR TAIL RECURSION
-  val mapToFitnessTree: Population => FitnessTree = aPopulation => {
-    // TODO: QUE EL MASTER AL ARMAR LA NUEVA POBLACIÓN PARA EL NUEVO OPERADOR LOS ORDENE POR FITNESS, Y LE PASE A CADA WORKER UNA POBLACIÓN, DONDE EL PRIMER INDIVIDUO ES EL QUE HAY QUE CRUZAR Y EL RESTO LA POBLACIÓN ORIGINAL
-    // TODO: USAR BÚSQUEDA BINARIA EN LA LISTA PARA SABER CON CUÁL CRUZAR (NO TRANSFORMAR A TREE)
-    val populationWithAccumulatedFitness = aPopulation
-      .zipWithIndex
-      .foldLeft(List[LeveledIndividual]()) { case (result, (individual, index)) =>
-        if(index == 0) result :+ (individual, individual.fitness)
-        else result :+ (individual, individual.fitness + result(index - 1)._2)
-      }
+  // TODO: QUE EL MASTER AL ARMAR LA NUEVA POBLACIÓN PARA EL NUEVO OPERADOR LOS ORDENE POR FITNESS, Y LE PASE A CADA WORKER UNA POBLACIÓN, DONDE EL PRIMER INDIVIDUO ES EL QUE HAY QUE CRUZAR Y EL RESTO LA POBLACIÓN ORIGINAL
+  // TODO: USAR BÚSQUEDA BINARIA EN LA LISTA PARA SABER CON CUÁL CRUZAR (NO TRANSFORMAR A TREE)
 
-    def middleElement(populationWithAccumulatedFitness: LeveledPopulation) = {
-      val populationLength = populationWithAccumulatedFitness.length
-      val middleIndex = populationLength / 2
-      populationWithAccumulatedFitness(middleIndex)
-    }
-
-    @tailrec
-    def buildFitnessTree(populationChunk: LeveledPopulation): FitnessTree = {
-      if(populationChunk.length == 1) Leaf(populationChunk.head)
-      else {
-        val populationLength = populationWithAccumulatedFitness.length
-        val middleIndex = populationLength / 2
-        Node(
-          middleElement(populationWithAccumulatedFitness),
-          buildFitnessTree(populationWithAccumulatedFitness.drop(middleIndex)),
-          buildFitnessTree(populationWithAccumulatedFitness.dropRight(populationLength - middleIndex))
-        )
-      }
-    }
-
-    val populationLength = populationWithAccumulatedFitness.length
-    val middleIndex = populationLength / 2
-    Node(
-      middleElement(populationWithAccumulatedFitness),
-      buildFitnessTree(populationWithAccumulatedFitness.drop(middleIndex)),
-      buildFitnessTree(populationWithAccumulatedFitness.dropRight(populationLength - middleIndex))
-    )
-  }
-
-  val maxFitness: FitnessTree => Double = {
-    case Node(_, _, rightTree) => maxFitness(rightTree)
-    case Leaf(individualWithAccumulatedFitness) => individualWithAccumulatedFitness._2
-  }
-
-  /*println(populationWithAccumulatedFitness.last._2)
-  println(maxFitness(toFitnessTree(population)))*/
+  println(population.baskets.map(_.fitness))
+  println(population.accumulatedFitness.map(_._2))
 
 
   /*
