@@ -5,18 +5,26 @@ import domain.Operators.*
 import domain.individuals.*
 
 import scala.annotation.tailrec
+import scala.util.Random
 
 object Test extends App {
 
   val population: Population = BasketsPopulationRandomGenerator.randomPopulation(500)
 
-  // TODO: USAR TAIL RECURSION
-  // TODO: QUE EL MASTER AL ARMAR LA NUEVA POBLACIÓN PARA EL NUEVO OPERADOR LOS ORDENE POR FITNESS, Y LE PASE A CADA WORKER UNA POBLACIÓN, DONDE EL PRIMER INDIVIDUO ES EL QUE HAY QUE CRUZAR Y EL RESTO LA POBLACIÓN ORIGINAL
-  // TODO: USAR BÚSQUEDA BINARIA EN LA LISTA PARA SABER CON CUÁL CRUZAR (NO TRANSFORMAR A TREE)
 
-  println(population.individuals.map(_.fitness))
-  println(population.accumulatedFitness.map(_._2))
+/*  println(population.individuals.map(_.fitness))
+  println(population.accumulatedFitness.map(_._2))*/
 
+
+  println(s"Tamaño total de la población: ${population.individuals.size}")
+  val random = new Random()
+
+  // TODO: master calcula los random de la mitad de la población, cada worker elige un chunk de la población siguiendo esos random
+  // TODO: cuando el master recibió los chunks de los workers, arma la población de los que encara, y le manda una porción a cada worker para que los cruce
+  
+  val totalAccumulatedFitness = population.accumulatedFitness.last._2.toInt
+  val randomFitness = (1 to population.individuals.size / 2).map(_ => random.nextInt(totalAccumulatedFitness) + 1).toList
+  println(randomFitness.size)
 
   /*
 
