@@ -2,7 +2,7 @@ package domain.serializers
 
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.BasketGenerator
+import domain.individuals.{BasketGenerator, BasketsPopulation}
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
@@ -20,7 +20,7 @@ class ExecuteBasketJsonSerializerSpec extends AnyWordSpecLike with should.Matche
 
     "serialize and deserialize a command for a random population" in {
       val commands = (1 to 10).map{_ =>
-        Execute(EVOLUTION, BasketGenerator.generateRandomPopulation(10))
+        Execute(EVOLUTION, BasketsPopulation.randomPopulation(10))
       }
       commands.foreach(expectedCommand => expectedCommand should be(serializer.read(serializer.write(expectedCommand))))
     }

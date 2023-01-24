@@ -19,17 +19,15 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
 
 case class BasketsPopulation(baskets: List[Basket]) extends Population(baskets)
 
-object BasketGenerator extends IndividualGenerator {
-  def apply(chromosome: ItemsList): Individual = Basket(chromosome)
-
-  override def generateRandomPopulation(populationSize: Int): BasketsPopulation = {
+object BasketsPopulation {
+  def randomPopulation(populationSize: Int): BasketsPopulation = {
     val random = new Random()
-    BasketsPopulation(
+    new BasketsPopulation(
       (1 to populationSize).map(i => Basket(
-      ItemsList(List(
-        Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1),
-        Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1)
-      )))).toList
+        ItemsList(List(
+          Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1),
+          Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1)
+        )))).toList
     )
   }
 }
