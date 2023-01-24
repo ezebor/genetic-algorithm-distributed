@@ -22,30 +22,25 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
   }
 
   def evolving(chunkSize: Int): Receive = {
-    case Execute(operatorName, population: Population) =>
-      val currentOperatorName = operatorName match
-        case EVOLUTION => NATURAL_SELECTION
-        case NATURAL_SELECTION => CROSSOVER
-        case CROSSOVER => MUTATION
-        case MUTATION => STOP
-        case operatorName => operatorName
-
-      context.become(waitingWorkers(Population(List()), currentOperatorName, quantityOfWorkers))
+    case Execute(EVOLUTION, population: Population) =>
+      context.become(waitingWorkers(Population(List()), CROSSOVER, quantityOfWorkers))
       population.individuals
         .grouped(chunkSize)
-        .foreach(individualsChunk => router ! Execute(currentOperatorName, Population(individualsChunk)))
+        .foreach(individualsChunk => router ! Execute(NATURAL_SELECTION, Population(individualsChunk)))
+    case Execute(CROSSOVER, population: Population) =>
+      println("ESTOY EN EL MASTER CROSSOVER")
   }
 
-  def waitingWorkers(evolvedPopulation: Population, currentOperatorName: String, pendingWorkers: Int): Receive = {
+  def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {
     case Execute(ADD_POPULATION, newPopulation: Population) =>
       log.info(s"Adding ${newPopulation.individuals.size} new members: ${newPopulation.individuals}")
       val finalPopulation = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
       if (pendingWorkers == 1) {
         log.info(s"Population has evolved with ${finalPopulation.individuals.size} members: $finalPopulation")
         context.become(evolving(finalPopulation.individuals.size / quantityOfWorkers))
-        self ! Execute(currentOperatorName, finalPopulation)
+        self ! Execute(nextOperatorName, finalPopulation)
       } else {
-        context.become(waitingWorkers(finalPopulation, currentOperatorName, pendingWorkers - 1))
+        context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
       }
     case Execute(UPDATE_POPULATION, population: Population) => ???
   }
