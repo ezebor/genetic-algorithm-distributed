@@ -1,6 +1,6 @@
 package domain
 
-import domain.individuals.{Individual, Population}
+import domain.entities.{Individual, Population}
 
 object Operators {
   val EVOLUTION = "evolution"

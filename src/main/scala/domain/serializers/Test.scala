@@ -2,7 +2,7 @@ package domain.serializers
 
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
+import domain.entities.*
 
 import scala.annotation.tailrec
 import scala.util.Random

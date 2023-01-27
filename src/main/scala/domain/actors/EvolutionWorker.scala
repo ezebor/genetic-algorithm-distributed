@@ -5,7 +5,7 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
+import domain.entities.*
 
 import scala.util.Random
 

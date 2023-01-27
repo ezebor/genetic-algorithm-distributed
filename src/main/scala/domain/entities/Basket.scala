@@ -1,9 +1,9 @@
-package domain.individuals
+package domain.entities
 
 import akka.remote.DaemonMsgCreate
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
+import domain.entities.*
 
 import scala.util.Random
 

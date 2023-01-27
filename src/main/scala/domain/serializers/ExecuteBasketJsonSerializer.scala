@@ -3,8 +3,8 @@ package domain.serializers
 import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
-import spray.json.{RootJsonFormat, *}
+import domain.entities.*
+import spray.json.*
 
 class ExecuteBasketJsonSerializer extends ExecuteJsonSerializer {
   protected override def chromosomeOf = (individual: Individual) => individual match {

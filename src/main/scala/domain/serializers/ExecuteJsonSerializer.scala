@@ -3,8 +3,8 @@ package domain.serializers
 import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
-import spray.json.{RootJsonFormat, *}
+import domain.entities.*
+import spray.json.*
 
 trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with RootJsonFormat[Execute] {
   protected def chromosomeOf: Individual => List[Gene]

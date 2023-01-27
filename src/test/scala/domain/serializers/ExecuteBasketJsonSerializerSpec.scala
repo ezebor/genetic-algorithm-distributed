@@ -2,7 +2,7 @@ package domain.serializers
 
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.*
+import domain.entities.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*

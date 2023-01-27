@@ -1,4 +1,4 @@
-package domain.individuals
+package domain.entities
 
 import scala.annotation.tailrec
 

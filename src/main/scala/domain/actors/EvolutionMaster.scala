@@ -7,7 +7,7 @@ import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
 import domain.Execute
 import domain.Operators.*
-import domain.individuals.{Individual, Population}
+import domain.entities.{Individual, Population}
 
 object EvolutionMaster {
   def props(quantityOfWorkers: Int, router: ActorRef): Props = Props(new EvolutionMaster(quantityOfWorkers, router))

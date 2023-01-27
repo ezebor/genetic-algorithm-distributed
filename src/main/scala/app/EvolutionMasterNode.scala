@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import domain.Execute
 import domain.Operators.*
 import domain.actors.*
-import domain.individuals.*
+import domain.entities.*
 
 class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
