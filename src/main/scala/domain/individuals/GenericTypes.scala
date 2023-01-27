@@ -1,5 +1,7 @@
 package domain.individuals
 
+import scala.annotation.tailrec
+
 trait Chromosome
 trait Gene
 
@@ -14,6 +16,7 @@ case class Population(individuals: List[Individual]) {
     }
 
   def findIndividualWithFitnessCloserTo(aFitness: Int): Individual = {
+    @tailrec
     def recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
       if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
       else {
