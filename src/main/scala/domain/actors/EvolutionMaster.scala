@@ -23,13 +23,11 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
 
   def evolving(chunkSize: Int): Receive = {
     case Execute(EVOLUTION, population: Population) =>
-      val chunks = population.individuals.grouped(chunkSize)
+      val chunks = population.individuals.grouped(chunkSize).toList
       context.become(waitingWorkers(Population(List()), CROSSOVER, chunks.size))
       chunks.foreach(individualsChunk => router ! Execute(NATURAL_SELECTION, Population(individualsChunk)))
     case Execute(CROSSOVER, population: Population) =>
       println("LLEGO CROSSOVER AL MASTER")
-    case m => println(s"OTRO MENSAJE: $m")
-      
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {

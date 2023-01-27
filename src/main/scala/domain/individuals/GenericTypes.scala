@@ -12,6 +12,22 @@ case class Population(individuals: List[Individual]) {
         else individual.fitness + result(index - 1)._2
       })
     }
+
+  def findIndividualWithFitnessCloserTo(aFitness: Int): Individual = {
+    def recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
+      if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
+      else {
+        val middleIndex = anAccumulatedFitness.size / 2
+        val middleFitness = anAccumulatedFitness(middleIndex)._2
+        if(aFitness >= middleFitness) recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness.takeRight(middleIndex))
+        else {
+          if(aFitness >= anAccumulatedFitness(middleIndex - 1)._2) anAccumulatedFitness(middleIndex)._1
+          else recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness.take(middleIndex))
+        }
+      }
+    }
+    recursiveFindIndividualWithFitnessCloserTo(accumulatedFitness)
+  }
 }
 
 trait Individual(chromosome: Chromosome) {
