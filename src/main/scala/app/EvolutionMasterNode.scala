@@ -26,7 +26,7 @@ class EvolutionMasterNode(quantityOfChildrenPerNode: Int) extends App {
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
 
-  val master = system.actorOf(EvolutionMaster.props(3 * quantityOfChildrenPerNode, system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
+  val master = system.actorOf(EvolutionMaster.props(2 * quantityOfChildrenPerNode, system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
 
   Thread.sleep(10000)
 
