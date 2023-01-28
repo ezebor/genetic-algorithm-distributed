@@ -9,27 +9,26 @@ case class Population(individuals: List[Individual]) {
   lazy val accumulatedFitness: List[(Individual, Double)] = individuals
     .zipWithIndex
     .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
-      result :+ (individual, {
-        if(index == 0) individual.fitness
-        else individual.fitness + result(index - 1)._2
-      })
+      result :+ (
+        individual,
+        if(index == 0) individual.fitness else individual.fitness + result(index - 1)._2
+      )
     }
 
-  def findIndividualWithFitnessCloserTo(aFitness: Int): Individual = {
+  def findIndividualWhoseAccumulatedFitnessIncludes(aFitness: Int): Individual = {
     @tailrec
-    def recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
+    def recFindIndividualWhoseAccumulatedFitnessIncludes(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
       if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
       else {
         val middleIndex = anAccumulatedFitness.size / 2
         val middleFitness = anAccumulatedFitness(middleIndex)._2
-        if(aFitness >= middleFitness) recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness.takeRight(middleIndex))
-        else {
-          if(aFitness >= anAccumulatedFitness(middleIndex - 1)._2) anAccumulatedFitness(middleIndex)._1
-          else recursiveFindIndividualWithFitnessCloserTo(anAccumulatedFitness.take(middleIndex))
-        }
+        aFitness match
+          case _ if aFitness >= middleFitness => recFindIndividualWhoseAccumulatedFitnessIncludes(anAccumulatedFitness.takeRight(middleIndex))
+          case _ if aFitness >= anAccumulatedFitness(middleIndex - 1)._2 => anAccumulatedFitness(middleIndex)._1
+          case _ => recFindIndividualWhoseAccumulatedFitnessIncludes(anAccumulatedFitness.take(middleIndex))
       }
     }
-    recursiveFindIndividualWithFitnessCloserTo(accumulatedFitness)
+    recFindIndividualWhoseAccumulatedFitnessIncludes(accumulatedFitness)
   }
 }
 

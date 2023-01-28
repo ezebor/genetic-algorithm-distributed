@@ -12,7 +12,7 @@ object Test extends App {
   val population: Population = BasketsPopulationRandomGenerator.randomPopulation(1000)
 
   println(population.accumulatedFitness)
-  println(population.findIndividualWithFitnessCloserTo(2000))
+  println(population.findIndividualWhoseAccumulatedFitnessIncludes(2000))
 
   val a = List(1800, 100)
   println(a.takeRight(1))
