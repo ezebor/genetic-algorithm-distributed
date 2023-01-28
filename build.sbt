@@ -11,10 +11,6 @@ val akkaVersion = "2.7.0"
 val scalaTestVersion = "3.2.14"
 val akkaHttpVersion = "10.4.0"
 
-// https://github.com/protocolbuffers/protobuf/releases
-// protoc-21.12-osx-x86_64.zip
-lazy val protobufVersion = "3.21.12"
-
 libraryDependencies ++= Seq(
   // testing
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
