@@ -28,6 +28,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       chunks.foreach(individualsChunk => router ! Execute(NATURAL_SELECTION, Population(individualsChunk)))
     case Execute(CROSSOVER, population: Population) =>
       println("LLEGO CROSSOVER AL MASTER")
+      3
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {

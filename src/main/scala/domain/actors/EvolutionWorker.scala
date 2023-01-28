@@ -10,18 +10,25 @@ import domain.entities.*
 import scala.util.Random
 
 object EvolutionWorker {
-  def props(): Props = Props(new EvolutionWorker())
-}
-
-class EvolutionWorker() extends Actor with ActorLogging {
   val SURVIVAL_LIKELIHOOD = 0.8
   val CROSSOVER_LIKELIHOOD = 0.5
   val MUTATION_LIKELIHOOD = 0.1
+  
+  def props(): Props = Props(new EvolutionWorker(
+    SURVIVAL_LIKELIHOOD,
+    CROSSOVER_LIKELIHOOD,
+    MUTATION_LIKELIHOOD
+  ))
+}
+
+class EvolutionWorker(survivalLikelihood: Double,
+                      crossoverLikelihood: Double,
+                      mutationLikelihood: Double) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
       val strongerIndividuals = population.individuals.filter { _ => 
-        likelihood <= (SURVIVAL_LIKELIHOOD * 100)
+        likelihood <= (survivalLikelihood * 100)
       }
       log.info(s"Population got through natural selection. The leftover population has ${strongerIndividuals.size} members: $strongerIndividuals")
       sender() ! Execute(ADD_POPULATION, Population(strongerIndividuals))
