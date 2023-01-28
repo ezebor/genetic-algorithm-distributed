@@ -13,7 +13,7 @@ import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EvolutionMasterSpec
-  extends TestKit(ActorSystem("ActorsSpec"))
+  extends TestKit(ActorSystem("EvolutionMasterSpec"))
     with ImplicitSender
     with AnyWordSpecLike
     with BeforeAndAfterAll

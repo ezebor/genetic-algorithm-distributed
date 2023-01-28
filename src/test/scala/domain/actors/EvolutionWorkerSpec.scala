@@ -13,7 +13,7 @@ import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EvolutionWorkerSpec
-  extends TestKit(ActorSystem("ActorsSpec"))
+  extends TestKit(ActorSystem("EvolutionWorkerSpec"))
     with ImplicitSender
     with AnyWordSpecLike
     with BeforeAndAfterAll
