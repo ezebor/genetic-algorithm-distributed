@@ -45,7 +45,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
           val topThresholdFitness = population.accumulatedFitness(index)._2.toInt
 
           (topThresholdFitness until bottomThresholdFitness).foreach { fitness =>
-            population.findIndividualWhoseAccumulatedFitnessIncludes(fitness) should be(individual)
+            population.findIndividualWhoseAccumulatedFitnessWindowIncludes(fitness) should be(individual)
           }
         }
     }

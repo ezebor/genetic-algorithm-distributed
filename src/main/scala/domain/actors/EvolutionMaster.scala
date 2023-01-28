@@ -9,6 +9,8 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.{Individual, Population}
 
+import scala.util.Random
+
 object EvolutionMaster {
   def props(quantityOfWorkers: Int, router: ActorRef): Props = Props(new EvolutionMaster(quantityOfWorkers, router))
 }
@@ -23,12 +25,14 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
 
   def evolving(chunkSize: Int): Receive = {
     case Execute(EVOLUTION, population: Population) =>
-      val chunks = population.individuals.grouped(chunkSize).toList
+      val chunks: List[Population] = population.intoChunks(chunkSize)
       context.become(waitingWorkers(Population(List()), CROSSOVER, chunks.size))
-      chunks.foreach(individualsChunk => router ! Execute(NATURAL_SELECTION, Population(individualsChunk)))
+      distribute(chunks, NATURAL_SELECTION)
     case Execute(CROSSOVER, population: Population) =>
-      println("LLEGO CROSSOVER AL MASTER")
-      3
+      val populationLookingForReproduction = population.randomSubPopulation(1 + population.individuals.size / 2)
+      val chunks = populationLookingForReproduction.intoChunks(populationLookingForReproduction.individuals.size / quantityOfWorkers)
+      context.become(waitingWorkers(Population(List()), MUTATION, chunks.size))
+      distribute(chunks, CROSSOVER)
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {
@@ -44,4 +48,6 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       }
     case Execute(UPDATE_POPULATION, population: Population) => ???
   }
+
+  def distribute(chunks: List[Population], operatorName: String) = chunks.foreach(chunk => router ! Execute(operatorName, chunk))
 }

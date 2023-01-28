@@ -33,10 +33,10 @@ class EvolutionMasterSpec
     "start natural selection when receives 'evolution' operator" in {
       master ! Execute(EVOLUTION, population)
 
-      val chunks = population.individuals.grouped(population.individuals.size / QUANTITY_OF_WORKERS).toList
+      val chunks = population.intoChunks(population.individuals.size / QUANTITY_OF_WORKERS)
       chunks.size should be(QUANTITY_OF_CHUNKS)
       chunks.foreach { chunk =>
-        router.expectMsg(Execute(NATURAL_SELECTION, Population(chunk)))
+        router.expectMsg(Execute(NATURAL_SELECTION, chunk))
       }
     }
   }

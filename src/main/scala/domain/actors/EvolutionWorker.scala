@@ -33,7 +33,7 @@ class EvolutionWorker(survivalLikelihood: Double,
       log.info(s"Population got through natural selection. The leftover population has ${strongerIndividuals.size} members: $strongerIndividuals")
       sender() ! Execute(ADD_POPULATION, Population(strongerIndividuals))
     case Execute(CROSSOVER, population: Population) =>
-      log.info("LLEGO CROSS OVER")
+      log.info("LLEGO CROSSOVER AL WORKEEERR!!!!!!!!!!")
   }
 
   def likelihood: Int = {

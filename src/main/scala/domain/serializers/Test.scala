@@ -10,16 +10,18 @@ import scala.util.Random
 object Test extends App {
 
   val population: Population = BasketsPopulationRandomGenerator.randomPopulation(1000)
-
+/*
   println(population.accumulatedFitness)
-  println(population.findIndividualWhoseAccumulatedFitnessIncludes(2000))
+  println(population.findIndividualWhoseAccumulatedFitnessWindowIncludes(2000))
+*/
 
-  val a = List(1800, 100)
-  println(a.takeRight(1))
+  val individualsToReproduce = (1 to population.individuals.size / 2).map{ _ =>
+    population.findIndividualWhoseAccumulatedFitnessWindowIncludes(population.randomFitness)
+  }.toList
 
-  println(s"Tamaño total de la población: ${population.individuals.size}")
-  val random = new Random()
-
+  println(  LazyList
+    .range(1, 10 + 1)
+    .map(_ => 10))
   // TODO: master calcula los random de la mitad de la población, cada worker elige un chunk de la población siguiendo esos random
   // TODO: cuando el master recibió los chunks de los workers, arma la población de los que encara, y le manda una porción a cada worker para que los cruce
 
