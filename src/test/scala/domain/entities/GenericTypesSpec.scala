@@ -9,7 +9,8 @@ import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
-  val POPULATION_SIZE = 500
+  val POPULATION_SIZE = 200
+  val CHUNKS_SIZE = 60
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
     new Individual(new Chromosome {}) {
       override protected def calculateFitness: Double = 10
@@ -48,6 +49,30 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
             population.findIndividualWhoseAccumulatedFitnessWindowIncludes(fitness) should be(individual)
           }
         }
+    }
+
+    "slice individuals list into chunks of populations whose individuals re-grouped are the original population" in {
+      val chunks = population.intoChunks(CHUNKS_SIZE)
+      chunks.size should be(POPULATION_SIZE / CHUNKS_SIZE + 1)
+
+      val actualIndividuals = chunks.flatMap(aPopulation => aPopulation.individuals)
+      actualIndividuals should be(population.individuals)
+    }
+
+    "generate sub populations given population size" in {
+      population.randomSubPopulation(0).individuals.size should be(0)
+      population.randomSubPopulation(1).individuals.size should be(1)
+      population.randomSubPopulation(POPULATION_SIZE / 2).individuals.size should be(POPULATION_SIZE / 2)
+      population.randomSubPopulation(POPULATION_SIZE).individuals.size should be(POPULATION_SIZE)
+    }
+
+    "generate the same population when the given size is equals to the population size" in {
+      val subPopulation = population.randomSubPopulation(POPULATION_SIZE)
+
+      subPopulation.individuals.size should be(POPULATION_SIZE)
+      subPopulation.individuals.foreach { individual =>
+        population.individuals.contains(individual) should be(true)
+      }
     }
   }
 }

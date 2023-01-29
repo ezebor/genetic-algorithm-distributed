@@ -21,11 +21,11 @@ object Test extends App {
 
 
   val a = Item("hola", 1.2, 4.5)
-  val b = Item("hola", 1.2, 4.5)
+  val b = Item("hola 2", 1.2, 4.5)
 
   println(a == b)
 
-  
+
   // TODO: master calcula los random de la mitad de la población, cada worker elige un chunk de la población siguiendo esos random
   // TODO: cuando el master recibió los chunks de los workers, arma la población de los que encara, y le manda una porción a cada worker para que los cruce
 
