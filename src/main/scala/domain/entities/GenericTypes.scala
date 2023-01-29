@@ -1,6 +1,7 @@
 package domain.entities
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 trait Chromosome
@@ -8,7 +9,7 @@ trait Gene
 
 case class Population(individuals: List[Individual]) {
   val random = new Random()
-  
+
   lazy val accumulatedFitness: List[(Individual, Double)] = individuals
     .zipWithIndex
     .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
@@ -33,21 +34,31 @@ case class Population(individuals: List[Individual]) {
     }
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
-  
+
   def randomFitness = random.nextInt(accumulatedFitness.last._2.toInt) + 1
-  
+
   def intoChunks(chunkSize: Int): List[Population] = individuals
     .grouped(chunkSize)
     .map(anIndividuals => Population(anIndividuals))
     .toList
-  
+
   def randomSubPopulation(size: Int): Population = {
-    Population(
-      LazyList // This is to avoid doing more than 1 loop
-        .range(1, size + 1)
-        .map(_ => randomFitness)
-        .map(findIndividualWhoseAccumulatedFitnessWindowIncludes)
-        .toList
+    def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
+      if(aSize == 0) sinkPopulation
+      else {
+        val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(sourcePopulation.randomFitness)
+        recRandomSubPopulation(
+          Population(sourcePopulation.individuals.filter(individual => individual != foundIndividual)),
+          Population(foundIndividual :: sinkPopulation.individuals),
+          aSize - 1
+        )
+      }
+    }
+
+    recRandomSubPopulation(
+      this,
+      Population(List()),
+      size
     )
   }
 }
