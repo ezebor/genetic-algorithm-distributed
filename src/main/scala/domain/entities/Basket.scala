@@ -9,7 +9,7 @@ import scala.util.Random
 
 case class Item(name: String, price: Double, satisfaction: Double) extends Gene
 
-case class ItemsList(items: List[Item]) extends Chromosome
+case class ItemsList(items: List[Item]) extends Chromosome(items)
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   protected override def calculateFitness: Double = itemsList match {

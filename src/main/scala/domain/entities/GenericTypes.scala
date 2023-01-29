@@ -4,7 +4,9 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-trait Chromosome
+trait Chromosome(genes: List[Gene]) {
+  def getGenes: List[Gene] = genes
+}
 trait Gene
 
 case class Population(individuals: List[Individual]) {
@@ -61,9 +63,15 @@ case class Population(individuals: List[Individual]) {
       size
     )
   }
+
+  def crossoverWith(otherPopulation: Population): Population = Population(individuals.flatMap(individual => individual.crossoverWith(otherPopulation)))
 }
 
 trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
   lazy val fitness: Double = calculateFitness
+  def crossoverWith(population: Population): List[Individual] = {
+    val couple = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(population.randomFitness)
+    List()
+  }
 }

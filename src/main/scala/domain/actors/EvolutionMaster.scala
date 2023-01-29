@@ -30,7 +30,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       chunks.foreach(chunk => router ! Execute(NATURAL_SELECTION, chunk))
     case Execute(CROSSOVER, population: Population) =>
       val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(Population(List()), MUTATION, chunks.size))
+      context.become(waitingWorkers(population, MUTATION, chunks.size))
       chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
   }
 

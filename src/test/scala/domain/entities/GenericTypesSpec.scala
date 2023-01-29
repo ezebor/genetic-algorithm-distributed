@@ -12,7 +12,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
-    new Individual(new Chromosome {}) {
+    new Individual(new Chromosome(List()) {}) {
       override protected def calculateFitness: Double = 10
     }
   }.toList)
