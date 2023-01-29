@@ -7,6 +7,8 @@ trait Chromosome
 trait Gene
 
 case class Population(individuals: List[Individual]) {
+  val random = new Random()
+  
   lazy val accumulatedFitness: List[(Individual, Double)] = individuals
     .zipWithIndex
     .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
@@ -32,10 +34,7 @@ case class Population(individuals: List[Individual]) {
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
   
-  def randomFitness = {
-    val random = new Random()
-    random.nextInt(accumulatedFitness.last._2.toInt) + 1
-  }
+  def randomFitness = random.nextInt(accumulatedFitness.last._2.toInt) + 1
   
   def intoChunks(chunkSize: Int): List[Population] = individuals
     .grouped(chunkSize)

@@ -5,6 +5,7 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import domain.Execute
 import domain.Operators.*
+import domain.actors.EvolutionWorker.SURVIVAL_LIKELIHOOD
 import domain.entities.*
 
 import scala.util.Random
@@ -27,11 +28,9 @@ class EvolutionWorker(survivalLikelihood: Double,
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
-      val strongerIndividuals = population.individuals.filter { _ => 
-        likelihood <= (survivalLikelihood * 100)
-      }
-      log.info(s"Population got through natural selection. The leftover population has ${strongerIndividuals.size} members: $strongerIndividuals")
-      sender() ! Execute(ADD_POPULATION, Population(strongerIndividuals))
+      val strongerPopulation = population.randomSubPopulation((population.individuals.size * SURVIVAL_LIKELIHOOD).toInt)
+      log.info(s"Population got through natural selection. The leftover population has ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
+      sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
       log.info("LLEGO CROSSOVER AL WORKEEERR!!!!!!!!!!")
   }

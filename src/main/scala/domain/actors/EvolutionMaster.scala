@@ -27,12 +27,11 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
     case Execute(EVOLUTION, population: Population) =>
       val chunks: List[Population] = population.intoChunks(chunkSize)
       context.become(waitingWorkers(Population(List()), CROSSOVER, chunks.size))
-      distribute(chunks, NATURAL_SELECTION)
+      chunks.foreach(chunk => router ! Execute(NATURAL_SELECTION, chunk))
     case Execute(CROSSOVER, population: Population) =>
-      val populationLookingForReproduction = population.randomSubPopulation(1 + population.individuals.size / 2)
-      val chunks = populationLookingForReproduction.intoChunks(populationLookingForReproduction.individuals.size / quantityOfWorkers)
+      val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
       context.become(waitingWorkers(Population(List()), MUTATION, chunks.size))
-      distribute(chunks, CROSSOVER)
+      chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {
@@ -48,6 +47,4 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       }
     case Execute(UPDATE_POPULATION, population: Population) => ???
   }
-
-  def distribute(chunks: List[Population], operatorName: String) = chunks.foreach(chunk => router ! Execute(operatorName, chunk))
 }
