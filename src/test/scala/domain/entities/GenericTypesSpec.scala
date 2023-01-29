@@ -73,6 +73,9 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       subPopulation.individuals.foreach { individual =>
         population.individuals.contains(individual) should be(true)
       }
+      population.individuals.foreach { individual =>
+        subPopulation.individuals.contains(individual) should be(true)
+      }
     }
   }
 }
