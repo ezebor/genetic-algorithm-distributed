@@ -5,16 +5,13 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import domain.Execute
 import domain.Operators.*
-import domain.actors.EvolutionWorker.SURVIVAL_LIKELIHOOD
 import domain.entities.*
+import AlgorithmConfig.*
+import OperatorRatios.*
 
 import scala.util.Random
 
 object EvolutionWorker {
-  val SURVIVAL_LIKELIHOOD = 0.8
-  val CROSSOVER_LIKELIHOOD = 0.5
-  val MUTATION_LIKELIHOOD = 0.1
-  
   def props(): Props = Props(new EvolutionWorker(
     SURVIVAL_LIKELIHOOD,
     CROSSOVER_LIKELIHOOD,

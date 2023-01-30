@@ -1,13 +1,27 @@
 package domain.entities
 
+import domain.actors.EvolutionWorker
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
+import OperatorRatios._
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
 }
 trait Gene
+
+object OperatorRatios {
+  val SURVIVAL_LIKELIHOOD = 0.8
+  val CROSSOVER_LIKELIHOOD = 0.5
+  val MUTATION_LIKELIHOOD = 0.1
+}
+
+object AlgorithmConfig {
+  val POPULATION_SIZE = 500
+  val QUANTITY_OF_WORKERS_PER_NODE = 3
+}
 
 case class Population(individuals: List[Individual]) {
   val random = new Random()
@@ -64,14 +78,31 @@ case class Population(individuals: List[Individual]) {
     )
   }
 
-  def crossoverWith(otherPopulation: Population): Population = Population(individuals.flatMap(individual => individual.crossoverWith(otherPopulation)))
+  def crossoverWith(otherPopulation: Population): Population = {
+    Population(individuals.flatMap { individual =>
+      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(randomFitness)
+      individual.crossoverWith(couple) 
+    })
+  }
 }
 
 trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
+  def getChromosome: Chromosome = chromosome
+  def copyWith(genes: List[Gene]): Individual
   lazy val fitness: Double = calculateFitness
-  def crossoverWith(population: Population): List[Individual] = {
-    val couple = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(population.randomFitness)
-    List()
+
+  def crossoverWith(couple: Individual): List[Individual] = {
+    val random = new Random()
+    val crossedGenes = for {
+      case (leftGene, rightGene) <- chromosome.getGenes.zip(couple.getChromosome.getGenes)
+    } yield {
+      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) (leftGene, rightGene)
+      else (rightGene, leftGene)
+    }
+    List(
+      copyWith(crossedGenes.map(_._1)),
+      copyWith(crossedGenes.map(_._2))
+    )
   }
 }

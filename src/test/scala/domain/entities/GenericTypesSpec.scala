@@ -12,10 +12,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
-    new Individual(new Chromosome(List()) {}) {
-      override protected def calculateFitness: Double = 10
-    }
+    buildIndividual(List())
   }.toList)
+
+  def buildIndividual(genes: List[Gene]): Individual = new Individual(new Chromosome(genes) {}) {
+    override protected def calculateFitness: Double = 10
+    override def copyWith(aGenes: List[Gene]): Individual = buildIndividual(aGenes)
+  }
 
   "Population" should {
     "reckon accumulated fitness for each individual" in {

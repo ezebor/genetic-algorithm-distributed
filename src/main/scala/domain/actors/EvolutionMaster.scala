@@ -8,7 +8,6 @@ import com.typesafe.config.Config
 import domain.Execute
 import domain.Operators.*
 import domain.entities.{Individual, Population}
-
 import scala.util.Random
 
 object EvolutionMaster {
@@ -32,6 +31,8 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
       context.become(waitingWorkers(population, MUTATION, chunks.size))
       chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
+    case Execute(MUTATION, population: Population) =>
+      println(s"LLEGO EL MUTATUON AL MASTER CON CANTIDAD DE INDIFIVUOS = ${population.individuals.size}")
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {

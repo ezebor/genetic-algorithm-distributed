@@ -11,6 +11,7 @@ import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
+import OperatorRatios.*
 
 class EvolutionWorkerSpec
   extends TestKit(ActorSystem("EvolutionWorkerSpec"))
@@ -33,7 +34,7 @@ class EvolutionWorkerSpec
       val executeMessage = expectMsgType[Execute]
 
       executeMessage.operatorName should be(ADD_POPULATION)
-      executeMessage.population.individuals.size should be((POPULATION_SIZE * EvolutionWorker.SURVIVAL_LIKELIHOOD).toInt)
+      executeMessage.population.individuals.size should be((POPULATION_SIZE * SURVIVAL_LIKELIHOOD).toInt)
     }
   }
 }
