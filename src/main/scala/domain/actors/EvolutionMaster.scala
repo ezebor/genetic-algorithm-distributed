@@ -18,14 +18,13 @@ object EvolutionMaster {
 class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor with ActorLogging {
   override def receive: Receive = {
     case command@Execute(EVOLUTION, population: Population) =>
-      val chunkSize = population.individuals.size / quantityOfWorkers
-      context.become(evolving(chunkSize))
+      context.become(evolving)
       self ! command
   }
 
-  def evolving(chunkSize: Int): Receive = {
+  def evolving: Receive = {
     case Execute(EVOLUTION, population: Population) =>
-      val chunks: List[Population] = population.intoChunks(chunkSize)
+      val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
       context.become(waitingWorkers(Population(List()), CROSSOVER, chunks.size))
       chunks.foreach(chunk => router ! Execute(NATURAL_SELECTION, chunk))
     case Execute(CROSSOVER, population: Population) =>
@@ -42,7 +41,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       val finalPopulation = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
       if (pendingWorkers == 1) {
         log.info(s"Population has evolved with ${finalPopulation.individuals.size} members: $finalPopulation")
-        context.become(evolving(finalPopulation.individuals.size / quantityOfWorkers))
+        context.become(evolving)
         self ! Execute(nextOperatorName, finalPopulation)
       } else {
         context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
