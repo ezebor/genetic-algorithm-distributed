@@ -4,32 +4,33 @@ import akka.remote.DaemonMsgCreate
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
-import AlgorithmConfig.*
-import OperatorRatios.*
+import domain.entities.AlgorithmConfig.*
+import domain.entities.OperatorRatios.*
 
 import scala.util.Random
 
-case class Item(name: String, price: Double, satisfaction: Double) extends Gene
+case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
+  override def mutate: Gene =
+    val random = new Random()
+    if(random.nextInt(100) + 1 > MUTATION_LIKELIHOOD * 100) this
+    else Item(s"Item ${name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
+}
 
-case class ItemsList(items: List[Item]) extends Chromosome(items)
+case class ItemsList(items: List[Item]) extends Chromosome(items) {
+  override def mutate: Chromosome = copyWith(items.map(item => item.mutate))
+  override def copyWith(genes: List[Gene]): Chromosome = genes match
+    case items: List[Item] => ItemsList(items)
+}
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   protected override def calculateFitness: Double = itemsList match {
     case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.max(price, satisfaction) - Math.min(price, satisfaction)}.sum
   }
 
-  override protected def copyWith(genes: List[Gene]): Individual = genes match
-    case items: List[Item] => Basket(ItemsList(items))
+  override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
+    case itemsList: ItemsList => Basket(itemsList)
 
-  override def mutate: Individual = {
-    val random = new Random()
-    copyWith(
-      itemsList.items.map(item =>
-        if(random.nextInt(100) + 1 > MUTATION_LIKELIHOOD * 100) item
-        else Item(s"Item ${item.name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
-      )
-    )
-  }
+  override def mutate: Individual = copyWith(itemsList.mutate)
 }
 
 object BasketsPopulationRandomGenerator {

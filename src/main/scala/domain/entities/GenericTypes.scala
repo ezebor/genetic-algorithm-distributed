@@ -9,8 +9,12 @@ import scala.util.Random
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
+  def mutate: Chromosome
+  def copyWith(genes: List[Gene]): Chromosome
 }
-trait Gene
+trait Gene {
+  def mutate: Gene
+}
 
 object OperatorRatios {
   val SURVIVAL_LIKELIHOOD = 0.8
@@ -93,7 +97,7 @@ case class Population(individuals: List[Individual]) {
 trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
-  protected def copyWith(genes: List[Gene]): Individual
+  protected def copyWith(chromosome: Chromosome): Individual
   def mutate: Individual
   lazy val fitness: Double = calculateFitness
   private val random = new Random()
@@ -106,8 +110,8 @@ trait Individual(chromosome: Chromosome) {
       else (rightGene, leftGene)
     }
     List(
-      copyWith(crossedGenes.map(_._1)),
-      copyWith(crossedGenes.map(_._2))
+      copyWith(chromosome.copyWith(crossedGenes.map(_._1))),
+      copyWith(chromosome.copyWith(crossedGenes.map(_._2)))
     )
   }
 }

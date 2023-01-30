@@ -36,5 +36,23 @@ class EvolutionWorkerSpec
       executeMessage.operatorName should be(ADD_POPULATION)
       executeMessage.population.individuals.size should be((POPULATION_SIZE * SURVIVAL_LIKELIHOOD).toInt)
     }
+
+    "execute crossover when receives 'crossover' operator" in {
+      worker ! Execute(CROSSOVER, population)
+
+      val executeMessage = expectMsgType[Execute]
+
+      executeMessage.operatorName should be(ADD_POPULATION)
+      executeMessage.population.individuals.size should be(POPULATION_SIZE)
+    }
+
+    "execute mutation when receives 'mutation' operator" in {
+      worker ! Execute(MUTATION, population)
+
+      val executeMessage = expectMsgType[Execute]
+
+      executeMessage.operatorName should be(ADD_POPULATION)
+      executeMessage.population.individuals.size should be(POPULATION_SIZE)
+    }
   }
 }

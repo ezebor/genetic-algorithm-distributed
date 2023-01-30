@@ -13,15 +13,22 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val CHUNKS_SIZE = 60
 
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
-    buildIndividual(List())
+    buildIndividual(buildChromosome(List(buildGene)))
   }.toList)
 
-  def buildGene: Gene = new Gene {}
+  def buildGene: Gene = new Gene {
+    override def mutate: Gene = buildGene
+  }
 
-  def buildIndividual(genes: List[Gene]): Individual = new Individual(new Chromosome(genes) {}) {
+  def buildChromosome(genes: List[Gene]): Chromosome = new Chromosome(genes) {
+    override def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
+    override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
+  }
+
+  def buildIndividual(chromosome: Chromosome): Individual = new Individual(chromosome) {
     override protected def calculateFitness: Double = 10
-    override def copyWith(aGenes: List[Gene]): Individual = buildIndividual(aGenes)
-    override def mutate: Individual = buildIndividual(List(buildGene))
+    override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
+    override def mutate: Individual = buildIndividual(chromosome.mutate)
   }
 
   "Population" should {
@@ -93,8 +100,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   "Individual" should {
     "crossover with other individual blending their genes" in {
-      val firstIndividual = buildIndividual(List(buildGene, buildGene, buildGene))
-      val secondIndividual = buildIndividual(List(buildGene, buildGene, buildGene))
+      val firstIndividual = buildIndividual(buildChromosome(List(buildGene, buildGene, buildGene)))
+      val secondIndividual = firstIndividual.mutate
 
       val children = firstIndividual.crossoverWith(secondIndividual)
       children.size should be(2)
