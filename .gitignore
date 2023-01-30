@@ -115,6 +115,7 @@ hs_err_pid*
 
 dist/*
 target/
+.idea/
 lib_managed/
 src_managed/
 project/boot/
