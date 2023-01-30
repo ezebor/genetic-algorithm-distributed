@@ -19,7 +19,7 @@ trait Gene {
 object OperatorRatios {
   val SURVIVAL_LIKELIHOOD = 0.8
   val CROSSOVER_LIKELIHOOD = 0.5
-  val MUTATION_LIKELIHOOD = 0.1
+  val MUTATION_LIKELIHOOD = 0.03
 }
 
 object AlgorithmConfig {
