@@ -109,5 +109,14 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       parentsGenes.foreach(gene => childrenGenes.contains(gene))
       childrenGenes.foreach(gene => parentsGenes.contains(gene))
     }
+
+    "mutate its chromosome creating new genes" in {
+      val individual = buildIndividual(buildChromosome(List(buildGene, buildGene, buildGene)))
+      val mutatedIndividual = individual.mutate
+
+      mutatedIndividual.getChromosome.getGenes.foreach { gene =>
+        assert(!individual.getChromosome.getGenes.contains(gene))
+      }
+    }
   }
 }
