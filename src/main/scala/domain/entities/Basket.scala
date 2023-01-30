@@ -12,12 +12,10 @@ import scala.util.Random
 case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
   override def mutate: Gene =
     val random = new Random()
-    if(random.nextInt(100) + 1 > MUTATION_LIKELIHOOD * 100) this
-    else Item(s"Item ${name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
+    Item(s"Item ${name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
 }
 
 case class ItemsList(items: List[Item]) extends Chromosome(items) {
-  override def mutate: Chromosome = copyWith(items.map(item => item.mutate))
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case items: List[Item] => ItemsList(items)
 }

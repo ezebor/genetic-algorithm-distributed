@@ -9,7 +9,7 @@ import scala.util.Random
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
-  def mutate: Chromosome
+  def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
   def copyWith(genes: List[Gene]): Chromosome
 }
 trait Gene {
@@ -89,9 +89,12 @@ case class Population(individuals: List[Individual]) {
     })
   }
 
-  def mutate: Population = Population(
-    individuals.map(individual => individual.mutate)
-  )
+  def mutate: Population = {
+    val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= MUTATION_LIKELIHOOD * 100)
+    Population(
+      individualsToMutate.map(individual => individual.mutate)
+    )
+  }
 }
 
 trait Individual(chromosome: Chromosome) {
