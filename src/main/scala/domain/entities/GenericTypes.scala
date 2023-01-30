@@ -98,7 +98,6 @@ trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
   protected def copyWith(chromosome: Chromosome): Individual
-  def mutate: Individual
   lazy val fitness: Double = calculateFitness
   private val random = new Random()
 
@@ -114,4 +113,6 @@ trait Individual(chromosome: Chromosome) {
       copyWith(chromosome.copyWith(crossedGenes.map(_._2)))
     )
   }
+
+  def mutate: Individual = copyWith(chromosome.mutate)
 }

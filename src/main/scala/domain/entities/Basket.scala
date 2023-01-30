@@ -29,8 +29,6 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
 
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
     case itemsList: ItemsList => Basket(itemsList)
-
-  override def mutate: Individual = copyWith(itemsList.mutate)
 }
 
 object BasketsPopulationRandomGenerator {
