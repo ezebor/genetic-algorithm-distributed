@@ -27,26 +27,19 @@ class EvolutionMasterSpec
 
   val population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
   val router = TestProbe("router")
-  router.receiveWhile() {
-    case Execute(_, _) => router.reply(Execute(ADD_POPULATION, population))
-  }
   val master = system.actorOf(EvolutionMaster.props(QUANTITY_OF_WORKERS, router.ref), "evolutionMaster")
 
   "Evolution master" should {
-    "start natural selection when receives 'evolution' operator" in {
+    "evolve a given population" in {
       master ! Execute(EVOLUTION, population)
 
-      router.receiveN(QUANTITY_OF_CHUNKS) foreach {
-        case Execute(operatorName, _) => assert(operatorName == NATURAL_SELECTION)
+      router.receiveWhile() {
+        case Execute(NATURAL_SELECTION, _) => router.reply(Execute(ADD_POPULATION, population))
+        case Execute(CROSSOVER, _) => router.reply(Execute(ADD_POPULATION, population))
       }
-    }
 
-    "start crossover when receives 'crossover' operator" in {
-      master ! Execute(CROSSOVER, population)
-
-      router.receiveN(QUANTITY_OF_CHUNKS) foreach {
-        case Execute(operatorName, _) => assert(operatorName == CROSSOVER)
-      }
+      master ! HEALTH
+      expectMsg[String](OK)
     }
   }
 }

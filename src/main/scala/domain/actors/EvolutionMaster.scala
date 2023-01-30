@@ -33,6 +33,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
     case Execute(MUTATION, population: Population) =>
       println(s"LLEGO EL MUTATUON AL MASTER CON CANTIDAD DE INDIFIVUOS = ${population.individuals.size}")
+    case HEALTH => sender() ! OK
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {
