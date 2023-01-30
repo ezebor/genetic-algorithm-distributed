@@ -11,9 +11,12 @@ import org.scalatest.wordspec.AnyWordSpecLike
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
+
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
     buildIndividual(List())
   }.toList)
+
+  def buildGene: Gene = new Gene {}
 
   def buildIndividual(genes: List[Gene]): Individual = new Individual(new Chromosome(genes) {}) {
     override protected def calculateFitness: Double = 10
@@ -79,6 +82,25 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       population.individuals.foreach { individual =>
         subPopulation.individuals.contains(individual) should be(true)
       }
+    }
+
+    "generate a new population composed by original members plus the children created through crossover" in {
+      val newPopulation = population.crossoverWith(population)
+      newPopulation.individuals.size should be(population.individuals.size * 2)
+    }
+  }
+
+  "Individual" should {
+    "crossover with other individual blending their genes" in {
+      val firstIndividual = buildIndividual(List(buildGene, buildGene, buildGene))
+      val secondIndividual = buildIndividual(List(buildGene, buildGene, buildGene))
+
+      val children = firstIndividual.crossoverWith(secondIndividual)
+      children.size should be(2)
+      val parentsGenes = firstIndividual.getChromosome.getGenes ::: secondIndividual.getChromosome.getGenes
+      val childrenGenes = children.flatMap(individual => individual.getChromosome.getGenes)
+      parentsGenes.foreach(gene => childrenGenes.contains(gene))
+      childrenGenes.foreach(gene => parentsGenes.contains(gene))
     }
   }
 }

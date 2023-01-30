@@ -7,11 +7,11 @@ import com.typesafe.config.ConfigFactory
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import domain.entities.OperatorRatios.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
-import OperatorRatios.*
 
 class EvolutionWorkerSpec
   extends TestKit(ActorSystem("EvolutionWorkerSpec"))

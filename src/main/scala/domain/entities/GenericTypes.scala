@@ -89,7 +89,7 @@ case class Population(individuals: List[Individual]) {
 trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
-  def copyWith(genes: List[Gene]): Individual
+  protected def copyWith(genes: List[Gene]): Individual
   lazy val fitness: Double = calculateFitness
 
   def crossoverWith(couple: Individual): List[Individual] = {

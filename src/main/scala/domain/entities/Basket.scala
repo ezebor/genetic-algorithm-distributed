@@ -16,7 +16,7 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
     case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.max(price, satisfaction) - Math.min(price, satisfaction)}.sum
   }
 
-  override def copyWith(genes: List[Gene]): Individual = genes match
+  override protected def copyWith(genes: List[Gene]): Individual = genes match
     case items: List[Item] => Basket(ItemsList(items))
 }
 

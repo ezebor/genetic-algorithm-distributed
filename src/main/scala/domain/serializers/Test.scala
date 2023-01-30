@@ -20,8 +20,8 @@ object Test extends App {
   }.toList
 
 
-  val a = Item("hola", 1.2, 4.5)
-  val b = Item("hola 2", 1.2, 4.5)
+  val a = new Gene {}
+  val b = new Gene {}
 
   println(a == b)
 
