@@ -8,6 +8,7 @@ import com.typesafe.config.Config
 import domain.Execute
 import domain.Operators.*
 import domain.entities.{Individual, Population}
+
 import scala.util.Random
 
 object EvolutionMaster {

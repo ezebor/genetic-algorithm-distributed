@@ -1,11 +1,11 @@
 package domain.entities
 
 import domain.actors.EvolutionWorker
+import domain.entities.OperatorRatios.*
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
-import OperatorRatios._
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes

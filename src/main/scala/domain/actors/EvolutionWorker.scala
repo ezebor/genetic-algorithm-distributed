@@ -6,8 +6,8 @@ import akka.cluster.{Cluster, Member}
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
-import AlgorithmConfig.*
-import OperatorRatios.*
+import domain.entities.AlgorithmConfig.*
+import domain.entities.OperatorRatios.*
 
 import scala.util.Random
 
