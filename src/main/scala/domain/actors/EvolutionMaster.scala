@@ -45,7 +45,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       log.info(s"Adding ${newPopulation.individuals.size} new members: ${newPopulation.individuals}")
       val finalPopulation = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
       if (pendingWorkers == 1) {
-        log.info(s"Population has evolved with ${finalPopulation.individuals.size} members: $finalPopulation")
+        log.info(s"Population has evolved with ${finalPopulation.individuals.size} members. Next operation is $nextOperatorName")
         context.become(evolving)
         self ! Execute(nextOperatorName, finalPopulation)
       } else {

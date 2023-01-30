@@ -36,6 +36,7 @@ class EvolutionMasterSpec
       router.receiveWhile() {
         case Execute(NATURAL_SELECTION, _) => router.reply(Execute(ADD_POPULATION, population))
         case Execute(CROSSOVER, _) => router.reply(Execute(ADD_POPULATION, population))
+        case Execute(MUTATION, _) => router.reply(Execute(ADD_POPULATION, population))
       }
 
       master ! HEALTH
