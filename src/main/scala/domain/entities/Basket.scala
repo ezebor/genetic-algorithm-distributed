@@ -4,6 +4,8 @@ import akka.remote.DaemonMsgCreate
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import AlgorithmConfig.*
+import OperatorRatios.*
 
 import scala.util.Random
 
@@ -18,6 +20,16 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
 
   override protected def copyWith(genes: List[Gene]): Individual = genes match
     case items: List[Item] => Basket(ItemsList(items))
+
+  override def mutate: Individual = {
+    val random = new Random()
+    copyWith(
+      itemsList.items.map(item =>
+        if(random.nextInt(100) + 1 > MUTATION_LIKELIHOOD * 100) item
+        else Item(s"Item ${item.name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
+      )
+    )
+  }
 }
 
 object BasketsPopulationRandomGenerator {

@@ -32,7 +32,11 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       context.become(waitingWorkers(population, MUTATION, chunks.size))
       chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
     case Execute(MUTATION, population: Population) =>
-      println(s"LLEGO EL MUTATUON AL MASTER CON CANTIDAD DE INDIFIVUOS = ${population.individuals.size}")
+      val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
+      context.become(waitingWorkers(population, UPDATE_POPULATION, chunks.size))
+      chunks.foreach(chunk => router ! Execute(MUTATION, chunk))
+    case Execute(UPDATE_POPULATION, population: Population) => 
+      println(s"LLEGO EL UPDATE POPULATION: ${population.individuals.size}")
     case HEALTH => sender() ! OK
   }
 
@@ -47,6 +51,5 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       } else {
         context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
       }
-    case Execute(UPDATE_POPULATION, population: Population) => ???
   }
 }

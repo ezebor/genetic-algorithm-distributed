@@ -33,6 +33,10 @@ class EvolutionWorker(survivalLikelihood: Double,
       val children = populationLookingForReproduction.crossoverWith(population)
       log.info(s"Crossover has generated ${children.individuals.size} children: ${children.individuals}")
       sender() ! Execute(ADD_POPULATION, children)
+    case Execute(MUTATION, population: Population) =>
+      val mutatedPopulation = population.mutate
+      log.info(s"The new mutated population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
+      sender() ! Execute(ADD_POPULATION, mutatedPopulation)
   }
 
   def likelihood: Int = {

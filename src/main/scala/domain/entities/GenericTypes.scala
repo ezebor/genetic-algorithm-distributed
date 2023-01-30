@@ -84,16 +84,21 @@ case class Population(individuals: List[Individual]) {
       individual.crossoverWith(couple) 
     })
   }
+
+  def mutate: Population = Population(
+    individuals.map(individual => individual.mutate)
+  )
 }
 
 trait Individual(chromosome: Chromosome) {
   protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
   protected def copyWith(genes: List[Gene]): Individual
+  def mutate: Individual
   lazy val fitness: Double = calculateFitness
+  private val random = new Random()
 
   def crossoverWith(couple: Individual): List[Individual] = {
-    val random = new Random()
     val crossedGenes = for {
       case (leftGene, rightGene) <- chromosome.getGenes.zip(couple.getChromosome.getGenes)
     } yield {
