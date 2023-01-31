@@ -3,13 +3,14 @@ package domain.serializers
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import domain.entities.AlgorithmConfig.*
 
 import scala.annotation.tailrec
 import scala.util.Random
 
 object Test extends App {
 
-  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(1000)
+  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(130)
 /*
   println(population.accumulatedFitness)
   println(population.findIndividualWhoseAccumulatedFitnessWindowIncludes(2000))
@@ -18,6 +19,9 @@ object Test extends App {
   val individualsToReproduce = (1 to population.individuals.size / 2).map{ _ =>
     population.findIndividualWhoseAccumulatedFitnessWindowIncludes(population.randomFitness)
   }.toList
+
+  val a = (population.individuals.size.toDouble  * 1.0 / (POPULATION_GROWTH_RATIO))
+  println(a)
 
 
   // TODO: master calcula los random de la mitad de la población, cada worker elige un chunk de la población siguiendo esos random

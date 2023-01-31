@@ -35,14 +35,18 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
       context.become(waitingWorkers(population, UPDATE_POPULATION, chunks.size))
       chunks.foreach(chunk => router ! Execute(MUTATION, chunk))
-    case Execute(UPDATE_POPULATION, population: Population) => 
-      println(s"LLEGO EL UPDATE POPULATION: ${population.individuals.size}")
+    case Execute(UPDATE_POPULATION, population: Population) =>
+      val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
+      context.become(waitingWorkers(Population(List()), STOP, chunks.size))
+      chunks.foreach(chunk => router ! Execute(UPDATE_POPULATION, chunk))
+    case Execute(STOP, population: Population) =>
+      println(s"LLEGO STOP: ${population.individuals.size}")
     case HEALTH => sender() ! OK
   }
 
   def waitingWorkers(evolvedPopulation: Population, nextOperatorName: String, pendingWorkers: Int): Receive = {
     case Execute(ADD_POPULATION, newPopulation: Population) =>
-      log.info(s"Adding ${newPopulation.individuals.size} new members: ${newPopulation.individuals}")
+      log.debug(s"Adding ${newPopulation.individuals.size} new members: ${newPopulation.individuals}")
       val finalPopulation = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
       if (pendingWorkers == 1) {
         log.info(s"Population has evolved with ${finalPopulation.individuals.size} members. Next operation is $nextOperatorName")

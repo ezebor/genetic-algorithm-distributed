@@ -12,7 +12,7 @@ import scala.util.Random
 case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
   override def mutate: Gene =
     val random = new Random()
-    Item(s"Item ${name}", random.nextInt(POPULATION_SIZE) + 1, random.nextInt(POPULATION_SIZE) + 1)
+    Item(s"Item ${name}", random.nextInt(INITIAL_POPULATION_SIZE) + 1, random.nextInt(INITIAL_POPULATION_SIZE) + 1)
 }
 
 case class ItemsList(items: List[Item]) extends Chromosome(items) {

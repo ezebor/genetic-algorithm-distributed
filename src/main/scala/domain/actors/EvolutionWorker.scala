@@ -26,17 +26,21 @@ class EvolutionWorker(survivalLikelihood: Double,
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
       val strongerPopulation = population.randomSubPopulation((population.individuals.size * SURVIVAL_LIKELIHOOD).toInt)
-      log.debug(s"Population got through natural selection. The leftover population has ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
+      log.debug(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
       val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
       val children = populationLookingForReproduction.crossoverWith(population)
-      log.debug(s"Crossover has generated ${children.individuals.size} children: ${children.individuals}")
+      log.debug(s"Population got through crossover. The new population has  ${children.individuals.size} children: ${children.individuals}")
       sender() ! Execute(ADD_POPULATION, children)
     case Execute(MUTATION, population: Population) =>
       val mutatedPopulation = population.mutate
-      log.debug(s"The new mutated population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
+      log.debug(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, mutatedPopulation)
+    case Execute(UPDATE_POPULATION, population: Population) =>
+      val updatedPopulation = population.randomSubPopulation((population.individuals.size * 1.0 / POPULATION_GROWTH_RATIO).toInt)
+      log.debug(s"Population got through update population. The new population has  ${updatedPopulation.individuals.size} members: ${updatedPopulation.individuals}")
+      sender() ! Execute(ADD_POPULATION, updatedPopulation)
   }
 
   def likelihood: Int = {

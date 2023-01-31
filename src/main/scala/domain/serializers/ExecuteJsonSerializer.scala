@@ -51,16 +51,12 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
   override def identifier: Int = 1712
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case command: Execute =>
-      println(s"Serializing Execute message to json: $command")
-      command.toJson(write).prettyPrint.getBytes()
+    case command: Execute => command.toJson(write).prettyPrint.getBytes()
     case _ => throw new Exception("Only Basket is supported to be serialized")
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
-    val command = new String(bytes).parseJson.convertTo[Execute](read)
-    println(s"Deserializing Execute message from json: $command")
-    command
+    new String(bytes).parseJson.convertTo[Execute](read)
   }
 
   override def includeManifest: Boolean = false

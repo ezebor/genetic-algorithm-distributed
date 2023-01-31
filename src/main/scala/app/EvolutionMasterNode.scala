@@ -27,11 +27,11 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
 
-  val master = system.actorOf(EvolutionMaster.props(2 * quantityOfWorkersPerNode, system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
+  val master = system.actorOf(EvolutionMaster.props(QUANTITY_OF_NODES * quantityOfWorkersPerNode, system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")))
 
   Thread.sleep(10000)
 
-  master ! Execute(EVOLUTION, BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE))
+  master ! Execute(EVOLUTION, BasketsPopulationRandomGenerator.randomPopulation(INITIAL_POPULATION_SIZE))
 }
 
 object MasterNode extends EvolutionMasterNode(QUANTITY_OF_WORKERS_PER_NODE)

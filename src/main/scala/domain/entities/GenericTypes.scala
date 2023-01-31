@@ -23,8 +23,10 @@ object OperatorRatios {
 }
 
 object AlgorithmConfig {
-  val POPULATION_SIZE = 500
+  val INITIAL_POPULATION_SIZE = 500
   val QUANTITY_OF_WORKERS_PER_NODE = 3
+  val QUANTITY_OF_NODES = 2
+  val POPULATION_GROWTH_RATIO = 1.648
 }
 
 case class Population(individuals: List[Individual]) {
