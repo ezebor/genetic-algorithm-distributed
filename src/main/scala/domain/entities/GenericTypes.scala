@@ -97,6 +97,8 @@ case class Population(individuals: List[Individual]) {
       individualsToMutate.map(individual => individual.mutate)
     )
   }
+  
+  def hasToStop: Boolean = individuals.exists(_.accomplishStopCriteria)
 }
 
 trait Individual(chromosome: Chromosome) {
@@ -105,6 +107,7 @@ trait Individual(chromosome: Chromosome) {
   protected def copyWith(chromosome: Chromosome): Individual
   lazy val fitness: Double = calculateFitness
   private val random = new Random()
+  def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual): List[Individual] = {
     val crossedGenes = for {

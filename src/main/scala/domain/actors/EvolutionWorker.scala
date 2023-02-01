@@ -41,6 +41,13 @@ class EvolutionWorker(survivalLikelihood: Double,
       val updatedPopulation = population.randomSubPopulation((population.individuals.size * 1.0 / POPULATION_GROWTH_RATIO).toInt)
       log.debug(s"Population got through update population. The new population has  ${updatedPopulation.individuals.size} members: ${updatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, updatedPopulation)
+    case Execute(STOP, population: Population) =>
+      val hasToStop: Boolean = population.hasToStop
+      log.debug(s"Has to stop: ${hasToStop}")
+      sender() ! Execute({
+        if(hasToStop) TAKE_BEST_INDIVIDUAL
+        else GO_TO_NEXT_GENERATION
+      }, population)
   }
 
   def likelihood: Int = {

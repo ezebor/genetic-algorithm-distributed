@@ -40,7 +40,9 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       context.become(waitingWorkers(Population(List()), STOP, chunks.size))
       chunks.foreach(chunk => router ! Execute(UPDATE_POPULATION, chunk))
     case Execute(STOP, population: Population) =>
-      println(s"LLEGO STOP: ${population.individuals.size}")
+      val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
+      context.become(waitingWorkers(Population(List()), EVOLUTION, chunks.size))
+      chunks.foreach(chunk => router ! Execute(STOP, chunk))
     case HEALTH => sender() ! OK
   }
 
@@ -55,5 +57,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       } else {
         context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
       }
+    case Execute(GO_TO_NEXT_GENERATION, newPopulation: Population) => ???
+    case Execute(TAKE_BEST_INDIVIDUAL, newPopulation: Population) => ???
   }
 }

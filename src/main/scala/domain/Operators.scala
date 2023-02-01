@@ -12,6 +12,8 @@ object Operators {
   val STOP = "stop"
   val HEALTH = "health"
   val OK = "ok"
+  val TAKE_BEST_INDIVIDUAL = "take_best_individual"
+  val GO_TO_NEXT_GENERATION = "go_to_next_generation"
 }
 
 case class Execute(operatorName: String, population: Population)
