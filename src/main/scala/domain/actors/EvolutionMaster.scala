@@ -16,10 +16,15 @@ object EvolutionMaster {
 }
 
 class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor with ActorLogging {
-  override def receive: Receive = {
-    case command@Execute(EVOLUTION, population: Population) =>
+  override def receive: Receive = offline
+
+  def offline: Receive = {
+    case command @ Execute(EVOLUTION, population: Population) =>
       context.become(evolving)
       self ! command
+    case Execute(RETURN_SOLUTIONS, solutions: Population) =>
+      log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals.map(_.fitness)}")
+    case HEALTH => sender() ! OK
   }
 
   def evolving: Receive = {
@@ -57,7 +62,23 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       } else {
         context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
       }
-    case Execute(GO_TO_NEXT_GENERATION, newPopulation: Population) => ???
-    case Execute(TAKE_BEST_INDIVIDUAL, newPopulation: Population) => ???
+    case Execute(GO_TO_NEXT_GENERATION, newPopulation: Population) =>
+      val populationForNextGeneration = Population(evolvedPopulation.individuals ++ newPopulation.individuals)
+      if (pendingWorkers == 1) {
+        log.info(s"Population has evolved with ${populationForNextGeneration.individuals.size} members. Next operation is $nextOperatorName")
+        context.become(evolving)
+        self ! Execute(nextOperatorName, populationForNextGeneration)
+      } else {
+        context.become(waitingWorkers(populationForNextGeneration, nextOperatorName, pendingWorkers - 1))
+      }
+    case Execute(TAKE_BESTS_INDIVIDUALS, newPopulation: Population) =>
+      val finalPopulation = Population(evolvedPopulation.bestIndividuals ++ newPopulation.bestIndividuals)
+      if (pendingWorkers == 1) {
+        log.info(s"Population has evolved with ${finalPopulation.individuals.size} members. Next operation is $nextOperatorName")
+        context.become(offline)
+        self ! Execute(RETURN_SOLUTIONS, finalPopulation)
+      } else {
+        context.become(waitingWorkers(finalPopulation, nextOperatorName, pendingWorkers - 1))
+      }
   }
 }

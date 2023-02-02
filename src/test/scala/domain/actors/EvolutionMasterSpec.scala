@@ -38,6 +38,7 @@ class EvolutionMasterSpec
         case Execute(CROSSOVER, _) => router.reply(Execute(ADD_POPULATION, population))
         case Execute(MUTATION, _) => router.reply(Execute(ADD_POPULATION, population))
         case Execute(UPDATE_POPULATION, _) => router.reply(Execute(ADD_POPULATION, population))
+        case Execute(STOP, _) => router.reply(Execute(TAKE_BESTS_INDIVIDUALS, population))
       }
 
       master ! HEALTH

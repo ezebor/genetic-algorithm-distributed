@@ -99,6 +99,8 @@ case class Population(individuals: List[Individual]) {
   }
   
   def hasToStop: Boolean = individuals.exists(_.accomplishStopCriteria)
+  
+  def bestIndividuals: List[Individual] = individuals.filter(_.accomplishStopCriteria)
 }
 
 trait Individual(chromosome: Chromosome) {
@@ -110,6 +112,7 @@ trait Individual(chromosome: Chromosome) {
   def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual): List[Individual] = {
+    // TODO: hacer un fold para decidir ante cada gen, si va para un hijo o para el otro (para que pueda pasar que un hijo tenga más genes que el hermano)
     val crossedGenes = for {
       case (leftGene, rightGene) <- chromosome.getGenes.zip(couple.getChromosome.getGenes)
     } yield {

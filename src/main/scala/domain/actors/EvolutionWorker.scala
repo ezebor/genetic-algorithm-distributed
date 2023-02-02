@@ -45,7 +45,7 @@ class EvolutionWorker(survivalLikelihood: Double,
       val hasToStop: Boolean = population.hasToStop
       log.debug(s"Has to stop: ${hasToStop}")
       sender() ! Execute({
-        if(hasToStop) TAKE_BEST_INDIVIDUAL
+        if(hasToStop) TAKE_BESTS_INDIVIDUALS
         else GO_TO_NEXT_GENERATION
       }, population)
   }

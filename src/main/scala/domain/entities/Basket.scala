@@ -12,7 +12,7 @@ import scala.util.Random
 case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
   override def mutate: Gene =
     val random = new Random()
-    Item(s"Item ${name}", random.nextInt(INITIAL_POPULATION_SIZE) + 1, random.nextInt(INITIAL_POPULATION_SIZE) + 1)
+    Item(s"Item ${name}", random.nextInt(10) + 1, random.nextInt(10) + 1)
 }
 
 case class ItemsList(items: List[Item]) extends Chromosome(items) {
@@ -29,7 +29,7 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
     case itemsList: ItemsList => Basket(itemsList)
 
   // TODO: FIX THIS
-  override def accomplishStopCriteria: Boolean = true
+  override def accomplishStopCriteria: Boolean = fitness >= 9 * itemsList.items.size
 }
 
 object BasketsPopulationRandomGenerator {
@@ -38,8 +38,7 @@ object BasketsPopulationRandomGenerator {
     Population(
       (1 to populationSize).map(i => Basket(
         ItemsList(List(
-          Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1),
-          Item(s"Item $i", random.nextInt(populationSize) + 1, random.nextInt(populationSize) + 1)
+          Item(s"Item $i", random.nextInt(10), random.nextInt(10))
         )))).toList
     )
   }

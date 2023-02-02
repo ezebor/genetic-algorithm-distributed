@@ -28,6 +28,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   def buildIndividual(chromosome: Chromosome): Individual = new Individual(chromosome) {
     override protected def calculateFitness: Double = 10
     override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
+    override def accomplishStopCriteria: Boolean = true
   }
 
   "Population" should {
