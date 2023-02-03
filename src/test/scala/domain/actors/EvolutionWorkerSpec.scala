@@ -22,7 +22,7 @@ class EvolutionWorkerSpec
 
   override def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
-  val POPULATION_SIZE = 200
+  val POPULATION_SIZE = 500
 
   val worker = system.actorOf(EvolutionWorker.props(), "evolutionWorker")
   val population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
