@@ -65,6 +65,7 @@ case class Population(individuals: List[Individual]) {
     .toList
 
   def randomSubPopulation(size: Int): Population = {
+    @tailrec
     def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
       if(aSize == 0) sinkPopulation
       else {

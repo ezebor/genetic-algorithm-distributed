@@ -46,7 +46,7 @@ class EvolutionWorker(survivalLikelihood: Double,
       log.debug(s"Has to stop: ${hasToStop}")
       sender() ! Execute({
         if(hasToStop) TAKE_BESTS_INDIVIDUALS
-        else GO_TO_NEXT_GENERATION
+        else ADD_POPULATION
       }, population)
   }
 

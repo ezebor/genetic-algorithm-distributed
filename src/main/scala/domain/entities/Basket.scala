@@ -22,14 +22,14 @@ case class ItemsList(items: List[Item]) extends Chromosome(items) {
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   protected override def calculateFitness: Double = itemsList match {
-    case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.max(price, satisfaction) - Math.min(price, satisfaction)}.sum
+    case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.abs(price - satisfaction)}.sum
   }
 
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
     case itemsList: ItemsList => Basket(itemsList)
 
   // TODO: FIX THIS
-  override def accomplishStopCriteria: Boolean = fitness >= 9 * itemsList.items.size
+  override def accomplishStopCriteria: Boolean = fitness >= 1000//(9 * itemsList.items.size)
 }
 
 object BasketsPopulationRandomGenerator {
