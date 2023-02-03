@@ -19,35 +19,28 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
   override def receive: Receive = offline
 
   def offline: Receive = {
-    case command @ Execute(EVOLUTION, population: Population) =>
+    case Execute(EVOLUTION, population: Population) =>
       context.become(evolving)
-      self ! command
+      self ! Execute(NATURAL_SELECTION, population: Population)
     case Execute(RETURN_SOLUTIONS, solutions: Population) =>
       log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals.map(_.fitness)}")
     case HEALTH => sender() ! OK
   }
 
   def evolving: Receive = {
-    case Execute(EVOLUTION, population: Population) =>
+    case Execute(currentOperatorName: String, population: Population) =>
+      val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
+        case NATURAL_SELECTION => (Population(List()), CROSSOVER)
+        case CROSSOVER => (population, MUTATION)
+        case MUTATION => (population, UPDATE_POPULATION)
+        case UPDATE_POPULATION => (Population(List()), STOP)
+        case STOP => (Population(List()), NATURAL_SELECTION)
+
+        log.info(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
+
       val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(Population(List()), CROSSOVER, chunks.size))
-      chunks.foreach(chunk => router ! Execute(NATURAL_SELECTION, chunk))
-    case Execute(CROSSOVER, population: Population) =>
-      val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(population, MUTATION, chunks.size))
-      chunks.foreach(chunk => router ! Execute(CROSSOVER, chunk))
-    case Execute(MUTATION, population: Population) =>
-      val chunks = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(population, UPDATE_POPULATION, chunks.size))
-      chunks.foreach(chunk => router ! Execute(MUTATION, chunk))
-    case Execute(UPDATE_POPULATION, population: Population) =>
-      val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(Population(List()), STOP, chunks.size))
-      chunks.foreach(chunk => router ! Execute(UPDATE_POPULATION, chunk))
-    case Execute(STOP, population: Population) =>
-      val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(Population(List()), EVOLUTION, chunks.size))
-      chunks.foreach(chunk => router ! Execute(STOP, chunk))
+      context.become(waitingWorkers(basePopulation, nextOperatorName, chunks.size))
+      chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
     case HEALTH => sender() ! OK
   }
 
