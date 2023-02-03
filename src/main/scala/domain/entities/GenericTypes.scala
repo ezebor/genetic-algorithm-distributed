@@ -24,7 +24,7 @@ object OperatorRatios {
 }
 
 object AlgorithmConfig {
-  val INITIAL_POPULATION_SIZE = 500
+  val POPULATION_SIZE = 500
   val QUANTITY_OF_WORKERS_PER_NODE = 3
   val QUANTITY_OF_NODES = 2
   val POPULATION_GROWTH_RATIO = 1.648
@@ -56,11 +56,13 @@ case class Population(individuals: List[Individual]) {
         val middleIndex = anAccumulatedFitness.size / 2
         val middleFitness = anAccumulatedFitness(middleIndex)._2
         aFitness match
-          case _ if aFitness >= middleFitness => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.takeRight(middleIndex))
-          case _ if aFitness >= anAccumulatedFitness(middleIndex - 1)._2 => anAccumulatedFitness(middleIndex)._1
-          case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.take(middleIndex))
+          case _ if aFitness == middleFitness => anAccumulatedFitness(middleIndex)._1
+          case _ if aFitness > middleFitness => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(middleIndex + 1, anAccumulatedFitness.size))
+          case _ if aFitness > anAccumulatedFitness(middleIndex - 1)._2 => anAccumulatedFitness(middleIndex)._1
+          case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(0, middleIndex))
       }
     }
+
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
@@ -72,11 +74,12 @@ case class Population(individuals: List[Individual]) {
   def randomSubPopulation(size: Int): Population = {
     @tailrec
     def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
-      if(aSize == 0) sinkPopulation
+      if(aSize == 0 || sourcePopulation.individuals.isEmpty) sinkPopulation
       else {
         val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
+
         recRandomSubPopulation(
-          Population(sourcePopulation.individuals.filter(individual => individual != foundIndividual)),
+          Population(sourcePopulation.individuals.filter(_ != foundIndividual)),
           Population(foundIndividual :: sinkPopulation.individuals),
           aSize - 1
         )
@@ -90,11 +93,7 @@ case class Population(individuals: List[Individual]) {
     )
   }
 
-  def selectStrongerPopulation = {
-    if(individuals.size >= INITIAL_POPULATION_SIZE)
-      randomSubPopulation((individuals.size * SURVIVAL_LIKELIHOOD).toInt)
-    else this
-  }
+  def selectStrongerPopulation(size: Int) = randomSubPopulation(size)
 
   def crossoverWith(otherPopulation: Population): Population = {
     Population(individuals.flatMap { individual =>

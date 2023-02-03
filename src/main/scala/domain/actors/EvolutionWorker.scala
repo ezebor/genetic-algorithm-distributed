@@ -25,7 +25,7 @@ class EvolutionWorker(survivalLikelihood: Double,
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
-      val strongerPopulation = population.selectStrongerPopulation
+      val strongerPopulation = population.selectStrongerPopulation(POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE))
       log.debug(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
@@ -37,10 +37,6 @@ class EvolutionWorker(survivalLikelihood: Double,
       val mutatedPopulation = population.mutate
       log.debug(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, mutatedPopulation)
-    case Execute(UPDATE_POPULATION, population: Population) =>
-      val updatedPopulation = population.randomSubPopulation((population.individuals.size * 1.0 / POPULATION_GROWTH_RATIO).toInt)
-      log.debug(s"Population got through update population. The new population has  ${updatedPopulation.individuals.size} members: ${updatedPopulation.individuals}")
-      sender() ! Execute(ADD_POPULATION, updatedPopulation)
     case Execute(STOP, population: Population) =>
       val hasToStop: Boolean = population.hasToStop
       log.debug(s"Has to stop: ${hasToStop}")

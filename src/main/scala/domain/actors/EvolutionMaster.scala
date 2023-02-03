@@ -23,7 +23,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       context.become(online)
       self ! Execute(NATURAL_SELECTION, population: Population)
     case Execute(RETURN_SOLUTIONS, solutions: Population) =>
-      log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals.map(_.fitness)}")
+      log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals}")
     case HEALTH => sender() ! OK
   }
 
@@ -32,8 +32,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
       val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
         case NATURAL_SELECTION => (Population(List()), CROSSOVER)
         case CROSSOVER => (population, MUTATION)
-        case MUTATION => (population, UPDATE_POPULATION)
-        case UPDATE_POPULATION => (Population(List()), STOP)
+        case MUTATION => (population, STOP)
         case STOP => (Population(List()), NATURAL_SELECTION)
 
         log.info(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")

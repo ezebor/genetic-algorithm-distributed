@@ -31,7 +31,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
 
   Thread.sleep(10000)
 
-  master ! Execute(EVOLUTION, BasketsPopulationRandomGenerator.randomPopulation(INITIAL_POPULATION_SIZE))
+  master ! Execute(EVOLUTION, BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE))
 }
 
 object MasterNode extends EvolutionMasterNode(QUANTITY_OF_WORKERS_PER_NODE)

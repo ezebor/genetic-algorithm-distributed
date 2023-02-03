@@ -12,13 +12,9 @@ object Test extends App {
 
   val population: Population = BasketsPopulationRandomGenerator.randomPopulation(500)
 
-  println(population.accumulatedFitness)
-  println(population.accumulatedFitness.last._2)
-
-  val random = new Random()
-  println(random.nextDouble())
-  println(random.nextDouble())
-  println(random.nextDouble())
+  val a = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(new Random().nextDouble())
+  println(a)
+  println(List(2).takeRight(2))
 
   /*
 

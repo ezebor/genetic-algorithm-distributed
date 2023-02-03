@@ -31,7 +31,7 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
     case itemsList: ItemsList => Basket(itemsList)
 
   // TODO: FIX THIS
-  override def accomplishStopCriteria: Boolean = fitness >= 1000//(9 * itemsList.items.size)
+  override def accomplishStopCriteria: Boolean = fitness >= 32//(9 * itemsList.items.size)
 }
 
 object BasketsPopulationRandomGenerator {
