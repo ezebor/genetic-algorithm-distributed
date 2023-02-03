@@ -16,17 +16,7 @@ object Test extends App {
   println(population.findIndividualWhoseAccumulatedFitnessWindowIncludes(2000))
 */
 
-  val individualsToReproduce = (1 to population.individuals.size / 2).map{ _ =>
-    population.findIndividualWhoseAccumulatedFitnessWindowIncludes(population.randomFitness)
-  }.toList
-
-  val a = (population.individuals.size.toDouble  * 1.0 / (POPULATION_GROWTH_RATIO))
-  println(a)
-
-
-  // TODO: master calcula los random de la mitad de la población, cada worker elige un chunk de la población siguiendo esos random
-  // TODO: cuando el master recibió los chunks de los workers, arma la población de los que encara, y le manda una porción a cada worker para que los cruce
-
+println(population.crossoverWith(population.crossoverWith(population)).individuals.map(_.getChromosome.getGenes.size))
 
 
   /*

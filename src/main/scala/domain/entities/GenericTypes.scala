@@ -112,16 +112,14 @@ trait Individual(chromosome: Chromosome) {
   def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual): List[Individual] = {
-    // TODO: hacer un fold para decidir ante cada gen, si va para un hijo o para el otro (para que pueda pasar que un hijo tenga más genes que el hermano)
-    val crossedGenes = for {
-      case (leftGene, rightGene) <- chromosome.getGenes.zip(couple.getChromosome.getGenes)
-    } yield {
-      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) (leftGene, rightGene)
-      else (rightGene, leftGene)
+    val crossedGenes: (List[Gene], List[Gene]) = (chromosome.getGenes ::: couple.getChromosome.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
+      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) (nextGene :: result._1, result._2)
+      else (result._1, nextGene :: result._2)
     }
+    
     List(
-      copyWith(chromosome.copyWith(crossedGenes.map(_._1))),
-      copyWith(chromosome.copyWith(crossedGenes.map(_._2)))
+      copyWith(chromosome.copyWith(crossedGenes._1)),
+      copyWith(chromosome.copyWith(crossedGenes._2))
     )
   }
 
