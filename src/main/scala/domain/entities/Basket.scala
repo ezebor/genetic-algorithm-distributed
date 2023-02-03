@@ -22,7 +22,9 @@ case class ItemsList(items: List[Item]) extends Chromosome(items) {
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   protected override def calculateFitness: Double = itemsList match {
-    case ItemsList(items) => items.map{ case Item(_, price, satisfaction) => Math.abs(price - satisfaction)}.sum
+    case ItemsList(items) =>
+      if(items.size >= 5 || items.size <= 2) 0.1
+      else items.map{ case Item(_, price, satisfaction) => Math.abs(price - satisfaction)}.sum
   }
 
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match

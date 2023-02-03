@@ -33,6 +33,7 @@ object AlgorithmConfig {
 case class Population(individuals: List[Individual]) {
   val random = new Random()
 
+  // TODO: para los que tengan fitness 0, usar un inifitecimal para su ventana
   lazy val accumulatedFitness: List[(Individual, Double)] = individuals
     .zipWithIndex
     .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
@@ -58,6 +59,7 @@ case class Population(individuals: List[Individual]) {
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
+  // TODO: usar nextDouble + algoritmo para reconstruir la fitness acumulada, porque nextInt falla dado que puede haber fitness entre 0 y 1, por lo que el toInt lo vuelve 0
   def randomFitness = random.nextInt(accumulatedFitness.last._2.toInt) + 1
 
   def intoChunks(chunkSize: Int): List[Population] = individuals

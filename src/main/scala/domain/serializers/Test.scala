@@ -16,7 +16,9 @@ object Test extends App {
   println(population.findIndividualWhoseAccumulatedFitnessWindowIncludes(2000))
 */
 
-println(population.crossoverWith(population.crossoverWith(population)).individuals.map(_.getChromosome.getGenes.size))
+println(new Random().nextDouble())
+println(new Random().nextDouble())
+println(new Random().nextDouble())
 
 
   /*
