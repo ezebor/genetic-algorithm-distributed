@@ -1,12 +1,12 @@
 package domain.entities
 
 import domain.actors.EvolutionWorker
+import domain.entities.AlgorithmConfig.*
 import domain.entities.OperatorRatios.*
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
-import AlgorithmConfig.*
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
@@ -34,16 +34,21 @@ case class Population(individuals: List[Individual]) {
   val random = new Random()
 
   // TODO: para los que tengan fitness 0, usar un inifitecimal para su ventana
-  lazy val accumulatedFitness: List[(Individual, Double)] = individuals
-    .zipWithIndex
-    .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
-      result :+ (
-        individual,
-        if(index == 0) individual.fitness else individual.fitness + result(index - 1)._2
-      )
-    }
+  lazy val accumulatedFitness: List[(Individual, Double)] = {
+    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness)
+    individuals
+      .zipWithIndex
+      .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
+        result :+ (
+          individual,
+          if(index == 0) individual.fitness / totalFitness
+          else if (index == individuals.size - 1) 1.0
+          else individual.fitness / totalFitness + result(index - 1)._2
+        )
+      }
+  }
 
-  def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Int): Individual = {
+  def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Double): Individual = {
     @tailrec
     def recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
       if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
@@ -59,9 +64,6 @@ case class Population(individuals: List[Individual]) {
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
-  // TODO: usar nextDouble + algoritmo para reconstruir la fitness acumulada, porque nextInt falla dado que puede haber fitness entre 0 y 1, por lo que el toInt lo vuelve 0
-  def randomFitness = random.nextInt(accumulatedFitness.last._2.toInt) + 1
-
   def intoChunks(chunkSize: Int): List[Population] = individuals
     .grouped(chunkSize)
     .map(anIndividuals => Population(anIndividuals))
@@ -72,7 +74,7 @@ case class Population(individuals: List[Individual]) {
     def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
       if(aSize == 0) sinkPopulation
       else {
-        val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(sourcePopulation.randomFitness)
+        val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
         recRandomSubPopulation(
           Population(sourcePopulation.individuals.filter(individual => individual != foundIndividual)),
           Population(foundIndividual :: sinkPopulation.individuals),
@@ -96,7 +98,7 @@ case class Population(individuals: List[Individual]) {
 
   def crossoverWith(otherPopulation: Population): Population = {
     Population(individuals.flatMap { individual =>
-      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(randomFitness)
+      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
       individual.crossoverWith(couple) 
     })
   }
@@ -122,9 +124,15 @@ trait Individual(chromosome: Chromosome) {
   def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual): List[Individual] = {
+    def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
+      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) nextGene :: genes
+      else genes
+
     val crossedGenes: (List[Gene], List[Gene]) = (chromosome.getGenes ::: couple.getChromosome.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
-      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) (nextGene :: result._1, result._2)
-      else (result._1, nextGene :: result._2)
+      (
+        addGeneAccordingToLikelihood(nextGene, result._1),
+        addGeneAccordingToLikelihood(nextGene, result._2)
+      )
     }
     
     List(

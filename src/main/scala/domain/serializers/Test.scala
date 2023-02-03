@@ -10,16 +10,15 @@ import scala.util.Random
 
 object Test extends App {
 
-  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(130)
-/*
+  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(500)
+
   println(population.accumulatedFitness)
-  println(population.findIndividualWhoseAccumulatedFitnessWindowIncludes(2000))
-*/
+  println(population.accumulatedFitness.last._2)
 
-println(new Random().nextDouble())
-println(new Random().nextDouble())
-println(new Random().nextDouble())
-
+  val random = new Random()
+  println(random.nextDouble())
+  println(random.nextDouble())
+  println(random.nextDouble())
 
   /*
 
