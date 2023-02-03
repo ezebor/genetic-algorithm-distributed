@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import domain.entities.AlgorithmConfig.*
 import domain.entities.OperatorRatios.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
@@ -34,7 +35,7 @@ class EvolutionWorkerSpec
       val executeMessage = expectMsgType[Execute]
 
       executeMessage.operatorName should be(ADD_POPULATION)
-      executeMessage.population.individuals.size should be((POPULATION_SIZE * SURVIVAL_LIKELIHOOD).toInt)
+      executeMessage.population.individuals.size should be((POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE)).toInt)
     }
 
     "execute crossover when receives 'crossover' operator" in {
