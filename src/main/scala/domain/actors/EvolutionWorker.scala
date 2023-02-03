@@ -25,7 +25,7 @@ class EvolutionWorker(survivalLikelihood: Double,
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
-      val strongerPopulation = population.randomSubPopulation((population.individuals.size * SURVIVAL_LIKELIHOOD).toInt)
+      val strongerPopulation = population.selectStrongerPopulation
       log.debug(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>

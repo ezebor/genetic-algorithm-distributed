@@ -6,6 +6,7 @@ import domain.entities.OperatorRatios.*
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
+import AlgorithmConfig.*
 
 trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
@@ -83,6 +84,12 @@ case class Population(individuals: List[Individual]) {
       Population(List()),
       size
     )
+  }
+
+  def selectStrongerPopulation = {
+    if(individuals.size >= INITIAL_POPULATION_SIZE)
+      randomSubPopulation((individuals.size * SURVIVAL_LIKELIHOOD).toInt)
+    else this
   }
 
   def crossoverWith(otherPopulation: Population): Population = {
