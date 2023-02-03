@@ -26,20 +26,20 @@ class EvolutionWorker(survivalLikelihood: Double,
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
       val strongerPopulation = population.selectStrongerPopulation(POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE))
-      log.debug(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
+      log.info(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
       val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
       val children = populationLookingForReproduction.crossoverWith(population)
-      log.debug(s"Population got through crossover. The new population has  ${children.individuals.size} children: ${children.individuals}")
+      log.info(s"Population got through crossover. The new population has  ${children.individuals.size} children: ${children.individuals}")
       sender() ! Execute(ADD_POPULATION, children)
     case Execute(MUTATION, population: Population) =>
       val mutatedPopulation = population.mutate
-      log.debug(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
+      log.info(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, mutatedPopulation)
     case Execute(STOP, population: Population) =>
       val hasToStop: Boolean = population.hasToStop
-      log.debug(s"Has to stop: ${hasToStop}")
+      log.info(s"Has to stop: ${hasToStop}")
       sender() ! Execute({
         if(hasToStop) TAKE_BESTS_INDIVIDUALS
         else ADD_POPULATION

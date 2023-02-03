@@ -24,14 +24,17 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
   protected override def calculateFitness: Double = itemsList match {
     case ItemsList(items) =>
       if(items.size >= 5 || items.size <= 2) 0.1
-      else items.map{ case Item(_, price, satisfaction) => Math.abs(price - satisfaction)}.sum
+      else items.map{ case Item(_, price, satisfaction) =>
+        if(price > satisfaction) 0
+        else satisfaction - price
+      }.sum
   }
 
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
     case itemsList: ItemsList => Basket(itemsList)
 
   // TODO: FIX THIS
-  override def accomplishStopCriteria: Boolean = fitness >= 32//(9 * itemsList.items.size)
+  override def accomplishStopCriteria: Boolean = fitness >= 40//(9 * itemsList.items.size)
 }
 
 object BasketsPopulationRandomGenerator {
