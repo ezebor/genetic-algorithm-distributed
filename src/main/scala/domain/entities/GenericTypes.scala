@@ -30,13 +30,12 @@ object AlgorithmConfig {
   val POPULATION_GROWTH_RATIO = 1.648
 }
 
-case class Population(individuals: List[Individual]) {
-  val random = new Random()
-
+case class Population(individuals: List[Individual])(implicit random: Random = new Random()) {
   // TODO: para los que tengan fitness 0, usar un inifitecimal para su ventana
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness)
     individuals
+      .filter(_.fitness > 0)
       .zipWithIndex
       .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
         result :+ (
