@@ -28,9 +28,10 @@ object AlgorithmConfig {
   val QUANTITY_OF_WORKERS_PER_NODE = 3
   val QUANTITY_OF_NODES = 2
   val POPULATION_GROWTH_RATIO = 1.648
+  implicit val random: Random = new Random()
 }
 
-case class Population(individuals: List[Individual])(implicit random: Random = new Random()) {
+case class Population(individuals: List[Individual])(implicit random: Random) {
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness)
     individuals

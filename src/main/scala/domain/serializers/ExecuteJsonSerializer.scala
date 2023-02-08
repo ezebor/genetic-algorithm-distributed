@@ -4,6 +4,7 @@ import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import domain.entities.AlgorithmConfig.random
 import spray.json.*
 
 trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with RootJsonFormat[Execute] {

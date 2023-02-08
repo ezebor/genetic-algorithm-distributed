@@ -39,7 +39,6 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
 
 object BasketsPopulationRandomGenerator {
   def randomPopulation(populationSize: Int): Population = {
-    val random = new Random()
     Population(
       (1 to populationSize).map(i => Basket(
         ItemsList(List(

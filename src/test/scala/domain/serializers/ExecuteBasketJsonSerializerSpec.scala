@@ -8,8 +8,11 @@ import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import scala.util.Random
+
 class ExecuteBasketJsonSerializerSpec extends AnyWordSpecLike with should.Matchers {
   val serializer = new ExecuteBasketJsonSerializer
+  implicit val random: Random = new Random()
 
   "Serializer" should {
     "serialize and deserialize a command for the empty population" in {

@@ -8,6 +8,8 @@ import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import scala.util.Random
+
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
@@ -15,6 +17,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val population: Population = Population((1 to POPULATION_SIZE).map { _ =>
     buildIndividual(buildChromosome(List(buildGene)))
   }.toList)
+
+  implicit val random: Random = new Random()
 
   def buildGene: Gene = new Gene {
     override def mutate: Gene = buildGene
