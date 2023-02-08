@@ -34,14 +34,14 @@ object AlgorithmConfig {
 case class Population(individuals: List[Individual])(implicit random: Random) {
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness)
-    individuals
-      .filter(_.fitness > 0)
+    val fitIndividuals = individuals.filter(_.fitness > 0)
+    fitIndividuals
       .zipWithIndex
       .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
         result :+ (
           individual,
           if(index == 0) individual.fitness / totalFitness
-          else if (index == individuals.size - 1) 1.0
+          else if (index == fitIndividuals.size - 1) 1.0
           else individual.fitness / totalFitness + result(index - 1)._2
         )
       }
@@ -61,6 +61,8 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
           case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(0, middleIndex))
       }
     }
+
+    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness is empty")
 
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
