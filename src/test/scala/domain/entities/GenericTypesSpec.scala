@@ -120,9 +120,19 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       actualIndividuals should be(population.individuals)
     }
 
-    // TODO: agregar intoChunks para population vacía
-    // TODO: agregar intoChunks para population con individuos con fitness = 0 todos
+    "create an empty chunk when it is empty" in {
+      val population = buildPopulation(0)
+      val chunks = population.intoChunks(CHUNKS_SIZE)
+      chunks.size should be(0)
+    }
 
+    "create a chunk equals to the population when the required size is 0" in {
+      val population = buildPopulation(POPULATION_SIZE)
+      intercept[IllegalArgumentException] {
+        population.intoChunks(0)
+      }
+    }
+    
     "generate sub populations given population size" in {
       val population = buildPopulation(POPULATION_SIZE)
       population.randomSubPopulation(0).individuals.size should be(0)

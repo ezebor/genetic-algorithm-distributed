@@ -67,7 +67,10 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
-  def intoChunks(chunkSize: Int): List[Population] = individuals
+  def intoChunks(chunkSize: Int): List[Population] = 
+    if(chunkSize == 0) throw new IllegalArgumentException(s"Unable to slice into chunks of size $chunkSize")
+    
+    individuals
     .grouped(chunkSize)
     .map(anIndividuals => Population(anIndividuals))
     .toList
