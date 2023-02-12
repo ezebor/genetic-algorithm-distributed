@@ -62,7 +62,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness is empty")
+    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness list is empty")
 
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
@@ -89,6 +89,8 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
         )
       }
     }
+
+    if(this.accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to generate a random subpopulation with with size = $size: accumulatedFitness list is empty")
 
     recRandomSubPopulation(
       this,

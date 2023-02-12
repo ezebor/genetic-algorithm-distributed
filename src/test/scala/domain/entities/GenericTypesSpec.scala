@@ -133,15 +133,38 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       }
     }
     
-    "generate sub populations given population size" in {
-      val population = buildPopulation(POPULATION_SIZE)
-      population.randomSubPopulation(0).individuals.size should be(0)
-      population.randomSubPopulation(1).individuals.size should be(1)
-      population.randomSubPopulation(POPULATION_SIZE / 2).individuals.size should be(POPULATION_SIZE / 2)
-      population.randomSubPopulation(POPULATION_SIZE).individuals.size should be(POPULATION_SIZE)
+    "throw an exception when trying to generate a random sub populations from an empty population" in {
+      val population = buildPopulation(0)
+
+      intercept[IllegalStateException] {
+        population.randomSubPopulation(0)
+      }
+
+      intercept[IllegalStateException] {
+        population.randomSubPopulation(1)
+      }
     }
 
-    // TODO: agregar randomSubPopulation con individuals size = 0
+    "throw an exception when trying to generate a random sub populations from an unfit population" in {
+      val population = buildPopulation(POPULATION_SIZE, 0)
+
+      intercept[IllegalStateException] {
+        population.randomSubPopulation(0)
+      }
+
+      intercept[IllegalStateException] {
+        population.randomSubPopulation(1)
+      }
+    }
+
+    "generate a random sub populations from a population with one individual" in {
+      val population = buildPopulation(1)
+
+      population.randomSubPopulation(0).individuals.size should be(0)
+      population.randomSubPopulation(1) should be(population.individuals)
+    }
+
+
     // TODO: agregar randomSubPopulation con individuals size = 1
     // TODO: agregar randomSubPopulation controlando el random (random = 1 elige el último)
     // TODO: agregar randomSubPopulation controlando el random (random = 0 elige el primero)
