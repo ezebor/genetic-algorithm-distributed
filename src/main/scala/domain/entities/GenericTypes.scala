@@ -84,7 +84,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 
         recRandomSubPopulation(
           Population(sourcePopulation.individuals.filter(_ != foundIndividual)),
-          Population(foundIndividual :: sinkPopulation.individuals),
+          Population(sinkPopulation.individuals ::: List(foundIndividual)),
           aSize - 1
         )
       }

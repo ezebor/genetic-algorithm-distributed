@@ -14,8 +14,6 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
 
-  implicit val random: Random = new Random()
-
   // TODO: llevar los build a un factory
 
   def buildGene: Gene = new Gene {
@@ -33,22 +31,15 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     override def accomplishStopCriteria: Boolean = true
   }
 
-  def buildPopulation(size: Int, fitnessValue: Double = 10): Population = Population((1 to size).map { _ =>
+  implicit val standardRandom: Random = new Random()
+
+  def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
     buildIndividual(buildChromosome(List(buildGene)), fitnessValue)
-  }.toList)
+  }.toList)(customRandom)
 
   "Population" should {
-    "reckon accumulated fitness for each individual" in {
-      val population = buildPopulation(POPULATION_SIZE)
-      val expectedSize = population.individuals.size
-      val actualSize = population.accumulatedFitness.size
-
-      actualSize should be(expectedSize)
-      actualSize should be(POPULATION_SIZE)
-    }
-
-    "build an accumulated fitness list when it has individuals with fitness greater than 0" in {
-      val population = buildPopulation(POPULATION_SIZE)
+    "build an accumulated fitness list with the same size than the individuals list when all the individuals have fitness greater than 0" in {
+      val population = buildPopulation(POPULATION_SIZE, 10)
       population.accumulatedFitness.last._2 should be(1)
       population.accumulatedFitness.size should be(population.individuals.size)
       population.accumulatedFitness.size should be(POPULATION_SIZE)
@@ -59,13 +50,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       }
     }
 
-    "build an empty accumulated fitness list when it is empty" in {
+    "build an empty accumulated fitness list with the individuals list is empty" in {
       val population = buildPopulation(0)
       assert(population.individuals.isEmpty)
       assert(population.accumulatedFitness.isEmpty)
     }
 
-    "build an accumulated fitness list ignoring individuals with fitness equals to 0" in {
+    "build an accumulated fitness list fewer than the individuals list when some individuals have fitness equals to 0" in {
       val population = Population(buildPopulation(POPULATION_SIZE / 2).individuals ::: buildPopulation(POPULATION_SIZE / 2, 0).individuals)
 
       population.accumulatedFitness.last._2 should be(1)
@@ -76,6 +67,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         assert(population.individuals.contains(population.accumulatedFitness(index)._1))
         assert(population.accumulatedFitness(index)._2 > population.accumulatedFitness(index - 1)._2)
       }
+
+      population.accumulatedFitness.map(_._1) should be(population.individuals.filter(_.fitness > 0))
     }
 
     "find an individual whose accumulated fitness includes a given fitness" in {
@@ -133,54 +126,46 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       }
     }
     
-    "throw an exception when trying to generate a random sub populations from an empty population" in {
-      val population = buildPopulation(0)
-
+    "throw an exception when trying to generate a random sub populations from an empty accumulated fitness list" in {
       intercept[IllegalStateException] {
-        population.randomSubPopulation(0)
+        buildPopulation(0).randomSubPopulation(0)
       }
 
       intercept[IllegalStateException] {
-        population.randomSubPopulation(1)
+        buildPopulation(0).randomSubPopulation(1)
+      }
+
+      intercept[IllegalStateException] {
+        buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(0)
+      }
+
+      intercept[IllegalStateException] {
+        buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(1)
       }
     }
 
-    "throw an exception when trying to generate a random sub populations from an unfit population" in {
-      val population = buildPopulation(POPULATION_SIZE, 0)
-
-      intercept[IllegalStateException] {
-        population.randomSubPopulation(0)
+    "build a random sub population from a population with fit individuals picking always the last individuals" in {
+      case object CustomRandom extends Random {
+        override def nextDouble(): Double = 1
       }
+      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
 
-      intercept[IllegalStateException] {
-        population.randomSubPopulation(1)
-      }
+      population.randomSubPopulation(0).individuals should be(List())
+      population.randomSubPopulation(1).individuals.head should be(population.individuals.last)
+      population.randomSubPopulation(POPULATION_SIZE / 2).individuals.reverse should be(population.individuals.takeRight(POPULATION_SIZE / 2))
+      population.randomSubPopulation(POPULATION_SIZE).individuals.reverse should be(population.individuals.takeRight(POPULATION_SIZE))
     }
 
-    "generate a random sub populations from a population with one individual" in {
-      val population = buildPopulation(1)
-
-      population.randomSubPopulation(0).individuals.size should be(0)
-      population.randomSubPopulation(1) should be(population.individuals)
-    }
-
-
-    // TODO: agregar randomSubPopulation con individuals size = 1
-    // TODO: agregar randomSubPopulation controlando el random (random = 1 elige el último)
-    // TODO: agregar randomSubPopulation controlando el random (random = 0 elige el primero)
-    // TODO: agregar randomSubPopulation para population con individuos con fitness = 0 todos
-
-    "generate the same population when the given size is equals to the population size" in {
-      val population = buildPopulation(POPULATION_SIZE)
-      val subPopulation = population.randomSubPopulation(POPULATION_SIZE)
-
-      subPopulation.individuals.size should be(POPULATION_SIZE)
-      subPopulation.individuals.foreach { individual =>
-        population.individuals.contains(individual) should be(true)
+    "build a random sub population from a population with fit individuals picking always the first individuals" in {
+      case object CustomRandom extends Random {
+        override def nextDouble(): Double = 0
       }
-      population.individuals.foreach { individual =>
-        subPopulation.individuals.contains(individual) should be(true)
-      }
+      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+
+      population.randomSubPopulation(0).individuals should be(List())
+      population.randomSubPopulation(1).individuals.head should be(population.individuals.head)
+      population.randomSubPopulation(POPULATION_SIZE / 2).individuals should be(population.individuals.take(POPULATION_SIZE / 2))
+      population.randomSubPopulation(POPULATION_SIZE).individuals should be(population.individuals.take(POPULATION_SIZE))
     }
 
     "generate a new population composed by original members plus the children created through crossover" in {
