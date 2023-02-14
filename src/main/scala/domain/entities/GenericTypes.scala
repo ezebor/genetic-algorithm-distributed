@@ -120,12 +120,11 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   def bestIndividuals: List[Individual] = individuals.filter(_.accomplishStopCriteria)
 }
 
-trait Individual(chromosome: Chromosome) {
+trait Individual(chromosome: Chromosome)(implicit random: Random) {
   protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
   protected def copyWith(chromosome: Chromosome): Individual
   lazy val fitness: Double = calculateFitness
-  private val random = new Random()
   def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual): List[Individual] = {

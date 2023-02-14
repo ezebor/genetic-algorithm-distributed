@@ -13,6 +13,7 @@ import scala.util.Random
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
+  val QUANTITY_OF_GENES = 3
 
   // TODO: llevar los build a un factory
 
@@ -21,11 +22,11 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   }
 
   def buildChromosome(genes: List[Gene]): Chromosome = new Chromosome(genes) {
-    override def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
+    override def mutate: Chromosome = copyWith(genes.map(_.mutate))
     override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
   }
 
-  def buildIndividual(chromosome: Chromosome, fitnessValue: Double = 10): Individual = new Individual(chromosome) {
+  def buildIndividual(chromosome: Chromosome, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
     override protected def calculateFitness: Double = fitnessValue
     override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
     override def accomplishStopCriteria: Boolean = true
@@ -34,7 +35,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   implicit val standardRandom: Random = new Random()
 
   def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
-    buildIndividual(buildChromosome(List(buildGene)), fitnessValue)
+    buildIndividual(buildChromosome((1 to QUANTITY_OF_GENES).map(_ => buildGene).toList), fitnessValue)
   }.toList)(customRandom)
 
   "Population" should {
@@ -168,14 +169,41 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       population.randomSubPopulation(POPULATION_SIZE).individuals should be(population.individuals.take(POPULATION_SIZE))
     }
 
-    "generate a new population composed by original members plus the children created through crossover" in {
-      val population = buildPopulation(POPULATION_SIZE)
-      val newPopulation = population.crossoverWith(population)
-      newPopulation.individuals.size should be(population.individuals.size * 2)
+    "build children population without parent's genes" in {
+      case object CustomRandom extends Random {
+        override def nextDouble(): Double = 0
+        override def nextInt(n: Int): Int = 100
+      }
+      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+
+      val children = parentsPopulationA.crossoverWith(parentsPopulationB)
+
+      children.individuals.size should be(POPULATION_SIZE)
+      children
+        .individuals
+        .foreach { individual =>
+          assert(individual.getChromosome.getGenes.isEmpty)
+        }
     }
 
-    // TODO: agregar crossoverWith para probabilidad = 1 (se cruzan todos)
-    // TODO: agregar crossoverWith para probabilidad = 0 (no se cruza nadie)
+    "build children population with all the genes of the parents" in {
+      case object CustomRandom extends Random {
+        override def nextDouble(): Double = 0
+        override def nextInt(n: Int): Int = 0
+      }
+      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+
+      val children = parentsPopulationA.crossoverWith(parentsPopulationB)
+
+      children.individuals.size should be(POPULATION_SIZE)
+      children
+        .individuals
+        .foreach { individual =>
+          individual.getChromosome.getGenes.size should be(QUANTITY_OF_GENES * 2)
+        }
+    }
 
     // TODO: agregar mutate con probabilidad = 0 (no muta nadie)
     // TODO: agregar mutate con probabilidad = 1 (mutan todos)
