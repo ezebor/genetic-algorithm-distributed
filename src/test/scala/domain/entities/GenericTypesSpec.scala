@@ -21,6 +21,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     override def mutate: Gene = buildGene
   }
 
+  def buildDefaultListOfGenes: List[Gene] = (1 to QUANTITY_OF_GENES).map(_ => buildGene).toList
+
   def buildChromosome(genes: List[Gene]): Chromosome = new Chromosome(genes) {
     override def mutate: Chromosome = copyWith(genes.map(_.mutate))
     override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
@@ -35,7 +37,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   implicit val standardRandom: Random = new Random()
 
   def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
-    buildIndividual(buildChromosome((1 to QUANTITY_OF_GENES).map(_ => buildGene).toList), fitnessValue)
+    buildIndividual(buildChromosome(buildDefaultListOfGenes), fitnessValue)
   }.toList)(customRandom)
 
   "Population" should {
@@ -205,36 +207,67 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         }
     }
 
-    // TODO: agregar mutate con probabilidad = 0 (no muta nadie)
-    // TODO: agregar mutate con probabilidad = 1 (mutan todos)
+    "build an empty mutated population when no individual mutated" in {
+      case object CustomRandom extends Random {
+        override def nextInt(n: Int): Int = 100
+      }
+      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+
+      population.mutate.individuals should be(List())
+    }
+
+    "build new population equals than the base population but with all the individuals mutated" in {
+      case object CustomRandom extends Random {
+        override def nextInt(n: Int): Int = 0
+      }
+      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+
+      population.mutate.individuals.size should be(population.individuals.size)
+    }
   }
 
   "Individual" should {
-    "crossover with other individual blending their genes" in {
-      val firstIndividual = buildIndividual(buildChromosome(List(buildGene, buildGene, buildGene)))
-      val secondIndividual = firstIndividual.mutate
+    "cross with other individual building new children without parent's genes" in {
+      case object CustomRandom extends Random {
+        override def nextInt(n: Int): Int = 100
+      }
+      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
+      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
 
-      val children = firstIndividual.crossoverWith(secondIndividual)
+      val children = individualA.crossoverWith(individualB)
+
       children.size should be(2)
-      val parentsGenes = firstIndividual.getChromosome.getGenes ::: secondIndividual.getChromosome.getGenes
-      val childrenGenes = children.flatMap(individual => individual.getChromosome.getGenes)
-      assert(parentsGenes.forall(gene => childrenGenes.contains(gene)))
-      assert(childrenGenes.forall(gene => parentsGenes.contains(gene)))
+      children
+        .foreach { child =>
+          child.getChromosome.getGenes should be(List())
+        }
     }
 
-    // TODO: agregar crossoverWith con probabilidad = 0 (los hijos no heredan ningún gen de los parents)
-    // TODO: agregar crossoverWith con probabilidad = 1 (los hijos heredan todos los genes de los parents)
+    "cross with other individual building new children with all the parent's genes" in {
+      case object CustomRandom extends Random {
+        override def nextInt(n: Int): Int = 0
+      }
+      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
+      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
 
-    "mutate its chromosome creating new genes" in {
-      val individual = buildIndividual(buildChromosome(List(buildGene, buildGene, buildGene)))
-      val mutatedIndividual = individual.mutate
+      val children = individualA.crossoverWith(individualB)
 
-      mutatedIndividual.getChromosome.getGenes.foreach { gene =>
+      children.size should be(2)
+      children
+        .foreach { child =>
+          child.getChromosome.getGenes.size should be(QUANTITY_OF_GENES * 2)
+          child.getChromosome.getGenes.foreach { gene =>
+            assert(individualA.getChromosome.getGenes.contains(gene) || individualB.getChromosome.getGenes.contains(gene))
+          }
+        }
+    }
+
+    "build a new individual with a new mutated chromosome" in {
+      val individual = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+
+      individual.mutate.getChromosome.getGenes.foreach { gene =>
         assert(!individual.getChromosome.getGenes.contains(gene))
       }
     }
-
-    // TODO: agregar mutate con probabilidad = 0 (no muta nadie)
-    // TODO: agregar mutate con probabilidad = 1 (mutan todos)
   }
 }
