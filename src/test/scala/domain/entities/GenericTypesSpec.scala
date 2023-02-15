@@ -148,10 +148,10 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build a random sub population from a population with fit individuals picking always the last individuals" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 1
       }
-      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+      val population = buildPopulation(POPULATION_SIZE)
 
       population.randomSubPopulation(0).individuals should be(List())
       population.randomSubPopulation(1).individuals.head should be(population.individuals.last)
@@ -160,10 +160,10 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build a random sub population from a population with fit individuals picking always the first individuals" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0
       }
-      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+      val population = buildPopulation(POPULATION_SIZE)
 
       population.randomSubPopulation(0).individuals should be(List())
       population.randomSubPopulation(1).individuals.head should be(population.individuals.head)
@@ -172,12 +172,12 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build children population without parent's genes" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0
         override def nextInt(n: Int): Int = 100
       }
-      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
-      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
 
       val children = parentsPopulationA.crossoverWith(parentsPopulationB)
 
@@ -190,12 +190,12 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build children population with all the genes of the parents" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0
         override def nextInt(n: Int): Int = 0
       }
-      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
-      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)(CustomRandom)
+      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
 
       val children = parentsPopulationA.crossoverWith(parentsPopulationB)
 
@@ -208,19 +208,19 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build an empty mutated population when no individual mutated" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 100
       }
-      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+      val population = buildPopulation(POPULATION_SIZE)
 
       population.mutate.individuals should be(List())
     }
 
     "build new population equals than the base population but with all the individuals mutated" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 0
       }
-      val population = buildPopulation(POPULATION_SIZE)(CustomRandom)
+      val population = buildPopulation(POPULATION_SIZE)
 
       population.mutate.individuals.size should be(population.individuals.size)
     }
@@ -228,11 +228,11 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   "Individual" should {
     "cross with other individual building new children without parent's genes" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 100
       }
-      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
-      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
+      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
 
       val children = individualA.crossoverWith(individualB)
 
@@ -244,11 +244,11 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "cross with other individual building new children with all the parent's genes" in {
-      case object CustomRandom extends Random {
+      implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 0
       }
-      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
-      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))(CustomRandom)
+      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
 
       val children = individualA.crossoverWith(individualB)
 
