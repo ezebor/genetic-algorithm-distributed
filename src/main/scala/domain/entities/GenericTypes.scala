@@ -116,10 +116,11 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 
   override def toString: String = {
     s"""
-      |Population summary:
-      |Size of the population: ${individuals.size} individuals
-      |Best individual (fitness = ${bestIndividual.fitness}): $bestIndividual
-      |Individuals: $individuals
+      |***** Population summary *****
+      |* Size of the population: ${individuals.size} individuals
+      |* Best individual (fitness = ${bestIndividual.fitness}): $bestIndividual
+      |* Individuals: $individuals
+      |******************************
       |""".stripMargin
   }
 
