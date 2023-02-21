@@ -3,11 +3,11 @@ package domain.entities
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
+import domain.entities.OperatorRatios.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
-import OperatorRatios.*
 
 import scala.util.Random
 
