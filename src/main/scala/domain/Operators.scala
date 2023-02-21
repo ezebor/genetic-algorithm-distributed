@@ -13,8 +13,6 @@ object Operators {
   val STOP = "stop"
   val HEALTH = "health"
   val OK = "ok"
-  val TAKE_BESTS_INDIVIDUALS = "take_bests_individuals"
-  val GO_TO_NEXT_GENERATION = "go_to_next_generation"
   val RETURN_SOLUTIONS = "return_solutions"
   val ONLINE = "online"
 }
@@ -22,3 +20,4 @@ object Operators {
 case class Online(manager: ActorRef)
 case class NextGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)
+case class NewGenerationBuilt(population: Population)

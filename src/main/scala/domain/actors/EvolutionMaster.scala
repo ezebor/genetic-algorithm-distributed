@@ -8,7 +8,7 @@ import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
-import domain.{Execute, Online}
+import domain.{Execute, NewGenerationBuilt, Online}
 
 import scala.util.Random
 
@@ -30,12 +30,13 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
   def online(manager: ActorRef): Receive = {
     case Execute(EVOLUTION, population: Population) =>
       self ! Execute(NATURAL_SELECTION, population)
+    case Execute(STOP, population: Population) =>
+      manager ! NewGenerationBuilt(population)
     case Execute(currentOperatorName: String, population: Population) =>
       val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
         case NATURAL_SELECTION => (Population(List()), CROSSOVER)
         case CROSSOVER => (population, MUTATION)
         case MUTATION => (population, STOP)
-        case STOP => (Population(List()), NATURAL_SELECTION)
 
         log.info(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
 
@@ -46,38 +47,13 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
   }
 
   def waitingWorkers(manager: ActorRef)(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
-    case Execute(currentOperatorName: String, newPopulation: Population) =>
-      val (connectionStatus: Receive, individuals: List[Individual], newContext: ((Population, Int) => Receive)) = currentOperatorName match
-        case ADD_POPULATION => (
-          online,
-          evolvedPopulation.individuals ::: newPopulation.individuals, 
-          waitingWorkers(manager)(nextOperatorName)
-        )
-        case TAKE_BESTS_INDIVIDUALS => (
-          offline,
-          evolvedPopulation.bestIndividuals ::: newPopulation.bestIndividuals, 
-          takingSolutions(RETURN_SOLUTIONS)
-        )
-
-      val finalPopulation = Population(individuals)
+    case Execute(ADD_POPULATION, newPopulation: Population) =>
+      val finalPopulation = Population(evolvedPopulation.individuals ::: newPopulation.individuals)
       if (pendingWorkers == 1) {
-        context.become(connectionStatus)
+        context.become(online(manager))
         self ! Execute(nextOperatorName, finalPopulation)
       } else {
-        context.become(newContext(finalPopulation, pendingWorkers - 1))
+        context.become(waitingWorkers(manager)(nextOperatorName)(finalPopulation, pendingWorkers - 1))
       }
-  }
-
-  def takingSolutions(nextOperatorName: String)(solutions: Population, pendingWorkers: Int): Receive = {
-    case Execute(currentOperatorName: String, newPopulation: Population) => currentOperatorName match
-      case ADD_POPULATION | TAKE_BESTS_INDIVIDUALS =>
-        val newSolutions = Population(solutions.individuals ::: newPopulation.bestIndividuals)
-        if (pendingWorkers == 1) {
-          context.become(offline)
-          self ! Execute(nextOperatorName, newSolutions)
-        } else {
-          context.become(takingSolutions(nextOperatorName)(newSolutions, pendingWorkers - 1))
-        }
-
   }
 }

@@ -37,13 +37,6 @@ class EvolutionWorker(survivalPopulationSize: Int,
       val mutatedPopulation = population.mutate(mutationLikelihood)
       log.info(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, mutatedPopulation)
-    case Execute(STOP, population: Population) =>
-      val hasToStop: Boolean = population.hasToStop
-      log.info(s"Has to stop: ${hasToStop}")
-      sender() ! Execute({
-        if(hasToStop) TAKE_BESTS_INDIVIDUALS
-        else ADD_POPULATION
-      }, population)
   }
 
   def likelihood: Int = {
