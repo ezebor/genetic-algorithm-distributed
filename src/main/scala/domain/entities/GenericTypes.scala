@@ -113,10 +113,20 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       individualsToMutate.map(individual => individual.mutate)
     )
   }
-  
-  def hasToStop: Boolean = individuals.exists(_.accomplishStopCriteria)
-  
-  def bestIndividuals: List[Individual] = individuals.filter(_.accomplishStopCriteria)
+
+  override def toString: String = {
+    s"""
+      |Population summary:
+      |Size of the population: ${individuals.size} individuals
+      |Best individual (fitness = ${bestIndividual.fitness}): $bestIndividual
+      |Individuals: $individuals
+      |""".stripMargin
+  }
+
+  lazy val bestIndividual: Individual = individuals.reduceLeft((firstIndividual: Individual, secondIndividual: Individual) => {
+    if(firstIndividual.fitness >= secondIndividual.fitness) firstIndividual
+    else secondIndividual
+  })
 }
 
 trait Individual(chromosome: Chromosome)(implicit random: Random) {

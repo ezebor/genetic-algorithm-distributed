@@ -23,6 +23,6 @@ class GenerationsManager(evolutionMaster: ActorRef) extends Actor with ActorLogg
       log.info(s"Starting generation [$generationsId]")
       evolutionMaster ! Execute(EVOLUTION, population: Population)
     case NewGenerationBuilt(population: Population) =>
-      log.info(s"New generation was built with population: [$population]")
+      log.info(s"$population")
   }
 }

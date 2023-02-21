@@ -38,7 +38,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
         case CROSSOVER => (population, MUTATION)
         case MUTATION => (population, STOP)
 
-        log.info(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
+        log.debug(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
 
       val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
       context.become(waitingWorkers(manager)(nextOperatorName)(basePopulation, chunks.size))
