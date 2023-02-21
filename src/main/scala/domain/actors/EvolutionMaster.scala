@@ -5,10 +5,10 @@ import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import com.typesafe.config.Config
-import domain.Execute
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
+import domain.{Execute, Online}
 
 import scala.util.Random
 
@@ -20,15 +20,16 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
   override def receive: Receive = offline
 
   def offline: Receive = {
-    case Execute(EVOLUTION, population: Population) =>
-      context.become(online)
-      self ! Execute(NATURAL_SELECTION, population: Population)
+    case Online(manager: ActorRef) =>
+      context.become(online(manager))
     case Execute(RETURN_SOLUTIONS, solutions: Population) =>
       log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals}")
     case HEALTH => sender() ! OK
   }
 
-  def online: Receive = {
+  def online(manager: ActorRef): Receive = {
+    case Execute(EVOLUTION, population: Population) =>
+      self ! Execute(NATURAL_SELECTION, population)
     case Execute(currentOperatorName: String, population: Population) =>
       val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
         case NATURAL_SELECTION => (Population(List()), CROSSOVER)
@@ -39,18 +40,18 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef) extends Actor wi
         log.info(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
 
       val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-      context.become(waitingWorkers(nextOperatorName)(basePopulation, chunks.size))
+      context.become(waitingWorkers(manager)(nextOperatorName)(basePopulation, chunks.size))
       chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
     case HEALTH => sender() ! OK
   }
 
-  def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
+  def waitingWorkers(manager: ActorRef)(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
     case Execute(currentOperatorName: String, newPopulation: Population) =>
       val (connectionStatus: Receive, individuals: List[Individual], newContext: ((Population, Int) => Receive)) = currentOperatorName match
         case ADD_POPULATION => (
           online,
           evolvedPopulation.individuals ::: newPopulation.individuals, 
-          waitingWorkers(nextOperatorName)
+          waitingWorkers(manager)(nextOperatorName)
         )
         case TAKE_BESTS_INDIVIDUALS => (
           offline,

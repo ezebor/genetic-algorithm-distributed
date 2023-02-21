@@ -1,5 +1,6 @@
 package domain
 
+import akka.actor.*
 import domain.entities.{Individual, Population}
 
 object Operators {
@@ -15,6 +16,9 @@ object Operators {
   val TAKE_BESTS_INDIVIDUALS = "take_bests_individuals"
   val GO_TO_NEXT_GENERATION = "go_to_next_generation"
   val RETURN_SOLUTIONS = "return_solutions"
+  val ONLINE = "online"
 }
 
+case class Online(manager: ActorRef)
+case class NextGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)
