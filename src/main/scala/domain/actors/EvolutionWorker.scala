@@ -19,22 +19,22 @@ object EvolutionWorker {
   ))
 }
 
-class EvolutionWorker(survivalLikelihood: Double,
+class EvolutionWorker(survivalPopulationSize: Int,
                       crossoverLikelihood: Double,
                       mutationLikelihood: Double) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case Execute(NATURAL_SELECTION, population: Population) =>
-      val strongerPopulation = population.selectStrongerPopulation(POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE))
+      val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
       log.info(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, strongerPopulation)
     case Execute(CROSSOVER, population: Population) =>
       val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
-      val children = populationLookingForReproduction.crossoverWith(population)
+      val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
       log.info(s"Population got through crossover. The new population has  ${children.individuals.size} children: ${children.individuals}")
       sender() ! Execute(ADD_POPULATION, children)
     case Execute(MUTATION, population: Population) =>
-      val mutatedPopulation = population.mutate
+      val mutatedPopulation = population.mutate(mutationLikelihood)
       log.info(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
       sender() ! Execute(ADD_POPULATION, mutatedPopulation)
     case Execute(STOP, population: Population) =>

@@ -18,9 +18,9 @@ trait Gene {
 }
 
 object OperatorRatios {
-  val SURVIVAL_LIKELIHOOD = 0.8
-  val CROSSOVER_LIKELIHOOD = 0.5
-  val MUTATION_LIKELIHOOD = 0.03
+  val SURVIVAL_LIKELIHOOD: Int = POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE)
+  val CROSSOVER_LIKELIHOOD: Double = 0.5
+  val MUTATION_LIKELIHOOD: Double = 0.03
 }
 
 object AlgorithmConfig {
@@ -101,15 +101,15 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 
   def selectStrongerPopulation(size: Int) = randomSubPopulation(size)
 
-  def crossoverWith(otherPopulation: Population): Population = {
+  def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-      individual.crossoverWith(couple) 
+      individual.crossoverWith(couple, crossoverLikelihood: Double)
     })
   }
 
-  def mutate: Population = {
-    val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= MUTATION_LIKELIHOOD * 100)
+  def mutate(mutationLikelihood: Double): Population = {
+    val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
     Population(
       individualsToMutate.map(individual => individual.mutate)
     )
@@ -127,9 +127,9 @@ trait Individual(chromosome: Chromosome)(implicit random: Random) {
   lazy val fitness: Double = calculateFitness
   def accomplishStopCriteria: Boolean
 
-  def crossoverWith(couple: Individual): List[Individual] = {
+  def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
-      if(random.nextInt(100) + 1 <= CROSSOVER_LIKELIHOOD * 100) nextGene :: genes
+      if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
       else genes
 
     val crossedGenes: (List[Gene], List[Gene]) = (chromosome.getGenes ::: couple.getChromosome.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>

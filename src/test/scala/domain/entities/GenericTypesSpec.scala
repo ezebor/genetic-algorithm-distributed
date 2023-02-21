@@ -7,6 +7,7 @@ import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
+import OperatorRatios.*
 
 import scala.util.Random
 
@@ -179,7 +180,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
       val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
 
-      val children = parentsPopulationA.crossoverWith(parentsPopulationB)
+      val children = parentsPopulationA.crossoverWith(parentsPopulationB, CROSSOVER_LIKELIHOOD)
 
       children.individuals.size should be(POPULATION_SIZE)
       children
@@ -197,7 +198,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
       val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
 
-      val children = parentsPopulationA.crossoverWith(parentsPopulationB)
+      val children = parentsPopulationA.crossoverWith(parentsPopulationB, CROSSOVER_LIKELIHOOD)
 
       children.individuals.size should be(POPULATION_SIZE)
       children
@@ -213,7 +214,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       }
       val population = buildPopulation(POPULATION_SIZE)
 
-      population.mutate.individuals should be(List())
+      population.mutate(MUTATION_LIKELIHOOD).individuals should be(List())
     }
 
     "build new population equals than the base population but with all the individuals mutated" in {
@@ -222,7 +223,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       }
       val population = buildPopulation(POPULATION_SIZE)
 
-      population.mutate.individuals.size should be(population.individuals.size)
+      population.mutate(MUTATION_LIKELIHOOD).individuals.size should be(population.individuals.size)
     }
   }
 
@@ -234,7 +235,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
       val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
 
-      val children = individualA.crossoverWith(individualB)
+      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
       children.size should be(2)
       children
@@ -250,7 +251,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
       val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
 
-      val children = individualA.crossoverWith(individualB)
+      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
       children.size should be(2)
       children
