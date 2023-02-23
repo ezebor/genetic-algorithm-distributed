@@ -13,7 +13,6 @@ object Operators {
   val STOP = "stop"
   val HEALTH = "health"
   val OK = "ok"
-  val RETURN_SOLUTIONS = "return_solutions"
   val ONLINE = "online"
 }
 

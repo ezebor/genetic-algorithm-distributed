@@ -22,8 +22,6 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef, originalSender: 
   private def offline: Receive = {
     case ONLINE =>
       context.become(online)
-    case Execute(RETURN_SOLUTIONS, solutions: Population) =>
-      log.info(s"${solutions.individuals.size} solutions were found. Fitness of each solution: ${solutions.individuals}")
     case HEALTH => sender() ! OK
   }
 
