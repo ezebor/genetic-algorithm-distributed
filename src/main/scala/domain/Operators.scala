@@ -17,7 +17,7 @@ object Operators {
   val ONLINE = "online"
 }
 
-case class Online(manager: ActorRef)
-case class NextGeneration(population: Population)
+case class Online(evolutionMaster: ActorRef)
+case class BuildNewGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)
-case class NewGenerationBuilt(population: Population)
+case class GenerationBuilt(population: Population)

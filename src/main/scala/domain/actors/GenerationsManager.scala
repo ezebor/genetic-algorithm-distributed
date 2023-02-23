@@ -3,26 +3,26 @@ import akka.actor.*
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.POPULATION_SIZE
 import domain.entities.{BasketsPopulationRandomGenerator, Population}
-import domain.{Execute, NewGenerationBuilt, NextGeneration, Online}
+import domain.{BuildNewGeneration, Execute, GenerationBuilt, Online}
 
 object GenerationsManager {
-  def props(evolutionMaster: ActorRef): Props = Props(new GenerationsManager(evolutionMaster))
+  def props: Props = Props(new GenerationsManager())
 }
 
-class GenerationsManager(evolutionMaster: ActorRef) extends Actor with ActorLogging {
+class GenerationsManager extends Actor with ActorLogging {
   override def receive: Receive = offline
 
-  def offline: Receive = {
-    case ONLINE =>
-      evolutionMaster ! Online(self)
-      context.become(online(1))
+  private def offline: Receive = {
+    case Online(evolutionMaster: ActorRef) =>
+      evolutionMaster ! ONLINE
+      context.become(online(1, evolutionMaster))
   }
 
-  def online(generationsId: Int): Receive = {
-    case NextGeneration(population: Population) =>
+  private def online(generationsId: Int, evolutionMaster: ActorRef): Receive = {
+    case BuildNewGeneration(population: Population) =>
       log.info(s"Starting generation [$generationsId]")
       evolutionMaster ! Execute(EVOLUTION, population: Population)
-    case NewGenerationBuilt(population: Population) =>
+    case GenerationBuilt(population: Population) =>
       log.info(s"$population")
   }
 }

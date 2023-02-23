@@ -27,7 +27,7 @@ class EvolutionMasterSpec
 
   val population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
   val router = TestProbe("router")
-  val master = system.actorOf(EvolutionMaster.props(QUANTITY_OF_WORKERS, router.ref), "evolutionMaster")
+  val master = system.actorOf(EvolutionMaster.props(QUANTITY_OF_WORKERS, router.ref, self), "evolutionMaster")
 
   "Evolution master" should {
     "evolve a given population" in {
