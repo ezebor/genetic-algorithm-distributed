@@ -23,8 +23,8 @@ class GenerationsManager extends Actor with ActorLogging {
       log.info(s"Starting generation [$generationsId]")
       evolutionMaster ! Execute(EVOLUTION, population: Population)
     case GenerationBuilt(population: Population) =>
-      // TODO 1: validar convergencia (que N seguidos den una diff menor a 1E-10
-      // TODO 2: si en la nueva generación nadie es mejor que las soluciones existentes, no agregarla a la lista
+      // TODO 1: validar convergencia (que N seguidos den una fitness menor o igual a la mayor registrada
+      // TODO 2: mantener una población con las N mejores soluciones encontradas hasta el momento
       if(solutions.individuals.isEmpty)
         val newSolutions = Population(List(population.bestIndividual))
         context.become(online(generationsId + 1, newSolutions, evolutionMaster))
