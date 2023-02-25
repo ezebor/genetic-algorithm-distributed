@@ -28,7 +28,7 @@ object AlgorithmConfig {
   val QUANTITY_OF_WORKERS_PER_NODE = 3
   val QUANTITY_OF_NODES = 2
   implicit val random: Random = new Random()
-  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 10
+  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 50
   val SOLUTIONS_POPULATION_SIZE = 10
 }
 
@@ -91,8 +91,6 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(this.accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to generate a random subpopulation with size = $size: accumulatedFitness list is empty")
-
     recRandomSubPopulation(
       this,
       Population(List()),
@@ -137,7 +135,6 @@ trait Individual(chromosome: Chromosome)(implicit random: Random) {
   def getChromosome: Chromosome = chromosome
   protected def copyWith(chromosome: Chromosome): Individual
   lazy val fitness: Double = calculateFitness
-  def accomplishStopCriteria: Boolean
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =

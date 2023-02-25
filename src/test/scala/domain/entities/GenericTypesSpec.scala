@@ -32,7 +32,6 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   def buildIndividual(chromosome: Chromosome, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
     override protected def calculateFitness: Double = fitnessValue
     override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
-    override def accomplishStopCriteria: Boolean = true
   }
 
   implicit val standardRandom: Random = new Random()
@@ -129,24 +128,6 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         population.intoChunks(0)
       }
     }
-    
-    "throw an exception when trying to generate a random sub populations from an empty accumulated fitness list" in {
-      intercept[IllegalStateException] {
-        buildPopulation(0).randomSubPopulation(0)
-      }
-
-      intercept[IllegalStateException] {
-        buildPopulation(0).randomSubPopulation(1)
-      }
-
-      intercept[IllegalStateException] {
-        buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(0)
-      }
-
-      intercept[IllegalStateException] {
-        buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(1)
-      }
-    }
 
     "build a random sub population from a population with fit individuals picking always the last individuals" in {
       implicit case object CustomRandom extends Random {
@@ -172,7 +153,17 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       population.randomSubPopulation(POPULATION_SIZE).individuals should be(population.individuals.take(POPULATION_SIZE))
     }
 
-    "build an empty population when all the individuals are unfit" in {
+    "build an empty sub population when the population is empty" in {
+      buildPopulation(0).randomSubPopulation(0).individuals should be (List())
+      buildPopulation(0).randomSubPopulation(1).individuals should be (List())
+    }
+
+    "build an empty sub population when the individuals of the population are unfit" in {
+      buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(0).individuals should be (List())
+      buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(1).individuals should be (List())
+    }
+
+    "build an empty sub population when an intermediate accumulated fitness list is empty" in {
       implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0.5
       }

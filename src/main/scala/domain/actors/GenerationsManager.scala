@@ -42,7 +42,7 @@ class GenerationsManager extends Actor with ActorLogging {
           if(solutions.individuals.size == SOLUTIONS_POPULATION_SIZE) solutions.individuals.dropRight(1)
           else solutions.individuals
         })
-        context.become(steadyOnline(generationId + 1, quantityOfGenerationsWithoutImprovements, newSolutions, evolutionMaster))
+        context.become(steadyOnline(generationId + 1, 0, newSolutions, evolutionMaster))
         self ! BuildNewGeneration(population)
       else
         if(quantityOfGenerationsWithoutImprovements <= MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS)

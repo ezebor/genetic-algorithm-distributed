@@ -32,9 +32,6 @@ case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
 
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
     case itemsList: ItemsList => Basket(itemsList)
-
-  // TODO: FIX THIS
-  override def accomplishStopCriteria: Boolean = fitness >= 40//(9 * itemsList.items.size)
 }
 
 object BasketsPopulationRandomGenerator {
