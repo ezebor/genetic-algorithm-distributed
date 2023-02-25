@@ -38,10 +38,10 @@ object BasketsPopulationRandomGenerator {
   def randomPopulation(populationSize: Int): Population = {
     Population(
       (1 to populationSize).map(i => Basket(
-        ItemsList(List(
-          Item(s"Item $i", random.nextInt(10), random.nextInt(10))
-        )))).toList
-    )
+        ItemsList(
+          (1 to (random.nextInt(5) + 1)).map(_ => Item(s"Item $i", random.nextInt(10), random.nextInt(10))).toList
+        )
+      )).toList)
   }
 }
 
