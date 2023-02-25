@@ -1,7 +1,7 @@
 package domain.actors
 import akka.actor.*
 import domain.Operators.*
-import domain.entities.AlgorithmConfig.{POPULATION_SIZE, random}
+import domain.entities.AlgorithmConfig.{MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS, POPULATION_SIZE, SOLUTIONS_POPULATION_SIZE, random}
 import domain.entities.{Individual, Population}
 import domain.{BuildNewGeneration, Execute, GenerationBuilt, Online}
 
@@ -15,29 +15,42 @@ class GenerationsManager extends Actor with ActorLogging {
   private def offline: Receive = {
     case Online(evolutionMaster: ActorRef) =>
       evolutionMaster ! ONLINE
-      context.become(online(1, Population(List()), evolutionMaster))
+      context.become(firstOnline(evolutionMaster))
   }
 
-  private def online(generationsId: Int, solutions: Population, evolutionMaster: ActorRef): Receive = {
+  private def firstOnline(evolutionMaster: ActorRef): Receive = {
     case BuildNewGeneration(population: Population) =>
-      log.info(s"Starting generation [$generationsId]")
+      log.info(s"Starting generation [1]")
       evolutionMaster ! Execute(EVOLUTION, population: Population)
     case GenerationBuilt(population: Population) =>
-      // TODO 1: validar convergencia (que N seguidos den una fitness menor o igual a la mayor registrada
-      // TODO 2: mantener una población con las N mejores soluciones encontradas hasta el momento
-      if(solutions.individuals.isEmpty)
-        val newSolutions = Population(List(population.bestIndividual))
-        context.become(online(generationsId + 1, newSolutions, evolutionMaster))
+      context.become(steadyOnline(2, 0, Population(List(population.bestIndividual)), evolutionMaster))
+      self ! BuildNewGeneration(population)
+  }
+
+  private def steadyOnline(
+                            generationId: Int,
+                            quantityOfGenerationsWithoutImprovements: Int,
+                            solutions: Population,
+                            evolutionMaster: ActorRef): Receive = {
+    case BuildNewGeneration(population: Population) =>
+      log.info(s"Starting generation [$generationId] over a population with ${population.individuals.size} individuals")
+      evolutionMaster ! Execute(EVOLUTION, population)
+    case GenerationBuilt(population: Population) =>
+      if(population.bestIndividual.fitness > solutions.individuals.head.fitness)
+        log.info(s"New better individual was found with fitness = ${population.bestIndividual.fitness}")
+        val newSolutions = Population(population.bestIndividual :: {
+          if(solutions.individuals.size == SOLUTIONS_POPULATION_SIZE) solutions.individuals.dropRight(1)
+          else solutions.individuals
+        })
+        context.become(steadyOnline(generationId + 1, quantityOfGenerationsWithoutImprovements, newSolutions, evolutionMaster))
         self ! BuildNewGeneration(population)
-      else {
-        val bestIndividual: Individual = population.bestIndividual
-        val previousSolution = solutions.individuals.last
-        val newSolutions = Population(solutions.individuals ::: List(bestIndividual))
-        if(Math.abs(bestIndividual.fitness - previousSolution.fitness) <= 1E-10)
-          log.info(s"$newSolutions")
-        else
-          context.become(online(generationsId + 1, newSolutions, evolutionMaster))
+      else
+        if(quantityOfGenerationsWithoutImprovements <= MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS)
+          context.become(steadyOnline(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions, evolutionMaster))
           self ! BuildNewGeneration(population)
-      }
+        else
+          evolutionMaster ! OFFLINE
+          log.info(s"Found solutions: $solutions")
+          context.become(offline)
   }
 }

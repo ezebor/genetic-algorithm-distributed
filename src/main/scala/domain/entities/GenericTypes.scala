@@ -28,6 +28,8 @@ object AlgorithmConfig {
   val QUANTITY_OF_WORKERS_PER_NODE = 3
   val QUANTITY_OF_NODES = 2
   implicit val random: Random = new Random()
+  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 10
+  val SOLUTIONS_POPULATION_SIZE = 10
 }
 
 case class Population(individuals: List[Individual])(implicit random: Random) {
@@ -61,7 +63,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness list is empty")
+    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness list is empty. Individuals size = ${individuals.size}")
 
     recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
@@ -77,7 +79,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   def randomSubPopulation(size: Int): Population = {
     @tailrec
     def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
-      if(aSize == 0 || sourcePopulation.individuals.isEmpty) sinkPopulation
+      if(aSize == 0 || sourcePopulation.accumulatedFitness.isEmpty) sinkPopulation
       else {
         val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
 
@@ -89,7 +91,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(this.accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to generate a random subpopulation with with size = $size: accumulatedFitness list is empty")
+    if(this.accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to generate a random subpopulation with size = $size: accumulatedFitness list is empty")
 
     recRandomSubPopulation(
       this,
@@ -98,7 +100,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     )
   }
 
-  def selectStrongerPopulation(size: Int) = randomSubPopulation(size)
+  def selectStrongerPopulation(size: Int): Population = randomSubPopulation(size)
 
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>

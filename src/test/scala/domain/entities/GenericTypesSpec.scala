@@ -172,6 +172,22 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       population.randomSubPopulation(POPULATION_SIZE).individuals should be(population.individuals.take(POPULATION_SIZE))
     }
 
+    "build an empty population when all the individuals are unfit" in {
+      implicit case object CustomRandom extends Random {
+        override def nextDouble(): Double = 0.5
+      }
+      val population = Population(List(
+        buildIndividual(buildChromosome(buildDefaultListOfGenes), 0),
+        buildIndividual(buildChromosome(buildDefaultListOfGenes), 0),
+        buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      ))
+
+      val subPopulation: Population = population.randomSubPopulation(2)
+
+      subPopulation.individuals.size should be(1)
+      subPopulation.individuals.head should be(population.individuals.last)
+    }
+
     "build children population without parent's genes" in {
       implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0

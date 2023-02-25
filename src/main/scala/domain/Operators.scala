@@ -14,6 +14,7 @@ object Operators {
   val HEALTH = "health"
   val OK = "ok"
   val ONLINE = "online"
+  val OFFLINE = "offline"
 }
 
 case class Online(evolutionMaster: ActorRef)

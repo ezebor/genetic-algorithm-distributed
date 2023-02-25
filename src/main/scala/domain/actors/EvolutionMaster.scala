@@ -42,6 +42,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef, originalSender: 
       context.become(waitingWorkers(nextOperatorName)(basePopulation, chunks.size))
       chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
     case HEALTH => sender() ! OK
+    case OFFLINE => context.become(offline)
   }
 
   private def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
