@@ -12,6 +12,8 @@ trait Chromosome(genes: List[Gene]) {
   def getGenes: List[Gene] = genes
   def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
   def copyWith(genes: List[Gene]): Chromosome
+  protected def calculateFitness: Double
+  lazy val fitness: Double = calculateFitness
 }
 trait Gene {
   def mutate: Gene
@@ -131,10 +133,10 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 }
 
 trait Individual(chromosome: Chromosome)(implicit random: Random) {
-  protected def calculateFitness: Double
   def getChromosome: Chromosome = chromosome
   protected def copyWith(chromosome: Chromosome): Individual
-  lazy val fitness: Double = calculateFitness
+  
+  def fitness: Double = chromosome.fitness
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =

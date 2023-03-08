@@ -18,18 +18,17 @@ case class Item(name: String, price: Double, satisfaction: Double) extends Gene 
 case class ItemsList(items: List[Item]) extends Chromosome(items) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case items: List[Item] => ItemsList(items)
+
+  protected override def calculateFitness: Double = {
+    if(items.size >= 5 || items.size <= 2) 0.1
+    else items.map{ case Item(_, price, satisfaction) =>
+      if(price > satisfaction) 0
+      else satisfaction - price
+    }.sum
+  }
 }
 
 case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
-  protected override def calculateFitness: Double = itemsList match {
-    case ItemsList(items) =>
-      if(items.size >= 5 || items.size <= 2) 0.1
-      else items.map{ case Item(_, price, satisfaction) =>
-        if(price > satisfaction) 0
-        else satisfaction - price
-      }.sum
-  }
-
   override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
     case itemsList: ItemsList => Basket(itemsList)
 }

@@ -24,20 +24,20 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   def buildDefaultListOfGenes: List[Gene] = (1 to QUANTITY_OF_GENES).map(_ => buildGene).toList
 
-  def buildChromosome(genes: List[Gene]): Chromosome = new Chromosome(genes) {
+  def buildChromosome(genes: List[Gene], fitnessValue: Double = 10): Chromosome = new Chromosome(genes) {
+    override protected def calculateFitness: Double = fitnessValue
     override def mutate: Chromosome = copyWith(genes.map(_.mutate))
     override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
   }
 
-  def buildIndividual(chromosome: Chromosome, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
-    override protected def calculateFitness: Double = fitnessValue
+  def buildIndividual(chromosome: Chromosome)(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
     override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
   }
 
   implicit val standardRandom: Random = new Random()
 
   def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
-    buildIndividual(buildChromosome(buildDefaultListOfGenes), fitnessValue)
+    buildIndividual(buildChromosome(buildDefaultListOfGenes, fitnessValue))
   }.toList)(customRandom)
 
   "Population" should {
@@ -168,8 +168,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         override def nextDouble(): Double = 0.5
       }
       val population = Population(List(
-        buildIndividual(buildChromosome(buildDefaultListOfGenes), 0),
-        buildIndividual(buildChromosome(buildDefaultListOfGenes), 0),
+        buildIndividual(buildChromosome(buildDefaultListOfGenes, 0)),
+        buildIndividual(buildChromosome(buildDefaultListOfGenes, 0)),
         buildIndividual(buildChromosome(buildDefaultListOfGenes))
       ))
 
