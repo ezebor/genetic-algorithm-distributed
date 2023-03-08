@@ -8,12 +8,26 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-trait Chromosome(genes: List[Gene]) {
+trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def getGenes: List[Gene] = genes
   def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
   def copyWith(genes: List[Gene]): Chromosome
+
   protected def calculateFitness: Double
   lazy val fitness: Double = calculateFitness
+
+  def crossoverWith(couple: Chromosome, crossoverLikelihood: Double)(implicit random: Random): (List[Gene], List[Gene]) = {
+    def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
+      if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
+      else genes
+
+    (genes ::: couple.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
+      (
+        addGeneAccordingToLikelihood(nextGene, result._1),
+        addGeneAccordingToLikelihood(nextGene, result._2)
+      )
+    }
+  }
 }
 trait Gene {
   def mutate: Gene
@@ -135,21 +149,11 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 trait Individual(chromosome: Chromosome)(implicit random: Random) {
   def getChromosome: Chromosome = chromosome
   protected def copyWith(chromosome: Chromosome): Individual
-  
+
   def fitness: Double = chromosome.fitness
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
-    def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
-      if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
-      else genes
-
-    val crossedGenes: (List[Gene], List[Gene]) = (chromosome.getGenes ::: couple.getChromosome.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
-      (
-        addGeneAccordingToLikelihood(nextGene, result._1),
-        addGeneAccordingToLikelihood(nextGene, result._2)
-      )
-    }
-    
+    val crossedGenes = chromosome.crossoverWith(couple.getChromosome, crossoverLikelihood)(random)
     List(
       copyWith(chromosome.copyWith(crossedGenes._1)),
       copyWith(chromosome.copyWith(crossedGenes._2))
