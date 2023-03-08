@@ -193,7 +193,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children
         .individuals
         .foreach { individual =>
-          assert(individual.getChromosome.getGenes.isEmpty)
+          assert(individual.getGenes.isEmpty)
         }
     }
 
@@ -211,7 +211,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children
         .individuals
         .foreach { individual =>
-          individual.getChromosome.getGenes.size should be(QUANTITY_OF_GENES * 2)
+          individual.getGenes.size should be(QUANTITY_OF_GENES * 2)
         }
     }
 
@@ -247,7 +247,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children.size should be(2)
       children
         .foreach { child =>
-          child.getChromosome.getGenes should be(List())
+          child.getGenes should be(List())
         }
     }
 
@@ -263,9 +263,9 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children.size should be(2)
       children
         .foreach { child =>
-          child.getChromosome.getGenes.size should be(QUANTITY_OF_GENES * 2)
-          child.getChromosome.getGenes.foreach { gene =>
-            assert(individualA.getChromosome.getGenes.contains(gene) || individualB.getChromosome.getGenes.contains(gene))
+          child.getGenes.size should be(QUANTITY_OF_GENES * 2)
+          child.getGenes.foreach { gene =>
+            assert(individualA.getGenes.contains(gene) || individualB.getGenes.contains(gene))
           }
         }
     }
@@ -273,8 +273,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     "build a new individual with a new mutated chromosome" in {
       val individual = buildIndividual(buildChromosome(buildDefaultListOfGenes))
 
-      individual.mutate.getChromosome.getGenes.foreach { gene =>
-        assert(!individual.getChromosome.getGenes.contains(gene))
+      individual.mutate.getGenes.foreach { gene =>
+        assert(!individual.getGenes.contains(gene))
       }
     }
   }
