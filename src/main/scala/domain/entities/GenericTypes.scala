@@ -146,27 +146,27 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   })
 }
 
-trait Individual(chromosome: Try[Chromosome])(implicit random: Random) {
+trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
   protected def copyWith(chromosome: Try[Chromosome]): Individual
 
-  def getGenes: List[Gene] = chromosome
+  def getGenes: List[Gene] = tryChromosome
     .map(_.getGenes)
     .getOrElse(List())
 
-  def fitness: Double = chromosome
+  def fitness: Double = tryChromosome
     .map(_.fitness)
     .getOrElse(0)
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     (for {
-      crossedGenes <- chromosome.map(_.crossoverWith(couple.getGenes, crossoverLikelihood)(random))
+      crossedGenes <- tryChromosome.map(_.crossoverWith(couple.getGenes, crossoverLikelihood)(random))
     } yield {
       List(
-        copyWith(chromosome.map(_.copyWith(crossedGenes._1))),
-        copyWith(chromosome.map(_.copyWith(crossedGenes._2)))
+        copyWith(tryChromosome.map(_.copyWith(crossedGenes._1))),
+        copyWith(tryChromosome.map(_.copyWith(crossedGenes._2)))
       )
     }).getOrElse(List())
   }
 
-  def mutate: Individual = copyWith(chromosome.map(_.mutate))
+  def mutate: Individual = copyWith(tryChromosome.map(_.mutate))
 }
