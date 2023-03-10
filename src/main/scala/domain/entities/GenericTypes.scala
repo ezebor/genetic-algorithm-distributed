@@ -16,12 +16,12 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   protected def calculateFitness: Double
   lazy val fitness: Double = calculateFitness
 
-  def crossoverWith(coupleGenes: List[Gene], crossoverLikelihood: Double)(implicit random: Random): (List[Gene], List[Gene]) = {
+  def crossoverWith(couple: Chromosome, crossoverLikelihood: Double)(implicit random: Random): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
       if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
       else genes
 
-    (genes ::: coupleGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
+    (genes ::: couple.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
       (
         addGeneAccordingToLikelihood(nextGene, result._1),
         addGeneAccordingToLikelihood(nextGene, result._2)
@@ -119,9 +119,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-      individual
-        .crossoverWith(couple, crossoverLikelihood: Double)
-        .getOrElse(List())
+      individual.crossoverWith(couple, crossoverLikelihood: Double)
     })
   }
 
@@ -157,16 +155,22 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 
   def fitness: Try[Double] = tryChromosome.map(_.fitness)
 
-  def crossoverWith(couple: Individual, crossoverLikelihood: Double): Try[List[Individual]] = {
-    for {
-      coupleGenes <- couple.getTryGenes
-      crossedGenes <- tryChromosome.map(_.crossoverWith(coupleGenes, crossoverLikelihood)(random))
+  def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
+    val tryChildrenChromosomes: Try[(Chromosome, Chromosome)] = for {
+      thisChromosome <- getTryChromosome
+      coupleChromosome <- couple.getTryChromosome
+      crossedGenes = thisChromosome.crossoverWith(coupleChromosome, crossoverLikelihood)(random)
     } yield {
-      List(
-        copyWith(tryChromosome.map(_.copyWith(crossedGenes._1))),
-        copyWith(tryChromosome.map(_.copyWith(crossedGenes._2)))
+      (
+        thisChromosome.copyWith(crossedGenes._1),
+        thisChromosome.copyWith(crossedGenes._2)
       )
     }
+
+    List(
+      copyWith(tryChildrenChromosomes.map ((child: Chromosome, _) => child)),
+      copyWith(tryChildrenChromosomes.map ((_, child: Chromosome) => child)),
+    )
   }
 
   def mutate: Individual = copyWith(tryChromosome.map(_.mutate))

@@ -250,9 +250,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
       val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
-      val children = individualA
-        .crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
-        .getOrElse(List())
+      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
       children.size should be(2)
       children
@@ -271,9 +269,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
       val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
-      val children = individualA
-        .crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
-        .getOrElse(List())
+      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
       children.size should be(2)
       children
