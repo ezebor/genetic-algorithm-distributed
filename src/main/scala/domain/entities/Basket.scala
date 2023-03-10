@@ -7,7 +7,7 @@ import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 import domain.entities.OperatorRatios.*
 
-import scala.util.Random
+import scala.util.{Random, Success, Try}
 
 case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
   override def mutate: Gene =
@@ -28,18 +28,18 @@ case class ItemsList(items: List[Item]) extends Chromosome(items) {
   }
 }
 
-case class Basket(itemsList: ItemsList) extends Individual(itemsList) {
-  override protected def copyWith(chromosome: Chromosome): Individual = chromosome match
-    case itemsList: ItemsList => Basket(itemsList)
+case class Basket(itemsList: Try[ItemsList]) extends Individual(itemsList) {
+  override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
+    case itemsList: Try[ItemsList] => Basket(itemsList)
 }
 
 object BasketsPopulationRandomGenerator {
   def randomPopulation(populationSize: Int): Population = {
     Population(
       (1 to populationSize).map(i => Basket(
-        ItemsList(
+        Success(ItemsList(
           (1 to (random.nextInt(5) + 1)).map(_ => Item(s"Item $i", random.nextInt(10), random.nextInt(10))).toList
-        )
+        ))
       )).toList)
   }
 }

@@ -6,9 +6,11 @@ import domain.Operators.*
 import domain.entities.*
 import spray.json.*
 
+import scala.util.Success
+
 class ExecuteBasketJsonSerializer extends ExecuteJsonSerializer {
   protected override def chromosomeOf = (individual: Individual) => individual match {
-    case Basket(itemsList) => itemsList.items
+    case Basket(Success(itemsList)) => itemsList.items
   }
 
   protected override def serializeGene = (gene: Gene) => gene match {
@@ -25,9 +27,9 @@ class ExecuteBasketJsonSerializer extends ExecuteJsonSerializer {
   }
 
   protected override def deserializeIndividual = (genes: List[JsValue]) => {
-    Basket(ItemsList(
+    Basket(Success(ItemsList(
       for case gene: JsValue <- genes
         yield buildItem(gene.asJsObject)
-    ))
+    )))
   }
 }

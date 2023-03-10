@@ -6,7 +6,7 @@ import domain.entities.OperatorRatios.*
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-import scala.util.Random
+import scala.util.{Random, Try}
 
 trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def getGenes: List[Gene] = genes
@@ -146,20 +146,27 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   })
 }
 
-trait Individual(chromosome: Chromosome)(implicit random: Random) {
-  protected def copyWith(chromosome: Chromosome): Individual
+trait Individual(chromosome: Try[Chromosome])(implicit random: Random) {
+  protected def copyWith(chromosome: Try[Chromosome]): Individual
 
-  def getGenes: List[Gene] = chromosome.getGenes
+  def getGenes: List[Gene] = chromosome
+    .map(_.getGenes)
+    .getOrElse(List())
 
-  def fitness: Double = chromosome.fitness
+  def fitness: Double = chromosome
+    .map(_.fitness)
+    .getOrElse(0)
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
-    val crossedGenes = chromosome.crossoverWith(couple.getGenes, crossoverLikelihood)(random)
-    List(
-      copyWith(chromosome.copyWith(crossedGenes._1)),
-      copyWith(chromosome.copyWith(crossedGenes._2))
-    )
+    (for {
+      crossedGenes <- chromosome.map(_.crossoverWith(couple.getGenes, crossoverLikelihood)(random))
+    } yield {
+      List(
+        copyWith(chromosome.map(_.copyWith(crossedGenes._1))),
+        copyWith(chromosome.map(_.copyWith(crossedGenes._2)))
+      )
+    }).getOrElse(List())
   }
 
-  def mutate: Individual = copyWith(chromosome.mutate)
+  def mutate: Individual = copyWith(chromosome.map(_.mutate))
 }

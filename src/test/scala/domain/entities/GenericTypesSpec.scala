@@ -9,7 +9,7 @@ import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.util.Random
+import scala.util.{Random, Success, Try}
 
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
@@ -30,14 +30,14 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
   }
 
-  def buildIndividual(chromosome: Chromosome)(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
-    override def copyWith(chromosome: Chromosome): Individual = buildIndividual(chromosome)
+  def buildIndividual(chromosome: Try[Chromosome])(implicit customRandom: Random = standardRandom): Individual = new Individual(chromosome) {
+    override def copyWith(chromosome: Try[Chromosome]): Individual = buildIndividual(chromosome)
   }
 
   implicit val standardRandom: Random = new Random()
 
   def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
-    buildIndividual(buildChromosome(buildDefaultListOfGenes, fitnessValue))
+    buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, fitnessValue)))
   }.toList)(customRandom)
 
   "Population" should {
@@ -168,9 +168,9 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         override def nextDouble(): Double = 0.5
       }
       val population = Population(List(
-        buildIndividual(buildChromosome(buildDefaultListOfGenes, 0)),
-        buildIndividual(buildChromosome(buildDefaultListOfGenes, 0)),
-        buildIndividual(buildChromosome(buildDefaultListOfGenes))
+        buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, 0))),
+        buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, 0))),
+        buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
       ))
 
       val subPopulation: Population = population.randomSubPopulation(2)
@@ -239,8 +239,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 100
       }
-      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
-      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
+      val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
       val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
@@ -255,8 +255,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 0
       }
-      val individualA = buildIndividual(buildChromosome(buildDefaultListOfGenes))
-      val individualB = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
+      val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
       val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
 
@@ -271,7 +271,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build a new individual with a new mutated chromosome" in {
-      val individual = buildIndividual(buildChromosome(buildDefaultListOfGenes))
+      val individual = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
       individual.mutate.getGenes.foreach { gene =>
         assert(!individual.getGenes.contains(gene))
