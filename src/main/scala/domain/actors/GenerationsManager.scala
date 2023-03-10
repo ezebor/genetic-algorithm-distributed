@@ -36,7 +36,7 @@ class GenerationsManager extends Actor with ActorLogging {
       log.info(s"Starting generation [$generationId] over a population with ${population.individuals.size} individuals")
       evolutionMaster ! Execute(EVOLUTION, population)
     case GenerationBuilt(population: Population) =>
-      if(population.bestIndividual.fitness > solutions.individuals.head.fitness)
+      if(population.bestIndividual.fitness.getOrElse(0d) > solutions.individuals.head.fitness.getOrElse(0d))
         log.info(s"New better individual was found with fitness = ${population.bestIndividual.fitness}")
         val newSolutions = Population(population.bestIndividual :: {
           if(solutions.individuals.size == SOLUTIONS_POPULATION_SIZE) solutions.individuals.dropRight(1)

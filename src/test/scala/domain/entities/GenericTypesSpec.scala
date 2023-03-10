@@ -71,7 +71,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         assert(population.accumulatedFitness(index)._2 > population.accumulatedFitness(index - 1)._2)
       }
 
-      population.accumulatedFitness.map(_._1) should be(population.individuals.filter(_.fitness > 0))
+      population.accumulatedFitness.map(_._1) should be(population.individuals.filter(_.fitness.getOrElse(0d) > 0))
     }
 
     "find an individual whose accumulated fitness includes a given fitness" in {

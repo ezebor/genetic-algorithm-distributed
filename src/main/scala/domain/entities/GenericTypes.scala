@@ -50,16 +50,16 @@ object AlgorithmConfig {
 
 case class Population(individuals: List[Individual])(implicit random: Random) {
   lazy val accumulatedFitness: List[(Individual, Double)] = {
-    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness)
-    val fitIndividuals = individuals.filter(_.fitness > 0)
+    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
+    val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
     fitIndividuals
       .zipWithIndex
       .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
         result :+ (
           individual,
-          if(index == 0) individual.fitness / totalFitness
+          if(index == 0) individual.fitness.getOrElse(0d) / totalFitness
           else if (index == fitIndividuals.size - 1) 1.0
-          else individual.fitness / totalFitness + result(index - 1)._2
+          else individual.fitness.getOrElse(0d) / totalFitness + result(index - 1)._2
         )
       }
   }
@@ -143,7 +143,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   }
 
   lazy val bestIndividual: Individual = individuals.reduceLeft((firstIndividual: Individual, secondIndividual: Individual) => {
-    if(firstIndividual.fitness >= secondIndividual.fitness) firstIndividual
+    if(firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
     else secondIndividual
   })
 }
@@ -155,9 +155,7 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 
   def getTryGenes: Try[List[Gene]] = tryChromosome.map(_.getGenes)
 
-  def fitness: Double = tryChromosome
-    .map(_.fitness)
-    .getOrElse(0)
+  def fitness: Try[Double] = tryChromosome.map(_.fitness)
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): Try[List[Individual]] = {
     for {
