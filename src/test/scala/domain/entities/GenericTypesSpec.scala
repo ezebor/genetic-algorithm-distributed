@@ -193,7 +193,12 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children
         .individuals
         .foreach { individual =>
-          assert(individual.getGenes.isEmpty)
+          assert(
+            individual
+              .getTryGenes
+              .getOrElse(List())
+              .isEmpty
+          )
         }
     }
 
@@ -211,7 +216,10 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       children
         .individuals
         .foreach { individual =>
-          individual.getGenes.size should be(QUANTITY_OF_GENES * 2)
+          individual
+            .getTryGenes
+            .getOrElse(List())
+            .size should be(QUANTITY_OF_GENES * 2)
         }
     }
 
@@ -242,12 +250,17 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
       val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
-      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
+      val children = individualA
+        .crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
+        .getOrElse(List())
 
       children.size should be(2)
       children
         .foreach { child =>
-          child.getGenes should be(List())
+          child
+            .getTryGenes
+            .getOrElse(List())
+            .size should be(0)
         }
     }
 
@@ -258,14 +271,23 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       val individualA = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
       val individualB = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
-      val children = individualA.crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
+      val children = individualA
+        .crossoverWith(individualB, CROSSOVER_LIKELIHOOD)
+        .getOrElse(List())
 
       children.size should be(2)
       children
         .foreach { child =>
-          child.getGenes.size should be(QUANTITY_OF_GENES * 2)
-          child.getGenes.foreach { gene =>
-            assert(individualA.getGenes.contains(gene) || individualB.getGenes.contains(gene))
+          val genes = child
+            .getTryGenes
+            .getOrElse(List())
+          genes.size should be(QUANTITY_OF_GENES * 2)
+
+          genes.foreach { gene =>
+            assert(
+              individualA.getTryGenes.getOrElse(List()).contains(gene)
+                || individualB.getTryGenes.getOrElse(List()).contains(gene)
+            )
           }
         }
     }
@@ -273,8 +295,15 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     "build a new individual with a new mutated chromosome" in {
       val individual = buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))
 
-      individual.mutate.getGenes.foreach { gene =>
-        assert(!individual.getGenes.contains(gene))
+      individual.mutate
+        .getTryGenes
+        .getOrElse(List())
+        .foreach { gene =>
+        assert(
+          !individual.mutate
+            .getTryGenes
+            .getOrElse(List()).contains(gene)
+        )
       }
     }
   }

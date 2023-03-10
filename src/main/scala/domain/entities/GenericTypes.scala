@@ -6,12 +6,12 @@ import domain.entities.OperatorRatios.*
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-import scala.util.{Random, Try}
+import scala.util.{Random, Success, Try}
 
 trait Chromosome(genes: List[Gene])(implicit random: Random) {
-  def getGenes: List[Gene] = genes
   def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
   def copyWith(genes: List[Gene]): Chromosome
+  def getGenes: List[Gene] = genes
 
   protected def calculateFitness: Double
   lazy val fitness: Double = calculateFitness
@@ -119,7 +119,9 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-      individual.crossoverWith(couple, crossoverLikelihood: Double)
+      individual
+        .crossoverWith(couple, crossoverLikelihood: Double)
+        .getOrElse(List())
     })
   }
 
@@ -149,23 +151,24 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
   protected def copyWith(chromosome: Try[Chromosome]): Individual
 
-  def getGenes: List[Gene] = tryChromosome
-    .map(_.getGenes)
-    .getOrElse(List())
+  def getTryChromosome: Try[Chromosome] = tryChromosome
+
+  def getTryGenes: Try[List[Gene]] = tryChromosome.map(_.getGenes)
 
   def fitness: Double = tryChromosome
     .map(_.fitness)
     .getOrElse(0)
 
-  def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
-    (for {
-      crossedGenes <- tryChromosome.map(_.crossoverWith(couple.getGenes, crossoverLikelihood)(random))
+  def crossoverWith(couple: Individual, crossoverLikelihood: Double): Try[List[Individual]] = {
+    for {
+      coupleGenes <- couple.getTryGenes
+      crossedGenes <- tryChromosome.map(_.crossoverWith(coupleGenes, crossoverLikelihood)(random))
     } yield {
       List(
         copyWith(tryChromosome.map(_.copyWith(crossedGenes._1))),
         copyWith(tryChromosome.map(_.copyWith(crossedGenes._2)))
       )
-    }).getOrElse(List())
+    }
   }
 
   def mutate: Individual = copyWith(tryChromosome.map(_.mutate))
