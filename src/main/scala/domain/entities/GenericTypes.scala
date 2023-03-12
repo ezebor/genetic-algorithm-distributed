@@ -3,10 +3,11 @@ package domain.entities
 import domain.actors.EvolutionWorker
 import domain.entities.AlgorithmConfig.*
 import domain.entities.OperatorRatios.*
+import domain.exceptions.EmptyAccumulatedFitnessListException
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-import scala.util.{Random, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def mutate: Chromosome = copyWith(genes.map(gene => gene.mutate))
@@ -79,9 +80,8 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(accumulatedFitness.isEmpty) throw new IllegalStateException(s"Unable to find individual with fitness = $aFitness: accumulatedFitness list is empty. Individuals size = ${individuals.size}")
-
-    recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
+    if(accumulatedFitness.isEmpty) Individual.emptyIndividual(Failure(EmptyAccumulatedFitnessListException(this)))
+    else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
   def intoChunks(chunkSize: Int): List[Population] = 
@@ -144,6 +144,11 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     if(firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
     else secondIndividual
   })
+}
+
+object Individual {
+  def emptyIndividual(tryChromosome: Try[Chromosome]): Individual = new Individual(tryChromosome):
+    override protected def copyWith(chromosome: Try[Chromosome]): Individual = emptyIndividual(tryChromosome)
 }
 
 trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {

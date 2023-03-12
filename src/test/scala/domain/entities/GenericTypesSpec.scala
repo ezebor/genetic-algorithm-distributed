@@ -4,12 +4,13 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.OperatorRatios.*
+import domain.exceptions.EmptyAccumulatedFitnessListException
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.util.{Random, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
@@ -90,21 +91,27 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         }
     }
 
-    "throw an exception when it is empty and tries to find an individual" in {
+    "Create an empty individual with a failure chromosome when the population is empty and tries to find an individual" in {
       val population = buildPopulation(0)
-      intercept[IllegalStateException] {
-        population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10)
-      }
+      val hasFailureChromosome: Boolean = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10).getTryChromosome match
+        case Failure(EmptyAccumulatedFitnessListException(population)) => true
+        case _ => false
+
+      assert(hasFailureChromosome)
     }
 
-    "throw an exception when all the individuals are unfit and tries to find an individual" in {
+    "Create an empty individual with a failure chromosome when all the individuals of the population are unfit and tries to find an individual" in {
       val population = buildPopulation(POPULATION_SIZE, 0)
 
       population.individuals.size should be(POPULATION_SIZE)
       population.accumulatedFitness.size should be(0)
-      intercept[IllegalStateException] {
-        population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10)
-      }
+
+
+      val hasFailureChromosome: Boolean = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10).getTryChromosome match
+        case Failure(EmptyAccumulatedFitnessListException(population)) => true
+        case _ => false
+
+      assert(hasFailureChromosome)
     }
 
     "slice individuals list into chunks of populations whose individuals re-grouped are the original population" in {
