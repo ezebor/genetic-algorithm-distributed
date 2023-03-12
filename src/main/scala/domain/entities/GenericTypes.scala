@@ -3,7 +3,7 @@ package domain.entities
 import domain.actors.EvolutionWorker
 import domain.entities.AlgorithmConfig.*
 import domain.entities.OperatorRatios.*
-import domain.exceptions.EmptyAccumulatedFitnessListException
+import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
@@ -80,17 +80,16 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       }
     }
 
-    if(accumulatedFitness.isEmpty) Individual.emptyIndividual(Failure(EmptyAccumulatedFitnessListException(this)))
+    if(accumulatedFitness.isEmpty) Individual.emptyIndividual(EmptyAccumulatedFitnessListException(this))
     else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
   def intoChunks(chunkSize: Int): List[Population] = 
-    if(chunkSize == 0) throw new IllegalArgumentException(s"Unable to slice into chunks of size $chunkSize")
-    
-    individuals
-    .grouped(chunkSize)
-    .map(anIndividuals => Population(anIndividuals))
-    .toList
+    if(chunkSize == 0) List(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
+    else individuals
+      .grouped(chunkSize)
+      .map(anIndividuals => Population(anIndividuals))
+      .toList
 
   def randomSubPopulation(size: Int): Population = {
     @tailrec
@@ -144,11 +143,14 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     if(firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
     else secondIndividual
   })
+
+  def copyWith(newIndividuals: List[Individual]): Population = Population(newIndividuals)(random)
 }
 
 object Individual {
-  def emptyIndividual(tryChromosome: Try[Chromosome]): Individual = new Individual(tryChromosome):
-    override protected def copyWith(chromosome: Try[Chromosome]): Individual = emptyIndividual(tryChromosome)
+  def emptyIndividual(exception: RuntimeException): Individual = new Individual(Failure(exception)) {
+    override protected def copyWith(chromosome: Try[Chromosome]): Individual = emptyIndividual(exception)
+  }
 }
 
 trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {

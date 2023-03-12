@@ -4,7 +4,7 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.OperatorRatios.*
-import domain.exceptions.EmptyAccumulatedFitnessListException
+import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
@@ -91,7 +91,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         }
     }
 
-    "Create an empty individual with a failure chromosome when the population is empty and tries to find an individual" in {
+    "create an empty individual with a failure chromosome when the population is empty and tries to find an individual" in {
       val population = buildPopulation(0)
       val hasFailureChromosome: Boolean = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10).getTryChromosome match
         case Failure(EmptyAccumulatedFitnessListException(population)) => true
@@ -100,7 +100,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       assert(hasFailureChromosome)
     }
 
-    "Create an empty individual with a failure chromosome when all the individuals of the population are unfit and tries to find an individual" in {
+    "create an empty individual with a failure chromosome when all the individuals of the population are unfit and tries to find an individual" in {
       val population = buildPopulation(POPULATION_SIZE, 0)
 
       population.individuals.size should be(POPULATION_SIZE)
@@ -114,7 +114,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       assert(hasFailureChromosome)
     }
 
-    "slice individuals list into chunks of populations whose individuals re-grouped are the original population" in {
+    "split up individuals list into chunks of populations whose individuals re-grouped are the original population" in {
       val population = buildPopulation(POPULATION_SIZE)
       val chunks = population.intoChunks(CHUNKS_SIZE)
       chunks.size should be(POPULATION_SIZE / CHUNKS_SIZE + 1)
@@ -123,17 +123,24 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       actualIndividuals should be(population.individuals)
     }
 
-    "create an empty chunk when it is empty" in {
+    "create an empty chunk when the populatioon is empty" in {
       val population = buildPopulation(0)
       val chunks = population.intoChunks(CHUNKS_SIZE)
       chunks.size should be(0)
     }
 
-    "create a chunk equals to the population when the required size is 0" in {
-      val population = buildPopulation(POPULATION_SIZE)
-      intercept[IllegalArgumentException] {
-        population.intoChunks(0)
-      }
+    "create a chunk with one population composed by one individual with a failure chromosome when the chunk size is 0" in {
+      val population: Population = buildPopulation(POPULATION_SIZE)
+
+      val failurePopulation: List[Population] = population.intoChunks(0)
+      failurePopulation.size should be(1)
+      failurePopulation.head.individuals.size should be(1)
+
+      val isFailurePopulation: Boolean = failurePopulation.head.individuals.head.getTryChromosome match
+        case Failure(IllegalChunkSizeException(failurePopulation)) => true
+        case _ => false
+
+      assert(isFailurePopulation)
     }
 
     "build a random sub population from a population with fit individuals picking always the last individuals" in {
