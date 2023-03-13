@@ -17,7 +17,7 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   protected def calculateFitness: Double
   lazy val fitness: Double = calculateFitness
 
-  def crossoverWith(couple: Chromosome, crossoverLikelihood: Double)(implicit random: Random): (List[Gene], List[Gene]) = {
+  def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
       if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
       else genes
@@ -30,7 +30,7 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
     }
   }
 }
-trait Gene {
+trait Gene(implicit random: Random) {
   def mutate: Gene
 }
 
@@ -166,7 +166,7 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
     val tryChildrenChromosomes: Try[(Chromosome, Chromosome)] = for {
       thisChromosome <- getTryChromosome
       coupleChromosome <- couple.getTryChromosome
-      crossedGenes = thisChromosome.crossoverWith(coupleChromosome, crossoverLikelihood)(random)
+      crossedGenes = thisChromosome.crossoverWith(coupleChromosome, crossoverLikelihood)
     } yield {
       (
         thisChromosome.copyWith(crossedGenes._1),

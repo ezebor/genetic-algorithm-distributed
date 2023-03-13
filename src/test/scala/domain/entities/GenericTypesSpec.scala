@@ -25,7 +25,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   def buildDefaultListOfGenes: List[Gene] = (1 to QUANTITY_OF_GENES).map(_ => buildGene).toList
 
-  def buildChromosome(genes: List[Gene], fitnessValue: Double = 10): Chromosome = new Chromosome(genes) {
+  def buildChromosome(genes: List[Gene], fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Chromosome = new Chromosome(genes) {
     override protected def calculateFitness: Double = fitnessValue
     override def mutate: Chromosome = copyWith(genes.map(_.mutate))
     override def copyWith(genes: List[Gene]): Chromosome = buildChromosome(genes)
@@ -38,7 +38,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   implicit val standardRandom: Random = new Random()
 
   def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
-    buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, fitnessValue)))
+    buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, fitnessValue)(customRandom)))
   }.toList)(customRandom)
 
   "Population" should {

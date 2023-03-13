@@ -9,13 +9,12 @@ import domain.entities.OperatorRatios.*
 
 import scala.util.{Random, Success, Try}
 
-case class Item(name: String, price: Double, satisfaction: Double) extends Gene {
+case class Item(name: String, price: Double, satisfaction: Double)(implicit customRandom: Random = random) extends Gene {
   override def mutate: Gene =
-    val random = new Random()
-    Item(s"Item ${name}", random.nextInt(10) + 1, random.nextInt(10) + 1)
+    Item(s"Item ${name}", customRandom.nextInt(10) + 1, customRandom.nextInt(10) + 1)
 }
 
-case class ItemsList(items: List[Item]) extends Chromosome(items) {
+case class ItemsList(items: List[Item])(implicit customRandom: Random = random) extends Chromosome(items)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case items: List[Item] => ItemsList(items)
 
@@ -28,18 +27,18 @@ case class ItemsList(items: List[Item]) extends Chromosome(items) {
   }
 }
 
-case class Basket(itemsList: Try[ItemsList]) extends Individual(itemsList) {
+case class Basket(itemsList: Try[ItemsList])(implicit customRandom: Random = random) extends Individual(itemsList)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case itemsList: Try[ItemsList] => Basket(itemsList)
 }
 
 object BasketsPopulationRandomGenerator {
-  def randomPopulation(populationSize: Int): Population = {
+  def randomPopulation(populationSize: Int)(implicit customRandom: Random = random): Population = {
     Population(
       (1 to populationSize).map(i => Basket(
         Success(ItemsList(
-          (1 to (random.nextInt(5) + 1)).map(_ => Item(s"Item $i", random.nextInt(10), random.nextInt(10))).toList
-        ))
+          (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
+        )(customRandom))
       )).toList)
   }
 }
