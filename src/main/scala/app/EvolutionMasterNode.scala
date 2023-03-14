@@ -27,10 +27,27 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
 
-  val generationsManager = system.actorOf(GenerationsManager.props)
+  val QUANTITY_OF_NODES = 2
+  val POPULATION_SIZE = 500
+  val SURVIVAL_POPULATION_SIZE: Int = POPULATION_SIZE / (QUANTITY_OF_NODES * quantityOfWorkersPerNode) 
+  val CROSSOVER_LIKELIHOOD = 0.5
+  val MUTATION_LIKELIHOOD = 0.03
+  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 50
+  val SOLUTIONS_POPULATION_SIZE = 10
+
+  val generationsManager = system.actorOf(GenerationsManager.props(
+    POPULATION_SIZE,
+    SOLUTIONS_POPULATION_SIZE,
+    MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS
+  ))
+
   val master = system.actorOf(EvolutionMaster.props(
     QUANTITY_OF_NODES * quantityOfWorkersPerNode,
-    system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter"),
+    system.actorOf(FromConfig.props(EvolutionWorker.props(
+      SURVIVAL_POPULATION_SIZE,
+      CROSSOVER_LIKELIHOOD,
+      MUTATION_LIKELIHOOD
+    )), "evolutionRouter"),
     generationsManager
   ))
 
@@ -40,4 +57,4 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
   generationsManager ! BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE))
 }
 
-object MasterNode extends EvolutionMasterNode(QUANTITY_OF_WORKERS_PER_NODE)
+object MasterNode extends EvolutionMasterNode(3)

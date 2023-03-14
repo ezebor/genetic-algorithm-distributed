@@ -5,7 +5,6 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.entities.OperatorRatios.*
 
 import scala.util.{Random, Success, Try}
 

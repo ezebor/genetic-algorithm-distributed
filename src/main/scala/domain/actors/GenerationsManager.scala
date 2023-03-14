@@ -1,15 +1,24 @@
 package domain.actors
 import akka.actor.*
 import domain.Operators.*
-import domain.entities.AlgorithmConfig.{MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS, POPULATION_SIZE, SOLUTIONS_POPULATION_SIZE, random}
+import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
 import domain.{BuildNewGeneration, Execute, GenerationBuilt, Online}
 
 object GenerationsManager {
-  def props: Props = Props(new GenerationsManager())
+  def props(populationSize: Int,
+            solutionsPopulationSize: Int,
+            maxQuantityOfGenerationsWithoutImprovements: Int): Props = Props(new GenerationsManager(
+    populationSize,
+    solutionsPopulationSize,
+    maxQuantityOfGenerationsWithoutImprovements
+  ))
 }
 
-class GenerationsManager extends Actor with ActorLogging {
+class GenerationsManager(
+                          populationSize: Int,
+                          solutionsPopulationSize: Int,
+                          maxQuantityOfGenerationsWithoutImprovements: Int) extends Actor with ActorLogging {
   override def receive: Receive = offline
 
   private def offline: Receive = {
@@ -39,13 +48,13 @@ class GenerationsManager extends Actor with ActorLogging {
       if(population.bestIndividual.fitness.getOrElse(0d) > solutions.individuals.head.fitness.getOrElse(0d))
         log.info(s"New better individual was found with fitness = ${population.bestIndividual.fitness}")
         val newSolutions = Population(population.bestIndividual :: {
-          if(solutions.individuals.size == SOLUTIONS_POPULATION_SIZE) solutions.individuals.dropRight(1)
+          if(solutions.individuals.size == solutionsPopulationSize) solutions.individuals.dropRight(1)
           else solutions.individuals
         })
         context.become(steadyOnline(generationId + 1, 0, newSolutions, evolutionMaster))
         self ! BuildNewGeneration(population)
       else
-        if(quantityOfGenerationsWithoutImprovements <= MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS)
+        if(quantityOfGenerationsWithoutImprovements <= maxQuantityOfGenerationsWithoutImprovements)
           context.become(steadyOnline(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions, evolutionMaster))
           self ! BuildNewGeneration(population)
         else

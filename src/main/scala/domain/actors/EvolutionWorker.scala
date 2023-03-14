@@ -7,15 +7,14 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.entities.OperatorRatios.*
 
 import scala.util.Random
 
 object EvolutionWorker {
-  def props(): Props = Props(new EvolutionWorker(
-    SURVIVAL_LIKELIHOOD,
-    CROSSOVER_LIKELIHOOD,
-    MUTATION_LIKELIHOOD
+  def props(survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double): Props = Props(new EvolutionWorker(
+    survivalPopulationSize,
+    crossoverLikelihood,
+    mutationLikelihood
   ))
 }
 

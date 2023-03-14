@@ -8,7 +8,6 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.entities.OperatorRatios.*
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
@@ -23,10 +22,20 @@ class EvolutionWorkerSpec
 
   override def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
-  val POPULATION_SIZE = 500
+  val QUANTITY_OF_WORKERS_PER_NODE = 3
+  val QUANTITY_OF_NODES = 2
+  val POPULATION_SIZE = 200
+  val SURVIVAL_POPULATION_SIZE: Int = POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE)
+  val CROSSOVER_LIKELIHOOD = 0.5
+  val MUTATION_LIKELIHOOD = 0.03
 
-  val worker = system.actorOf(EvolutionWorker.props(), "evolutionWorker")
-  val population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
+  val worker = system.actorOf(EvolutionWorker.props(
+    SURVIVAL_POPULATION_SIZE,
+    CROSSOVER_LIKELIHOOD,
+    MUTATION_LIKELIHOOD
+  ), "evolutionWorker")
+
+  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
 
   "Evolution worker" should {
     "execute natural selection when receives 'natural_selection' operator" in {
@@ -35,7 +44,7 @@ class EvolutionWorkerSpec
       val executeMessage = expectMsgType[Execute]
 
       executeMessage.operatorName should be(ADD_POPULATION)
-      executeMessage.population.individuals.size should be((POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE)).toInt)
+      executeMessage.population.individuals.size should be(SURVIVAL_POPULATION_SIZE)
     }
 
     "execute crossover when receives 'crossover' operator" in {

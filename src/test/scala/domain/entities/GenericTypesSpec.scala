@@ -3,7 +3,6 @@ package domain.entities
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
-import domain.entities.OperatorRatios.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import org.scalatest.*
 import org.scalatest.flatspec.*
@@ -16,8 +15,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
   val POPULATION_SIZE = 200
   val CHUNKS_SIZE = 60
   val QUANTITY_OF_GENES = 3
-
-  // TODO: llevar los build a un factory
+  val CROSSOVER_LIKELIHOOD = 0.5
+  val MUTATION_LIKELIHOOD = 0.03
 
   def buildGene: Gene = new Gene {
     override def mutate: Gene = buildGene

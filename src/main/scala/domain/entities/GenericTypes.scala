@@ -2,7 +2,6 @@ package domain.entities
 
 import domain.actors.EvolutionWorker
 import domain.entities.AlgorithmConfig.*
-import domain.entities.OperatorRatios.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 
 import scala.annotation.tailrec
@@ -34,19 +33,8 @@ trait Gene(implicit random: Random) {
   def mutate: Gene
 }
 
-object OperatorRatios {
-  val SURVIVAL_LIKELIHOOD: Int = POPULATION_SIZE / (QUANTITY_OF_NODES * QUANTITY_OF_WORKERS_PER_NODE)
-  val CROSSOVER_LIKELIHOOD: Double = 0.5
-  val MUTATION_LIKELIHOOD: Double = 0.03
-}
-
 object AlgorithmConfig {
-  val POPULATION_SIZE = 500
-  val QUANTITY_OF_WORKERS_PER_NODE = 3
-  val QUANTITY_OF_NODES = 2
   implicit val random: Random = new Random()
-  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 50
-  val SOLUTIONS_POPULATION_SIZE = 10
 }
 
 case class Population(individuals: List[Individual])(implicit random: Random) {
