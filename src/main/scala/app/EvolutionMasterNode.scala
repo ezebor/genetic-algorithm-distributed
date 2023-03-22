@@ -2,12 +2,15 @@ package app
 
 import akka.actor.*
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{as, complete, delete, entity, get, optionalHeaderValueByName, parameter, path, pathEndOrSingleSlash, pathPrefix, post, *}
 import akka.http.scaladsl.server.Route
+import akka.pattern.ask
 import akka.routing.FromConfig
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import domain.Operators.*
 import domain.actors.*
@@ -16,8 +19,11 @@ import domain.entities.AlgorithmConfig.*
 import domain.{BuildNewGeneration, Execute, Online}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.*
+import scala.language.postfixOps
+import scala.util.Random
 
-class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJsonSupport {
+class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
   val configSource = ConfigFactory.load("resources/application.conf")
   val serializationConfig = configSource.getConfig("executeBasketSerializationConfig")
   val mainConfig = configSource.getConfig("mainConfig")
@@ -32,41 +38,40 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
     .withFallback(masterRouterConfig)
     .withFallback(mainConfig)
 
-  val system = ActorSystem("GeneticAlgorithmSystem", config)
+  implicit val system: ActorSystem = ActorSystem("GeneticAlgorithmSystem", config)
+  implicit val timeout: Timeout = Timeout(3 seconds)
+  implicit val ec: ExecutionContext = system.dispatcher
 
-  val QUANTITY_OF_NODES = 2
-  val POPULATION_SIZE = 500
-  val SURVIVAL_POPULATION_SIZE: Int = POPULATION_SIZE / (QUANTITY_OF_NODES * quantityOfWorkersPerNode) 
-  val CROSSOVER_LIKELIHOOD = 0.5
-  val MUTATION_LIKELIHOOD = 0.03
-  val MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS = 50
-  val SOLUTIONS_POPULATION_SIZE = 10
-
-  val generationsManager = system.actorOf(GenerationsManager.props(
-    POPULATION_SIZE,
-    SOLUTIONS_POPULATION_SIZE,
-    MAX_QUANTITY_OF_GENERATIONS_WITHOUT_IMPROVEMENTS
-  ))
-
-  val master = system.actorOf(EvolutionMaster.props(
-    QUANTITY_OF_NODES * quantityOfWorkersPerNode,
-    system.actorOf(FromConfig.props(EvolutionWorker.props(
-      SURVIVAL_POPULATION_SIZE,
-      CROSSOVER_LIKELIHOOD,
-      MUTATION_LIKELIHOOD
-    )), "evolutionRouter"),
-    generationsManager
-  ))
-
-  generationsManager ! Online(master)
-
-  pathPrefix("api" / "evolution") {
+  val routesTree: Route = pathPrefix("api" / "evolution") {
     (post & pathEndOrSingleSlash) {
-      //entity(as[Fighter]) {
+      entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
+      quantityOfNodes,
+      populationSize,
+      crossoverLikelihood,
+      mutationLikelihood,
+      maxQuantityOfGenerationsWithoutImprovements,
+      solutionsPopulationsSize
+      ) =>
+        val generationsManager = system.actorOf(GenerationsManager.props(solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements), s"generationManager")
+
+        val master = system.actorOf(EvolutionMaster.props(
+          quantityOfNodes * quantityOfWorkersPerNode,
+          system.actorOf(FromConfig.props(EvolutionWorker.props(
+            populationSize / (quantityOfNodes * quantityOfWorkersPerNode),
+            crossoverLikelihood,
+            mutationLikelihood
+          )), s"evolutionRouter"),
+          generationsManager
+        ), s"master")
+
+        generationsManager ? Online(master)
+        generationsManager ? BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(populationSize))
         complete(StatusCodes.Created)
-      //}
+      }
     }
   }
+
+  Http().newServerAt("localhost", 8080).bind(routesTree)
 }
 
 object MasterNode extends EvolutionMasterNode(3)

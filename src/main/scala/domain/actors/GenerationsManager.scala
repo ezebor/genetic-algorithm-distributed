@@ -6,17 +6,13 @@ import domain.entities.{Individual, Population}
 import domain.{BuildNewGeneration, Execute, GenerationBuilt, Online}
 
 object GenerationsManager {
-  def props(populationSize: Int,
-            solutionsPopulationSize: Int,
-            maxQuantityOfGenerationsWithoutImprovements: Int): Props = Props(new GenerationsManager(
-    populationSize,
+  def props(solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int): Props = Props(new GenerationsManager(
     solutionsPopulationSize,
     maxQuantityOfGenerationsWithoutImprovements
   ))
 }
 
 class GenerationsManager(
-                          populationSize: Int,
                           solutionsPopulationSize: Int,
                           maxQuantityOfGenerationsWithoutImprovements: Int) extends Actor with ActorLogging {
   override def receive: Receive = offline

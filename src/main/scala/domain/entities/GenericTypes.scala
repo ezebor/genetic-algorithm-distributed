@@ -1,8 +1,9 @@
 package domain.entities
 
-import domain.actors.EvolutionWorker
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
+import spray.json.*
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
@@ -169,4 +170,17 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
   }
 
   def mutate: Individual = copyWith(tryChromosome.map(_.mutate))
+}
+
+case class EvolutionRequestBody(
+                                 quantityOfNodes: Int = 2,
+                                 populationSize: Int = 500,
+                                 crossoverLikelihood: Double = 0.5,
+                                 mutationLikelihood: Double = 0.03,
+                                 maxQuantityOfGenerationsWithoutImprovements: Int = 50,
+                                 solutionsPopulationsSize: Int = 10
+                               )
+
+trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
+  implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat6(EvolutionRequestBody.apply)
 }
