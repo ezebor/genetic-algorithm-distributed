@@ -2,6 +2,11 @@ package app
 
 import akka.actor.*
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.Directives.{as, complete, delete, entity, get, optionalHeaderValueByName, parameter, path, pathEndOrSingleSlash, pathPrefix, post, *}
+import akka.http.scaladsl.server.Route
 import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
 import domain.Operators.*
@@ -10,7 +15,9 @@ import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 import domain.{BuildNewGeneration, Execute, Online}
 
-class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
+import scala.concurrent.ExecutionContext
+
+class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJsonSupport {
   val configSource = ConfigFactory.load("resources/application.conf")
   val serializationConfig = configSource.getConfig("executeBasketSerializationConfig")
   val mainConfig = configSource.getConfig("mainConfig")
@@ -51,10 +58,15 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App {
     generationsManager
   ))
 
-  Thread.sleep(10000)
-
   generationsManager ! Online(master)
-  generationsManager ! BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE))
+
+  pathPrefix("api" / "evolution") {
+    (post & pathEndOrSingleSlash) {
+      //entity(as[Fighter]) {
+        complete(StatusCodes.Created)
+      //}
+    }
+  }
 }
 
 object MasterNode extends EvolutionMasterNode(3)
