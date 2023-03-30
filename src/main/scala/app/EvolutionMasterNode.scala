@@ -32,7 +32,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
   val config = ConfigFactory.parseString(
     s"""
       |akka.remote.artery.canonical.port = 2551
-      |akka.actor.deployment./evolutionMaster/evolutionRouter.cluster.max-nr-of-instances-per-node = $quantityOfWorkersPerNode
+      |akka.actor.deployment./evolutionRouter.cluster.max-nr-of-instances-per-node = $quantityOfWorkersPerNode
       |""".stripMargin)
     .withFallback(serializationConfig)
     .withFallback(masterRouterConfig)
@@ -44,14 +44,9 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
 
   val generationsManager = system.actorOf(GenerationsManager.props(), "generationManager")
   val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
-
-  // TODO: Recibir esos valores por mensaje en el worker
-  val router: ActorRef = system.actorOf(FromConfig.props(EvolutionWorker.props(
-    populationSize / quantityOfWorkers,
-    crossoverLikelihood,
-    mutationLikelihood
-  )), "evolutionRouter")
-
+  val router: ActorRef = system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")
+  
+  
   val routesTree: Route = pathPrefix("api" / "evolution") {
     (post & pathEndOrSingleSlash) {
       entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
@@ -63,7 +58,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
       solutionsPopulationsSize
       ) =>
         generationsManager ? ManagerOnline(master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-        master ? MasterOnline(generationsManager, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
+        master ? MasterOnline(generationsManager, router, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
         generationsManager ? BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(populationSize))
         complete(StatusCodes.Created)
       }

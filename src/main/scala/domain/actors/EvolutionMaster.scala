@@ -9,7 +9,7 @@ import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
-import domain.{Execute, GenerationBuilt, MasterOnline}
+import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
 
 import scala.util.Random
 
@@ -21,15 +21,15 @@ class EvolutionMaster() extends Actor with ActorLogging {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case MasterOnline(manager: ActorRef, quantityOfNodes: Int, quantityOfWorkersPerNode: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
-
+    case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfNodes: Int, quantityOfWorkersPerNode: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       val quantityOfWorkers: Int = quantityOfNodes * quantityOfWorkersPerNode
-      val router: ActorRef = context.actorOf(FromConfig.props(EvolutionWorker.props(
+
+      (1 to quantityOfWorkers).foreach(_ => router ! WorkerOnline(
         populationSize / quantityOfWorkers,
         crossoverLikelihood,
         mutationLikelihood
-      )), "evolutionRouter")
-
+      ))
+      
       def online: Receive = { message =>
         def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
           case Execute(ADD_POPULATION, newPopulation: Population) =>
