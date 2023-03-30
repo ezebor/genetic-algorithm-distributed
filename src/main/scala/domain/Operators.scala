@@ -16,8 +16,8 @@ object Operators {
   val OFFLINE = "offline"
 }
 
-case class ManagerOnline(evolutionMaster: ActorRef)
-case class MasterOnline()
+case class ManagerOnline(evolutionMaster: ActorRef, solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int)
+case class MasterOnline(manager: ActorRef, quantityOfNodes: Int, quantityOfWorkersPerNode: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double)
 case class BuildNewGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)
 case class GenerationBuilt(population: Population)

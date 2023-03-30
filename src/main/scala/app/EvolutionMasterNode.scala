@@ -16,7 +16,7 @@ import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.{BuildNewGeneration, Execute, ManagerOnline}
+import domain.{BuildNewGeneration, Execute, ManagerOnline, MasterOnline}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
@@ -42,6 +42,9 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
   implicit val timeout: Timeout = Timeout(3 seconds)
   implicit val ec: ExecutionContext = system.dispatcher
 
+  val generationsManager = system.actorOf(GenerationsManager.props(), "generationManager")
+  val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
+
   val routesTree: Route = pathPrefix("api" / "evolution") {
     (post & pathEndOrSingleSlash) {
       entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
@@ -52,19 +55,8 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
       maxQuantityOfGenerationsWithoutImprovements,
       solutionsPopulationsSize
       ) =>
-        val generationsManager = system.actorOf(GenerationsManager.props(solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements), s"generationManager")
-
-        val master = system.actorOf(EvolutionMaster.props(
-          quantityOfNodes * quantityOfWorkersPerNode,
-          system.actorOf(FromConfig.props(EvolutionWorker.props(
-            populationSize / (quantityOfNodes * quantityOfWorkersPerNode),
-            crossoverLikelihood,
-            mutationLikelihood
-          )), s"evolutionRouter"),
-          generationsManager
-        ), s"master")
-
-        generationsManager ? ManagerOnline(master)
+        generationsManager ? ManagerOnline(master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
+        master ? MasterOnline(generationsManager, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
         generationsManager ? BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(populationSize))
         complete(StatusCodes.Created)
       }
