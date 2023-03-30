@@ -25,10 +25,10 @@ class EvolutionMaster() extends Actor with ActorLogging {
 
       val quantityOfWorkers: Int = quantityOfNodes * quantityOfWorkersPerNode
       val router: ActorRef = context.actorOf(FromConfig.props(EvolutionWorker.props(
-        populationSize / quantityOfWorkers, 
+        populationSize / quantityOfWorkers,
         crossoverLikelihood,
         mutationLikelihood
-      )))
+      )), "evolutionRouter")
 
       def online: Receive = { message =>
         def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
