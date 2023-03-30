@@ -3,7 +3,7 @@ import akka.actor.*
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
-import domain.{BuildNewGeneration, Execute, GenerationBuilt, Online}
+import domain.{BuildNewGeneration, Execute, GenerationBuilt, ManagerOnline, MasterOnline}
 
 object GenerationsManager {
   def props(solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int): Props = Props(new GenerationsManager(
@@ -18,8 +18,8 @@ class GenerationsManager(
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case Online(evolutionMaster: ActorRef) =>
-      evolutionMaster ! ONLINE
+    case ManagerOnline(evolutionMaster: ActorRef) =>
+      evolutionMaster ! MasterOnline()
       context.become(firstOnline(evolutionMaster))
   }
 

@@ -6,7 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives.{as, complete, delete, entity, get, optionalHeaderValueByName, parameter, path, pathEndOrSingleSlash, pathPrefix, post, *}
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.routing.FromConfig
@@ -16,7 +16,7 @@ import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.{BuildNewGeneration, Execute, Online}
+import domain.{BuildNewGeneration, Execute, ManagerOnline}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
@@ -64,7 +64,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
           generationsManager
         ), s"master")
 
-        generationsManager ? Online(master)
+        generationsManager ? ManagerOnline(master)
         generationsManager ? BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(populationSize))
         complete(StatusCodes.Created)
       }

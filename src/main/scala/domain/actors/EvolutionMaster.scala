@@ -8,7 +8,7 @@ import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
-import domain.{Execute, GenerationBuilt}
+import domain.{Execute, GenerationBuilt, MasterOnline}
 
 import scala.util.Random
 
@@ -20,7 +20,7 @@ class EvolutionMaster(quantityOfWorkers: Int, router: ActorRef, originalSender: 
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case ONLINE =>
+    case MasterOnline() =>
       context.become(online)
     case HEALTH => sender() ! OK
   }

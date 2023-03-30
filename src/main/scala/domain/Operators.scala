@@ -13,11 +13,11 @@ object Operators {
   val STOP = "stop"
   val HEALTH = "health"
   val OK = "ok"
-  val ONLINE = "online"
   val OFFLINE = "offline"
 }
 
-case class Online(evolutionMaster: ActorRef)
+case class ManagerOnline(evolutionMaster: ActorRef)
+case class MasterOnline()
 case class BuildNewGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)
 case class GenerationBuilt(population: Population)
