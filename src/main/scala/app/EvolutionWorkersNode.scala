@@ -23,6 +23,3 @@ class EvolutionWorkersNode(port: Int) extends App {
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
 }
-
-object WorkersNode1 extends EvolutionWorkersNode(2561)
-object WorkersNode2 extends EvolutionWorkersNode(2562)

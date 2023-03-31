@@ -67,5 +67,3 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
 
   Http().newServerAt("localhost", 8080).bind(routesTree)
 }
-
-object MasterNode extends EvolutionMasterNode(3)
