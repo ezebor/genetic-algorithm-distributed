@@ -44,6 +44,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: Str
 
   val generationsManager = system.actorOf(GenerationsManager.props(), "generationManager")
   val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
+  val solutionsPrinter = system.actorOf(SolutionsPrinter.props(), "solutionsPrinter")
   val router: ActorRef = system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")
   
   
@@ -57,7 +58,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: Str
       maxQuantityOfGenerationsWithoutImprovements,
       solutionsPopulationsSize
       ) =>
-        generationsManager ? ManagerOnline(master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
+        generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
         master ? MasterOnline(generationsManager, router, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
         generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
         complete(StatusCodes.Created)

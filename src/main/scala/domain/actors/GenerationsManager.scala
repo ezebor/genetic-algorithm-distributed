@@ -1,9 +1,9 @@
 package domain.actors
 import akka.actor.*
+import domain.*
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{Individual, Population}
-import domain.*
 
 object GenerationsManager {
   def props(): Props = Props(new GenerationsManager())
@@ -13,7 +13,7 @@ class GenerationsManager() extends Actor with ActorLogging {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case ManagerOnline(evolutionMaster, solutionsPopulationSize, maxQuantityOfGenerationsWithoutImprovements) =>
+    case ManagerOnline(originalSender: ActorRef, evolutionMaster, solutionsPopulationSize, maxQuantityOfGenerationsWithoutImprovements) =>
       def firstOnline: Receive = { message =>
         def steadyOnline(generationId: Int, quantityOfGenerationsWithoutImprovements: Int, solutions: Population): Receive = {
           case BuildNewGeneration(population: Population) =>
@@ -33,8 +33,8 @@ class GenerationsManager() extends Actor with ActorLogging {
                 context.become(steadyOnline(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions))
                 self ! BuildNewGeneration(population)
               else
+                originalSender ! solutions
                 evolutionMaster ! OFFLINE
-                log.info(s"Found solutions: $solutions")
                 context.become(offline)
         }
 
