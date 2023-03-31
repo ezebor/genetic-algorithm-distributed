@@ -31,15 +31,4 @@ case class Basket(itemsList: Try[ItemsList])(implicit customRandom: Random = ran
     case itemsList: Try[ItemsList] => Basket(itemsList)
 }
 
-object BasketsPopulationRandomGenerator {
-  def randomPopulation(populationSize: Int)(implicit customRandom: Random = random): Population = {
-    Population(
-      (1 to populationSize).map(i => Basket(
-        Success(ItemsList(
-          (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
-        )(customRandom))
-      )).toList)
-  }
-}
-
 

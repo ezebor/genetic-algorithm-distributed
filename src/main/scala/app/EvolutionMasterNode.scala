@@ -23,7 +23,7 @@ import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
 
-class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
+class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: String) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
   val configSource = ConfigFactory.load("resources/application.conf")
   val serializationConfig = configSource.getConfig("executeBasketSerializationConfig")
   val mainConfig = configSource.getConfig("mainConfig")
@@ -59,7 +59,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
       ) =>
         generationsManager ? ManagerOnline(master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
         master ? MasterOnline(generationsManager, router, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
-        generationsManager ? BuildNewGeneration(BasketsPopulationRandomGenerator.randomPopulation(populationSize))
+        generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
         complete(StatusCodes.Created)
       }
     }

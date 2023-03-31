@@ -184,3 +184,13 @@ case class EvolutionRequestBody(
 trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat6(EvolutionRequestBody.apply)
 }
+
+object RandomPopulation {
+  def apply(populationSize: Int, individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
+    case "Basket" => Population(
+      (1 to populationSize).map(i => Basket(
+        Success(ItemsList(
+          (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
+        )(customRandom))
+      )).toList)
+}
