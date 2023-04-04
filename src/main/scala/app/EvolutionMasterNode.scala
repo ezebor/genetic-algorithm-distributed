@@ -46,25 +46,10 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: Str
   val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
   val solutionsPrinter = system.actorOf(SolutionsPrinter.props(), "solutionsPrinter")
   val router: ActorRef = system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")
-  
-  
-  val routesTree: Route = pathPrefix("api" / "evolution") {
-    (post & pathEndOrSingleSlash) {
-      entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
-      quantityOfNodes,
-      populationSize,
-      crossoverLikelihood,
-      mutationLikelihood,
-      maxQuantityOfGenerationsWithoutImprovements,
-      solutionsPopulationsSize
-      ) =>
-        generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-        master ? MasterOnline(generationsManager, router, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
-        generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
-        complete(StatusCodes.Created)
-      }
-    }
-  }
+
+  val routesTree: Route = MasterRouteTree(
+    generationsManager, master, router, solutionsPrinter, quantityOfWorkersPerNode, individualTypeName
+  )
 
   Http().newServerAt("localhost", 8080).bind(routesTree)
 }
