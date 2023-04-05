@@ -17,7 +17,7 @@ object Operators {
 }
 
 case class ManagerOnline(originalSender: ActorRef, evolutionMaster: ActorRef, solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int)
-case class MasterOnline(manager: ActorRef, router: ActorRef, quantityOfNodes: Int, quantityOfWorkersPerNode: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double)
+case class MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double)
 case class WorkerOnline(survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double)
 case class BuildNewGeneration(population: Population)
 case class Execute(operatorName: String, population: Population)

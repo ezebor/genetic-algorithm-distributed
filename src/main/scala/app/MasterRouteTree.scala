@@ -27,6 +27,8 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
 
   implicit val timeout: Timeout = Timeout(3 seconds)
 
+  private val QUANTITY_OF_NODES: Int = 2
+
   def apply(
              generationsManager: ActorRef,
              master: ActorRef,
@@ -38,7 +40,6 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
     pathPrefix("api" / "evolution") {
       (post & pathEndOrSingleSlash) {
         entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
-        quantityOfNodes,
         populationSize,
         crossoverLikelihood,
         mutationLikelihood,
@@ -46,7 +47,7 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
         solutionsPopulationsSize
         ) =>
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-          master ? MasterOnline(generationsManager, router, quantityOfNodes, quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
+          master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
           generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
           complete(StatusCodes.Created, "Evolution has started")
         }
