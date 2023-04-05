@@ -13,16 +13,74 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.server._
-import Directives._
+import akka.http.scaladsl.server.*
+import Directives.*
+import akka.http.scaladsl.model.StatusCodes
+import app.MasterRouteTree
+import domain.actors.{EvolutionMaster, EvolutionWorker, GenerationsManager, SolutionsPrinter}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import akka.routing.RoundRobinPool
 
-class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRouteTest with SprayJsonSupport {
+class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRouteTest with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
 
   "Baskets evolution" should {
     "find the best basket using one worker for a small population" in {
-      
+      implicit val testActorSystem: ActorSystem = ActorSystem("BasketsEvolutionSpec", ConfigFactory.parseString(
+        s"""
+           |akka.test.single-expect-default = 60s
+           |""".stripMargin))
+      val generationsManager: ActorRef = testActorSystem.actorOf(GenerationsManager.props(), "generationManager")
+      val master: ActorRef = testActorSystem.actorOf(EvolutionMaster.props(), "evolutionMaster")
+      val solutionsPrinter: TestProbe = TestProbe("solutionsPrinter")(testActorSystem)
+      val router: ActorRef = testActorSystem.actorOf(RoundRobinPool(1).props(EvolutionWorker.props()), "router")
+      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 1, "Basket")
+
+      // TODO: this test takes several seconds
+      /*Post("/api/evolution", EvolutionRequestBody()) ~> routesTree ~> check {
+        status shouldBe StatusCodes.Created
+      }
+
+      val solutions = solutionsPrinter.expectMsgType[Population]
+      assert(solutions.bestIndividual.fitness.get == 36)*/
+    }
+
+    "find the best basket using several workers for a small population" in {
+      implicit val testActorSystem: ActorSystem = ActorSystem("BasketsEvolutionSpec", ConfigFactory.parseString(
+        s"""
+           |akka.test.single-expect-default = 3s
+           |""".stripMargin))
+      val generationsManager: ActorRef = testActorSystem.actorOf(GenerationsManager.props(), "generationManager")
+      val master: ActorRef = testActorSystem.actorOf(EvolutionMaster.props(), "evolutionMaster")
+      val solutionsPrinter: TestProbe = TestProbe("solutionsPrinter")(testActorSystem)
+      val router: ActorRef = testActorSystem.actorOf(RoundRobinPool(50).props(EvolutionWorker.props()), "router")
+      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 50, "Basket")
+
+      Post("/api/evolution", EvolutionRequestBody()) ~> routesTree ~> check {
+        status shouldBe StatusCodes.Created
+      }
+
+      val solutions = solutionsPrinter.expectMsgType[Population]
+      assert(solutions.bestIndividual.fitness.get == 36)
+    }
+
+    "find the best basket using quite a lot of workers for a small population" in {
+      implicit val testActorSystem: ActorSystem = ActorSystem("BasketsEvolutionSpec", ConfigFactory.parseString(
+        s"""
+           |akka.test.single-expect-default = 1s
+           |""".stripMargin))
+      val generationsManager: ActorRef = testActorSystem.actorOf(GenerationsManager.props(), "generationManager")
+      val master: ActorRef = testActorSystem.actorOf(EvolutionMaster.props(), "evolutionMaster")
+      val solutionsPrinter: TestProbe = TestProbe("solutionsPrinter")(testActorSystem)
+      val router: ActorRef = testActorSystem.actorOf(RoundRobinPool(100).props(EvolutionWorker.props()), "router")
+      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 100, "Basket")
+
+      Post("/api/evolution", EvolutionRequestBody()) ~> routesTree ~> check {
+        status shouldBe StatusCodes.Created
+      }
+
+      val solutions = solutionsPrinter.expectMsgType[Population]
+      assert(solutions.bestIndividual.fitness.get == 36)
     }
   }
 }

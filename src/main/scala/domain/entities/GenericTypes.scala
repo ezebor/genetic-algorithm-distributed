@@ -176,7 +176,7 @@ case class EvolutionRequestBody(
                                  populationSize: Int = 500,
                                  crossoverLikelihood: Double = 0.5,
                                  mutationLikelihood: Double = 0.03,
-                                 maxQuantityOfGenerationsWithoutImprovements: Int = 50,
+                                 maxQuantityOfGenerationsWithoutImprovements: Int = 10,
                                  solutionsPopulationsSize: Int = 10
                                )
 
