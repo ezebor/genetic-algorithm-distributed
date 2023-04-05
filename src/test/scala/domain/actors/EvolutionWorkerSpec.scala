@@ -1,10 +1,10 @@
 package domain.actors
 
-import akka.actor.ActorSystem
+import akka.actor.*
 import akka.routing.{FromConfig, RoundRobinGroup}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import domain.Execute
+import domain.{Execute, WorkerOnline}
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
@@ -12,6 +12,12 @@ import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
 import org.scalatest.wordspec.AnyWordSpecLike
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.*
+import scala.language.postfixOps
+import akka.pattern.ask
+import akka.util.Timeout
 
 class EvolutionWorkerSpec
   extends TestKit(ActorSystem("EvolutionWorkerSpec"))
@@ -29,13 +35,12 @@ class EvolutionWorkerSpec
   val CROSSOVER_LIKELIHOOD = 0.5
   val MUTATION_LIKELIHOOD = 0.03
 
-  val worker = system.actorOf(EvolutionWorker.props(
-    SURVIVAL_POPULATION_SIZE,
-    CROSSOVER_LIKELIHOOD,
-    MUTATION_LIKELIHOOD
-  ), "evolutionWorker")
+  implicit val timeout: Timeout = Timeout(3 seconds)
 
-  val population: Population = BasketsPopulationRandomGenerator.randomPopulation(POPULATION_SIZE)
+  val worker: ActorRef = system.actorOf(EvolutionWorker.props(), "evolutionWorker")
+  worker ? WorkerOnline(SURVIVAL_POPULATION_SIZE, CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD)
+
+  val population: Population = RandomPopulation(POPULATION_SIZE, "Basket")
 
   "Evolution worker" should {
     "execute natural selection when receives 'natural_selection' operator" in {

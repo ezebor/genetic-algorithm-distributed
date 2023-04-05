@@ -23,7 +23,7 @@ class ExecuteBasketJsonSerializerSpec extends AnyWordSpecLike with should.Matche
 
     "serialize and deserialize a command for a random population" in {
       val commands = (1 to 10).map{_ =>
-        Execute(EVOLUTION, BasketsPopulationRandomGenerator.randomPopulation(10))
+        Execute(EVOLUTION, RandomPopulation(10, "Basket"))
       }
       commands.foreach(expectedCommand => expectedCommand should be(serializer.read(serializer.write(expectedCommand))))
     }
