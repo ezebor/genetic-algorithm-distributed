@@ -10,6 +10,7 @@ lazy val root = (project in file("."))
 val akkaVersion = "2.7.0"
 val scalaTestVersion = "3.2.14"
 val akkaHttpVersion = "10.5.0"
+val scrimageVersion = "4.0.34"
 
 libraryDependencies ++= Seq(
   // testing
@@ -29,3 +30,6 @@ libraryDependencies ++= Seq(
   "io.aeron" % "aeron-client" % "1.40.0",
   "io.spray" %%  "spray-json" % "1.3.6",
 )
+
+libraryDependencies += "com.sksamuel.scrimage" % "scrimage-core" % scrimageVersion
+libraryDependencies += "com.sksamuel.scrimage" % "scrimage-filters" % scrimageVersion
