@@ -19,11 +19,11 @@ class WindowManager
                          BufferedImage comparisonImage) throws SsimException
     {
 
-        if (refImage.getWidth() != comparisonImage.getWidth()
+        /*if (refImage.getWidth() != comparisonImage.getWidth()
                 || refImage.getHeight() != comparisonImage.getHeight())
         {
             throw new SsimException("Image dimmensions are not the same");
-        }
+        }*/
 
         int width = getNearestMultipleOf(refImage.getWidth(), WIN_SIZE);
         int height = getNearestMultipleOf(refImage.getHeight(), WIN_SIZE);

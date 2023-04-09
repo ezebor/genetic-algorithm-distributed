@@ -88,7 +88,11 @@ public class SsimCalculator
             final double numerator = (2 * mx * my + c1) * (2 * sigxy + c2);
             final double denominator = (pow(mx, 2) + pow(my, 2) + c1) * (sigsqx + sigsqy + c2);
 
-            final double ssim = numerator/denominator;
+            final double luminance = (2 * mx * my + c1) / (pow(mx, 2) + pow(my, 2) + c1);
+            final double contrast = (2 * sigsqx * sigsqy + c2) / (pow(sigsqx, 2) + pow(sigsqy, 2) + c2);
+            final double structure = (sigxy + (c2 / 2)) / (sigsqx * sigsqy + (c2 / 2));
+
+            final double ssim = luminance * pow(contrast, 4) * structure;
 
             mssim += ssim;
             numWindows++;
