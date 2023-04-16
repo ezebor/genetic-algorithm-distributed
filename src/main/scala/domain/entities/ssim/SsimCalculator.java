@@ -1,4 +1,6 @@
 package domain.entities.ssim;
+
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -7,8 +9,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Iterator;
-
-import javax.imageio.ImageIO;
 
 import static java.lang.Math.pow;
 

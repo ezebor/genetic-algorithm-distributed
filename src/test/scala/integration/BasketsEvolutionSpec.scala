@@ -2,25 +2,21 @@ package integration
 
 import akka.actor.*
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.routing.{FromConfig, RoundRobinGroup}
+import akka.routing.{FromConfig, RoundRobinGroup, RoundRobinPool}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.matchers.*
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import app.MasterRouteTree
 import com.typesafe.config.ConfigFactory
 import domain.Execute
 import domain.Operators.*
-import domain.entities.*
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.server.*
-import Directives.*
-import akka.http.scaladsl.model.StatusCodes
-import app.MasterRouteTree
 import domain.actors.{EvolutionMaster, EvolutionWorker, GenerationsManager, SolutionsPrinter}
+import domain.entities.*
+import org.scalatest.matchers.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import akka.routing.RoundRobinPool
 
 class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRouteTest with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
 

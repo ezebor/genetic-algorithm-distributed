@@ -1,13 +1,15 @@
 package domain.actors
 
 import akka.actor.*
+import akka.pattern.ask
 import akka.routing.{FromConfig, RoundRobinGroup}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import domain.{Execute, WorkerOnline}
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
+import domain.{Execute, WorkerOnline}
 import org.scalatest.*
 import org.scalatest.flatspec.*
 import org.scalatest.matchers.*
@@ -16,8 +18,6 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import akka.pattern.ask
-import akka.util.Timeout
 
 class EvolutionWorkerSpec
   extends TestKit(ActorSystem("EvolutionWorkerSpec"))
