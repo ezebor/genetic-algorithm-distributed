@@ -11,23 +11,38 @@ import java.awt.Color
 import scala.util.Random
 
 object CustomSsim extends App {
-  val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/bulbasaur.png")
+  val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
 
   // TODO: crear nueva imagen a partir de píxeles
   // TODO: IMPORTANTE ---> cuando haga crossover, si el pixel que quiero usar está ocupado buscar el primero libre
   // TODO: argb del pixel libre = -16777216
   //println(List.from(other.blank().pixels()))
-  val newImage = reference.copy()
+  val newImage = reference.blank()
 
-  val a = Set.from(reference.pixels().map(_.x)).toList.sortWith((a, b) => a <= b)
-  val b = Set.from(reference.pixels().map(_.y)).toList.sortWith((a, b) => a <= b)
-  // TODO: para cada fila, hacer un grouped(11) en las columnas, y zippear la fila con cada columna. Repetir para cada fila
-  println(a)
-  println(b)
+  for {
+    block <- intoBlocks(reference)
+    position <- block
+  } yield {
+    newImage.setPixel(reference.pixel(position._1, position._2))
+  }
 
+  def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[List[(Int, Int)]] = {
+    def dimensionOrderedIndexes(dimension: Pixel => Int) = Set
+      .from(immutableImage.pixels().map(dimension))
+      .toList
+      .sortWith((a, b) => a <= b)
 
-  val pixels = reference.pixels().map(pixel => Pixel(pixel.x, pixel.y, pixel.argb))
-  pixels.foreach(pixel => newImage.setPixel(pixel))
+    val rows = dimensionOrderedIndexes(pixel => pixel.x)
+    val columns = dimensionOrderedIndexes(pixel => pixel.y).grouped(blockSize).toList
+
+    for {
+      row <- rows
+      blockY <- columns
+    } yield {
+      (1 to blockY.size).map(_ => row).zip(blockY).toList
+    }
+  }
+
   newImage.output(PngWriter.MinCompression, "src/main/scala/resources/ssim/cyndaquil2.png")
 
   // TODO: FORMULA
