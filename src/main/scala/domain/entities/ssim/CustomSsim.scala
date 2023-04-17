@@ -18,9 +18,17 @@ object CustomSsim extends App {
   // TODO: argb del pixel libre = -16777216
   //println(List.from(other.blank().pixels()))
   val newImage = reference.copy()
+
+  val a = Set.from(reference.pixels().map(_.x)).toList.sortWith((a, b) => a <= b)
+  val b = Set.from(reference.pixels().map(_.y)).toList.sortWith((a, b) => a <= b)
+  // TODO: para cada fila, hacer un grouped(11) en las columnas, y zippear la fila con cada columna. Repetir para cada fila
+  println(a)
+  println(b)
+
+
   val pixels = reference.pixels().map(pixel => Pixel(pixel.x, pixel.y, pixel.argb))
   pixels.foreach(pixel => newImage.setPixel(pixel))
-  //newImage.output(PngWriter.MinCompression, "src/main/scala/resources/ssim/cyndaquil2.png")
+  newImage.output(PngWriter.MinCompression, "src/main/scala/resources/ssim/cyndaquil2.png")
 
   // TODO: FORMULA
   println(ssim(reference, ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusiongrass.png")))
