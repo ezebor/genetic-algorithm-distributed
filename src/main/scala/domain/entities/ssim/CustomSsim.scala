@@ -19,27 +19,31 @@ object CustomSsim extends App {
   //println(List.from(other.blank().pixels()))
   val newImage = reference.blank()
 
+  println(intoBlocks(reference).head)
+  println(intoBlocks(reference).head.size)
+
   for {
-    block <- intoBlocks(reference)
+    block <- intoBlocks(reference).take(100)
     position <- block
   } yield {
     newImage.setPixel(reference.pixel(position._1, position._2))
   }
 
   def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[List[(Int, Int)]] = {
-    def dimensionOrderedIndexes(dimension: Pixel => Int) = Set
+    def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
       .from(immutableImage.pixels().map(dimension))
       .toList
       .sortWith((a, b) => a <= b)
+      .grouped(blockSize).toList
 
-    val rows = dimensionOrderedIndexes(pixel => pixel.x)
-    val columns = dimensionOrderedIndexes(pixel => pixel.y).grouped(blockSize).toList
+    val rows: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.x)
+    val columns: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.y)
 
     for {
-      row <- rows
+      blockX <- rows
       blockY <- columns
     } yield {
-      (1 to blockY.size).map(_ => row).zip(blockY).toList
+      blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
     }
   }
 

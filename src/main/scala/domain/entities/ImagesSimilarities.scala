@@ -29,7 +29,6 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] =>
       // TODO: poner acá lóigca para eliminar bloques con pixeles solapados
-      // TODO: completar huecos en el frame caso falten bloques que se perdieron en la cruza (completar con bloques transparentes)
       Frame(aBlocks)(customRandom)
 
   protected override def calculateFitness: Double = blocks.foldLeft(0d)((total, aBlock) => total + aBlock.ssim) / blocks.size
