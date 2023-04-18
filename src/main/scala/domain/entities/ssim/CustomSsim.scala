@@ -13,6 +13,7 @@ import scala.util.Random
 
 object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
+  val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
   // TODO: crear nueva imagen a partir de píxeles
   // TODO: IMPORTANTE ---> cuando haga crossover, si el pixel que quiero usar está ocupado buscar el primero libre
@@ -51,10 +52,12 @@ object CustomSsim extends App {
 
   newImage.output(PngWriter.MinCompression, "src/main/scala/resources/ssim/cyndaquil2.png")
 
+  println(List((1, 2), (1, 5), (3, 4)).toMap.values)
+
   // TODO: FORMULA
-  println(ssim(reference, ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusiongrass.png")))
-  println(ssim(reference, ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")))
-  println(ssim(reference, newImage))
+  val block1 = intoBlocks(reference).head
+  val block2 = intoBlocks(comp).head
+  println(block1.ssim(block2))
 
   // TODO: gaussian formula distribution: https://en.wikipedia.org/wiki/Normal_distribution
 

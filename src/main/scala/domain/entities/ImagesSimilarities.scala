@@ -6,6 +6,7 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
+import domain.entities.ssim.CustomSsim.{contrast, luminance, structure}
 
 import scala.util.{Random, Success, Try}
 
@@ -19,7 +20,7 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
   private val C3: Double = C2 / 2
 
   lazy val mean: Double = pixels.foldLeft(0)((total, aPixel) => total + aPixel.average()) / size
-  private lazy val standardDeviation: Double = Math.sqrt(pixels.map(pixel => Math.pow(pixel.average() - mean, 2)).sum / (size - 1))
+  lazy val standardDeviation: Double = Math.sqrt(pixels.map(pixel => Math.pow(pixel.average() - mean, 2)).sum / (size - 1))
   private lazy val covariance: Block => Double = { reference =>
     val referenceValues = reference.values.toArray
     val selfValues = values.toArray
@@ -29,8 +30,12 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
 
   override def mutate: Gene = ??? // TODO: hacer un shuffle de los pixeles del block
 
+  def luminance(reference: Block): Double = (2 * mean * reference.mean + C1) / (Math.pow(mean, 2) + Math.pow(reference.mean, 2) + C1)
+  def contrast(reference: Block): Double = (2 * standardDeviation * reference.standardDeviation + C2) / (Math.pow(standardDeviation, 2) + Math.pow(reference.standardDeviation, 2) + C2)
+  def structure(reference: Block): Double = (covariance(reference) + C3) / (standardDeviation * reference.standardDeviation + C3)
+
   def ssim: Block => Double = { referenceBlock =>
-    1
+    luminance(referenceBlock) * contrast(referenceBlock) * structure(referenceBlock)
   }
 
   def index: (Int, Int) = {
@@ -46,8 +51,12 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
 case class Frame(references: Map[(Int, Int), List[Block]])(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] =>
-      // TODO: poner acá lóigca para eliminar bloques con pixeles solapados
-      Frame(references)(aBlocks)(customRandom)
+      Frame(references)(aBlocks
+        .map(block => block.index -> block)
+        .toMap
+        .values
+        .toList
+      )(customRandom)
 
   protected override def calculateFitness: Double = blocks.foldLeft(0d) {(total, aBlock) =>
     val referencesBlocks = references.getOrElse(aBlock.index, List())
@@ -57,5 +66,5 @@ case class Frame(references: Map[(Int, Int), List[Block]])(blocks: List[Block])(
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
-    case aFrame: Try[Frame] => Image(aFrame)(customRandom)
+    case aFrame: Success[Frame] => Image(aFrame)(customRandom)
 }
