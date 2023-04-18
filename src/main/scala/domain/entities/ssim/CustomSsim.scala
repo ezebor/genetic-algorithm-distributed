@@ -6,6 +6,7 @@ import com.sksamuel.scrimage.filter.BlurFilter
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
+import domain.entities.Block
 
 import java.awt.Color
 import scala.util.Random
@@ -23,13 +24,13 @@ object CustomSsim extends App {
   println(intoBlocks(reference).head.size)
 
   for {
-    block <- intoBlocks(reference).take(100)
-    position <- block
+    case Block(pixels) <- intoBlocks(reference).take(400)
+    pixel <- pixels
   } yield {
-    newImage.setPixel(reference.pixel(position._1, position._2))
+    newImage.setPixel(reference.pixel(pixel.x, pixel.y))
   }
 
-  def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[List[(Int, Int)]] = {
+  def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block] = {
     def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
       .from(immutableImage.pixels().map(dimension))
       .toList
@@ -42,8 +43,9 @@ object CustomSsim extends App {
     for {
       blockX <- rows
       blockY <- columns
+      positionsBlock = blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
     } yield {
-      blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
+      Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
     }
   }
 
