@@ -11,6 +11,7 @@ import domain.entities.AlgorithmConfig.*
 import scala.util.{Random, Success, Try}
 
 // TODO: convertir lista de píxeles a lista de posiciones (en vector, List[Int])
+// TODO: levantar la imagen en el individuo y obtener de ahí los pixeles via las posiciones del bloque
 case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) extends Gene {
 
   private val K1: Double = 0.01

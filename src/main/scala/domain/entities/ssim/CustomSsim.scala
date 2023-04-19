@@ -21,8 +21,12 @@ object CustomSsim extends App {
   //println(List.from(other.blank().pixels()))
   val newImage = reference.blank()
 
-  println(intoBlocks(reference).head)
-  println(intoBlocks(reference).head.size)
+  println(intoBlocks(reference).head.pixels.size)
+  val a = intoBlocks(reference).head.pixels.flatMap{pixel =>
+    val s = s"${pixel.x + pixel.y}"
+    s.getBytes
+  }
+  println(a.size)
 
   for {
     case Block(pixels) <- intoBlocks(reference).take(400)
