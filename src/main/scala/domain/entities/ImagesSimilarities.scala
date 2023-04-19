@@ -1,12 +1,12 @@
 package domain.entities
 
 import akka.remote.DaemonMsgCreate
+import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.pixels.Pixel
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.entities.ssim.CustomSsim.{contrast, luminance, structure}
 
 import scala.util.{Random, Success, Try}
 
@@ -28,7 +28,12 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
     valuesSum / (size - 1)
   }
 
-  override def mutate: Gene = ??? // TODO: hacer un shuffle de los pixeles del block
+  override def mutate: Gene = Block(
+    pixels
+    .map(pixel => (customRandom.nextDouble(), pixel))
+    .sortWith { case ((randomA, _), (randomB, _)) => randomA <= randomB}
+    .map((_, pixel) => pixel)
+  )
 
   def luminance(reference: Block): Double = (2 * mean * reference.mean + C1) / (Math.pow(mean, 2) + Math.pow(reference.mean, 2) + C1)
   def contrast(reference: Block): Double = (2 * standardDeviation * reference.standardDeviation + C2) / (Math.pow(standardDeviation, 2) + Math.pow(reference.standardDeviation, 2) + C2)
@@ -46,12 +51,14 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
   def size: Int = pixels.size
 
   def values: List[Int] = pixels.map(_.average())
+
+  override def toString: String = s"Block: $index"
 }
 
-case class Frame(references: Map[(Int, Int), List[Block]])(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
+case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] =>
-      Frame(references)(aBlocks
+      Frame(aBlocks
         .map(block => block.index -> block)
         .toMap
         .values
@@ -59,7 +66,7 @@ case class Frame(references: Map[(Int, Int), List[Block]])(blocks: List[Block])(
       )(customRandom)
 
   protected override def calculateFitness: Double = blocks.foldLeft(0d) {(total, aBlock) =>
-    val referencesBlocks = references.getOrElse(aBlock.index, List())
+    val referencesBlocks = ReferencesManager.indexedBlocks.getOrElse(aBlock.index, List())
     total + (referencesBlocks.map(aBlock.ssim).sum / aBlock.size)
   }
 }
@@ -67,4 +74,45 @@ case class Frame(references: Map[(Int, Int), List[Block]])(blocks: List[Block])(
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case aFrame: Success[Frame] => Image(aFrame)(customRandom)
+}
+
+def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block] = {
+  def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
+    .from(immutableImage.pixels().map(dimension))
+    .toList
+    .sortWith((a, b) => a <= b)
+    .grouped(blockSize).toList
+
+  val rows: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.x)
+  val columns: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.y)
+
+  for {
+    blockX <- rows
+    blockY <- columns
+    positionsBlock = blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
+  } yield {
+    Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
+  }
+}
+
+object ReferencesManager {
+  val references: List[ImmutableImage] = List(
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
+  )
+
+  lazy val indexedBlocks: Map[(Int, Int), List[Block]] = {
+    val blocks = references.flatMap(immutableImage => intoBlocks(immutableImage))
+    blocks.foldLeft(Map(): Map[(Int, Int), List[Block]]) { (result, block) =>
+      result.updated(block.index, block :: result.getOrElse(block.index, List()))
+    }
+  }
+
+  def population(populationSize: Int): Population = {
+    Population(
+      references
+        .map(immutableImage => intoBlocks(immutableImage))
+        .flatMap(blocks => (1 to populationSize / references.size).map(_ => Image(Success(Frame(blocks)))))
+    )
+  }
 }

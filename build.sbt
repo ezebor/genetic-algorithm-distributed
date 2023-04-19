@@ -7,7 +7,7 @@ lazy val root = (project in file("."))
     name := "genetic-algorithm-distributed"
   )
 
-val akkaVersion = "2.7.0"
+val akkaVersion = "2.8.0"
 val scalaTestVersion = "3.2.14"
 val akkaHttpVersion = "10.5.0"
 val scrimageVersion = "4.0.34"

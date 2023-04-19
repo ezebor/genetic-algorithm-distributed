@@ -1,6 +1,7 @@
 package domain.entities
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import spray.json.*
@@ -192,4 +193,5 @@ object RandomPopulation {
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
+    case "ImagesSimilarities" => ReferencesManager.population(populationSize)
 }
