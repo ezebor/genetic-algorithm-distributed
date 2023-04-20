@@ -99,8 +99,8 @@ def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block]
 
 object ReferencesManager {
   val references: List[ImmutableImage] = List(
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scale(0.1),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scale(0.1)
   )
 
   lazy val indexedBlocks: Map[(Int, Int), List[Block]] = {
