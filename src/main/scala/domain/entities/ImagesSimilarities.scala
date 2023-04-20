@@ -97,6 +97,7 @@ def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block]
   }
 }
 
+// TODO: refactor de nombre de variables + optimización de intoBlocks (y poner esa función acá dentro)
 object ReferencesManager {
   val references: List[ImmutableImage] = List(
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scale(0.1),
