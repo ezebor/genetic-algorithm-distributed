@@ -78,44 +78,50 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
     case aFrame: Success[Frame] => Image(aFrame)(customRandom)
 }
 
-def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block] = {
-  def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
-    .from(immutableImage.pixels().map(dimension))
-    .toList
-    .sortWith((a, b) => a <= b)
-    .grouped(blockSize).toList
-
-  val rows: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.x)
-  val columns: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.y)
-
-  for {
-    blockX <- rows
-    blockY <- columns
-    positionsBlock = blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
-  } yield {
-    Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
-  }
-}
-
 // TODO: refactor de nombre de variables + optimización de intoBlocks (y poner esa función acá dentro)
 object ReferencesManager {
-  val references: List[ImmutableImage] = List(
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scale(0.1),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scale(0.1)
+  private def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block] = {
+    def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
+      .from(immutableImage.pixels().map(dimension))
+      .toList
+      .sortWith((a, b) => a <= b)
+      .grouped(blockSize).toList
+
+    val rows: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.x)
+    val columns: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.y)
+
+    for {
+      blockX <- rows
+      blockY <- columns
+      positionsBlock = blockX.flatMap(index => (1 to blockSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
+    } yield {
+      Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
+    }
+  }
+
+  private val immutableImages: List[ImmutableImage] = List(
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
   )
 
+  private lazy val imagesBlocks: List[List[Block]] = immutableImages.map(immutableImage => intoBlocks(immutableImage))
+
   lazy val indexedBlocks: Map[(Int, Int), List[Block]] = {
-    val blocks = references.flatMap(immutableImage => intoBlocks(immutableImage))
-    blocks.foldLeft(Map(): Map[(Int, Int), List[Block]]) { (result, block) =>
-      result.updated(block.index, block :: result.getOrElse(block.index, List()))
+    val indexedBlocksList = for {
+      imageBlocks <- imagesBlocks
+      block <- imageBlocks
+    } yield {
+      block.index -> block
+    }
+
+    indexedBlocksList.foldLeft(Map(): Map[(Int, Int), List[Block]]) { (result, indexedBlock) =>
+      result.updated(indexedBlock._1, indexedBlock._2 :: result.getOrElse(indexedBlock._1, List()))
     }
   }
 
   def population(populationSize: Int): Population = {
     Population(
-      references
-        .map(immutableImage => intoBlocks(immutableImage))
-        .flatMap(blocks => (1 to populationSize / references.size).map(_ => Image(Success(Frame(blocks)))))
+      imagesBlocks.flatMap(imageBlocks => (1 to populationSize / imagesBlocks.size).map(_ => Image(Success(Frame(imageBlocks)))))
     )
   }
 }
