@@ -13,7 +13,7 @@ object SolutionsPrinter {
 
 class SolutionsPrinter extends Actor with ActorLogging {
   override def receive: Receive = {
-    case Population(images: List[Image]) =>
+    /*case Population(images: List[Image]) =>
       images
         .zipWithIndex
         .map { case (image, index) =>
@@ -22,7 +22,7 @@ class SolutionsPrinter extends Actor with ActorLogging {
             case Success(Frame(blocks)) =>
               blocks.flatMap(_.pixels).foreach(pixel => newImage.setPixel(pixel))
               newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-        }
+        }*/
     case solutions: Population =>
       log.info(s"Found solutions: $solutions")
   }

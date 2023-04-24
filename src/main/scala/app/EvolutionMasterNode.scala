@@ -25,7 +25,7 @@ import scala.util.Random
 
 class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: String) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
   val configSource = ConfigFactory.load("resources/application.conf")
-  val serializationConfig = configSource.getConfig("executeImagesSimilaritiesSerializationConfig")
+  val serializationConfig = configSource.getConfig(ExecutionScript.SERIALIZATION_CONFIG)
   val mainConfig = configSource.getConfig("mainConfig")
   val masterRouterConfig = configSource.getConfig("masterRouterConfig")
 

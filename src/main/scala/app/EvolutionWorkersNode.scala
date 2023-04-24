@@ -11,7 +11,7 @@ import domain.actors.EvolutionWorker
 
 class EvolutionWorkersNode(port: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
-  val serializationConfig = configSource.getConfig("executeImagesSimilaritiesSerializationConfig")
+  val serializationConfig = configSource.getConfig(ExecutionScript.SERIALIZATION_CONFIG)
   val mainConfig = configSource.getConfig("mainConfig")
 
   val config = ConfigFactory.parseString(
