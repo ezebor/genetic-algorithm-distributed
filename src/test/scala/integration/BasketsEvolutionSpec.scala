@@ -10,7 +10,7 @@ import akka.routing.{FromConfig, RoundRobinGroup, RoundRobinPool}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
 import app.MasterRouteTree
 import com.typesafe.config.ConfigFactory
-import domain.Execute
+import domain.{Execute, PrinterOnline}
 import domain.Operators.*
 import domain.actors.{EvolutionMaster, EvolutionWorker, GenerationsManager, SolutionsPrinter}
 import domain.entities.*
@@ -56,6 +56,7 @@ class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRoute
         status shouldBe StatusCodes.Created
       }
 
+      solutionsPrinter.expectMsg(PrinterOnline)
       val solutions = solutionsPrinter.expectMsgType[Population]
       assert(solutions.bestIndividual.fitness.get == 36)
     }
@@ -75,6 +76,7 @@ class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRoute
         status shouldBe StatusCodes.Created
       }
 
+      solutionsPrinter.expectMsg(PrinterOnline)
       val solutions = solutionsPrinter.expectMsgType[Population]
       assert(solutions.bestIndividual.fitness.get == 36)
     }

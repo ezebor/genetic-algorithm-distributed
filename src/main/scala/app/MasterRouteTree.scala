@@ -16,7 +16,7 @@ import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.{BuildNewGeneration, Execute, ManagerOnline, MasterOnline}
+import domain.{BuildNewGeneration, Execute, ManagerOnline, MasterOnline, PrinterOnline}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
@@ -46,6 +46,7 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
         maxQuantityOfGenerationsWithoutImprovements,
         solutionsPopulationsSize
         ) =>
+          solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
           master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, populationSize, crossoverLikelihood, mutationLikelihood)
           generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
