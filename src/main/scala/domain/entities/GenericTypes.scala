@@ -129,10 +129,11 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       |""".stripMargin
   }
 
-  lazy val bestIndividual: Individual = individuals.reduceLeft((firstIndividual: Individual, secondIndividual: Individual) => {
-    if(firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
-    else secondIndividual
-  })
+  lazy val bestIndividual: Individual = individuals.foldLeft(Individual.emptyIndividual(new RuntimeException())) { (firstIndividual, secondIndividual) => {
+      if (firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
+      else secondIndividual
+    }
+  }
 
   def copyWith(newIndividuals: List[Individual]): Population = Population(newIndividuals)(random)
 }
