@@ -21,9 +21,9 @@ class EvolutionMaster() extends Actor with ActorLogging {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+    case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       (1 to quantityOfWorkers).foreach(_ => router ! WorkerOnline(
-        populationSize / quantityOfWorkers,
+        ((populationSize / quantityOfWorkers) *  survivalLikelihood).toInt,
         crossoverLikelihood,
         mutationLikelihood
       ))

@@ -175,15 +175,16 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 }
 
 case class EvolutionRequestBody(
-                                 populationSize: Int = 500,
+                                 populationSize: Int = 1000,
+                                 survivalLikelihood: Double = 0.8,
                                  crossoverLikelihood: Double = 0.5,
                                  mutationLikelihood: Double = 0.03,
-                                 maxQuantityOfGenerationsWithoutImprovements: Int = 10,
+                                 maxQuantityOfGenerationsWithoutImprovements: Int = 20,
                                  solutionsPopulationsSize: Int = 10
                                )
 
 trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat5(EvolutionRequestBody.apply)
+  implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat6(EvolutionRequestBody.apply)
 }
 
 object RandomPopulation {
