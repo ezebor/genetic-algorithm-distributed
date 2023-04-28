@@ -124,7 +124,6 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       |***** Population summary *****
       |* Size of the population: ${individuals.size} individuals
       |* Best individual (fitness = ${bestIndividual.fitness}): $bestIndividual
-      |* Individuals: $individuals
       |******************************
       |""".stripMargin
   }
@@ -175,7 +174,7 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 }
 
 case class EvolutionRequestBody(
-                                 populationSize: Int = 1000,
+                                 populationSize: Int = 500,
                                  survivalLikelihood: Double = 0.8,
                                  crossoverLikelihood: Double = 0.5,
                                  mutationLikelihood: Double = 0.03,

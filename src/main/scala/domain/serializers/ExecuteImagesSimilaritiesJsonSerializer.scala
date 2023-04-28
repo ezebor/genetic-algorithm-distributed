@@ -15,25 +15,20 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   }
 
   protected override def serializeGene = (gene: Gene) => gene match {
-    case Block(pixels) => JsArray(
-      pixels.map(pixel => JsObject(
-        "x" -> JsNumber(pixel.x),
-        "y" -> JsNumber(pixel.y),
-        "argb" -> JsNumber(pixel.argb),
-      )).toVector
+    case BlockCoordinates(imageId, blockId) => JsObject(
+      "imageId" -> JsNumber(imageId),
+      "blockId" -> JsNumber(blockId)
     )
   }
 
-  private def buildBlock = (gene: JsArray) => Block(gene.elements.map { case pixel: JsObject =>
-    pixel.getFields("x", "y", "argb") match {
-      case Seq(JsNumber(x), JsNumber(y), JsNumber(argb)) => Pixel(x.intValue, y.intValue, argb.intValue)
-    }
-  }.toList)
+  private def buildBlockCoordinates = (blockCoordinates: JsObject) => blockCoordinates.getFields("imageId", "blockId") match {
+    case Seq(JsNumber(imageId), JsNumber(blockId)) => BlockCoordinates(imageId.intValue, blockId.intValue)
+  }
 
-  protected override def deserializeIndividual = (genes: List[JsValue]) => {
+  protected override def deserializeIndividual = (coordinates: List[JsValue]) => {
     Image(Success(Frame(
-      for case gene: JsArray <- genes
-        yield buildBlock(gene)
+      for case blockCoordinates: JsObject <- coordinates
+        yield buildBlockCoordinates(blockCoordinates)
     )))
   }
 }

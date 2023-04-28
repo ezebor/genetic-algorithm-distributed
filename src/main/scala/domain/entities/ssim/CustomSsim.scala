@@ -6,7 +6,7 @@ import com.sksamuel.scrimage.filter.BlurFilter
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
-import domain.entities.Block
+import domain.entities.{BlockCoordinates, ReferencesManager}
 
 import java.awt.Color
 import scala.util.Random
@@ -15,6 +15,12 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
+
+  println(ReferencesManager.population(1000).individuals.size)
+  println(ReferencesManager.population(1000).individuals)
+
+
+  /*
   // TODO: crear nueva imagen a partir de píxeles
   // TODO: IMPORTANTE ---> cuando haga crossover, si el pixel que quiero usar está ocupado buscar el primero libre
   // TODO: argb del pixel libre = -16777216
@@ -29,13 +35,13 @@ object CustomSsim extends App {
   println(a.size)
 
   for {
-    case Block(pixels) <- intoBlocks(reference).take(400)
+    case BlockCoordinates(pixels) <- intoBlocks(reference).take(400)
     pixel <- pixels
   } yield {
     newImage.setPixel(reference.pixel(pixel.x, pixel.y))
   }
 
-  def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[Block] = {
+  def intoBlocks(immutableImage: ImmutableImage, blockSize: Int = 11): List[BlockCoordinates] = {
     def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
       .from(immutableImage.pixels().map(dimension))
       .toList
@@ -98,4 +104,5 @@ object CustomSsim extends App {
   def structure(ref: ImmutableImage, comp: ImmutableImage) = (sigma(ref, comp) + c3) / (sigma(ref) * sigma(comp) + c3)
 
   def ssim(ref: ImmutableImage, comp: ImmutableImage) = luminance(ref, comp) * contrast(ref, comp) * structure(ref, comp)
+  */
 }
