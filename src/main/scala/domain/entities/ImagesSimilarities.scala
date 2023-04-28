@@ -136,7 +136,6 @@ object ReferencesManager {
   }
 
   def updatePixelsDictionary(blockCoordinates: BlockCoordinates, block: Block): BlockCoordinates = {
-    println(mutablePixelsDictionary.getOrElse(blockCoordinates.imageId, s"ERROR image id: ${blockCoordinates.imageId}"))
     mutablePixelsDictionary(blockCoordinates.imageId).updated(blockCoordinates.blockId, block.pixels)
     blockCoordinates
   }
