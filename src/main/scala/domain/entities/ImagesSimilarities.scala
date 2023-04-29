@@ -54,9 +54,7 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   lazy val mean: Double = block.mean
   lazy val standardDeviation: Double = block.standardDeviation
 
-  override def mutate: Gene = {
-    ReferencesManager.updatePixelsDictionary(this, block.mutate)
-  }
+  override def mutate: Gene = ReferencesManager.updatePixelsDictionary(this, block.mutate)
 
   override def toString: String = s"Block coordinates: $imageId $blockId"
 }
@@ -80,7 +78,7 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 }
 
 object ReferencesManager {
-  private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[List[Pixel]] = {
+  private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[Block] = {
     def dimensionOrderedIndexes(dimension: Pixel => Int): List[List[Int]] = Set
       .from(immutableImage.pixels().map(dimension))
       .toList
@@ -95,7 +93,7 @@ object ReferencesManager {
       blockY <- columns
       positionsBlock = blockX.flatMap(index => (1 to chunkSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
     } yield {
-      positionsBlock.map((x, y) => immutableImage.pixel(x, y))
+      Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
     }
   }
 
@@ -104,10 +102,10 @@ object ReferencesManager {
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
   )
 
-  var mutablePixelsDictionary: collection.mutable.Map[Int, Map[Int, List[Pixel]]] = collection.mutable.Map()
-  lazy val pixelsReferences: Map[Int, Map[Int, List[Pixel]]] = immutablePixelsDictionary(immutableImages.size)
+  var mutablePixelsDictionary: collection.mutable.Map[Int, Map[Int, Block]] = collection.mutable.Map()
+  lazy val pixelsReferences: Map[Int, Map[Int, Block]] = immutablePixelsDictionary(immutableImages.size)
 
-  private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, List[Pixel]]] = {
+  private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, Block]] = {
     val imagesPixels = immutableImages
       .map(immutableImage => intoPixelsChunks(immutableImage))
       .zip((0 until populationSize).grouped(populationSize / immutableImages.size))
@@ -118,8 +116,8 @@ object ReferencesManager {
       image.indices.flatMap(blockId => range.map(imageId => (imageId -> (blockId -> image(blockId)))))
     }).flatten
 
-    preliminaryDictionary.foldLeft(Map(): Map[Int, Map[Int, List[Pixel]]]) {(result, nextEntry) =>
-      val block: Map[Int, List[Pixel]] = result.getOrElse(nextEntry._1, Map())
+    preliminaryDictionary.foldLeft(Map(): Map[Int, Map[Int, Block]]) {(result, nextEntry) =>
+      val block: Map[Int, Block] = result.getOrElse(nextEntry._1, Map())
       result.updated(nextEntry._1, block.updated(nextEntry._2._1, nextEntry._2._2))
     }
   }
@@ -147,13 +145,12 @@ object ReferencesManager {
     blocksCoordinates.map(blockCoordinates => updatePixelsDictionary(blockCoordinates, blockCoordinates.block))
   }
 
-  def blockAt(coordinates: BlockCoordinates): Block = Block(mutablePixelsDictionary(coordinates.imageId)(coordinates.blockId))
+  def blockAt(coordinates: BlockCoordinates): Block = mutablePixelsDictionary(coordinates.imageId)(coordinates.blockId)
 
   def referencesBlocksAt(coordinates: BlockCoordinates): List[Block] = {
     pixelsReferences
       .values
-      .map(_.getOrElse(coordinates.blockId, List()))
-      .map(pixels => Block(pixels))
+      .map(_.getOrElse(coordinates.blockId, Block(List())))
       .toList
   }
 }
