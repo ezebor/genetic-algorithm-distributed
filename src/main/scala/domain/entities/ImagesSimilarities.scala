@@ -70,8 +70,7 @@ case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom
   }
 }
 
-// TODO NOTA: LO QUE DEBE ESTAR ROMPIENDO ES LA SELECCIÓN NATURAL; cuando elimino individuos, estoy perdiendo coordenadas ejecutables. Tengo que dejarlas pero pintarlas en blanco
-// TODO: además, asegurarme de que se actualiza la variable global luego de la selección natural
+// TODO NOTA: EL PROBLEMA NO ESTÁ EN LA SELECCIÓN NATURAL, TIENE QUE ESTAR EN EL CRUZAMIENTO Y EN COMO SE HACEN LOS COPY
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case aFrame: Success[Frame] => Image(aFrame)(customRandom)
@@ -102,7 +101,7 @@ object ReferencesManager {
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
   )
 
-  var mutablePixelsDictionary: collection.mutable.Map[Int, Map[Int, Block]] = collection.mutable.Map()
+  var mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   lazy val pixelsReferences: Map[Int, Map[Int, Block]] = immutablePixelsDictionary(immutableImages.size)
 
   private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, Block]] = {
@@ -123,7 +122,16 @@ object ReferencesManager {
   }
 
   def population(populationSize: Int): Population = {
-    mutablePixelsDictionary.addAll(immutablePixelsDictionary(populationSize))
+    val immutableDictionary = immutablePixelsDictionary(populationSize)
+    immutableDictionary.keys.foreach { case imageId =>
+      if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+
+      val blocks = immutableDictionary(imageId)
+      blocks.foreach { case (blockId, block) =>
+        mutablePixelsDictionary(imageId) += (blockId -> block)
+      }
+    }
+
     Population(
       (for {
         imageId <- mutablePixelsDictionary.keys
@@ -137,7 +145,7 @@ object ReferencesManager {
   }
 
   def updatePixelsDictionary(blockCoordinates: BlockCoordinates, block: Block): BlockCoordinates = {
-    mutablePixelsDictionary(blockCoordinates.imageId).updated(blockCoordinates.blockId, block.pixels)
+    mutablePixelsDictionary(blockCoordinates.imageId) += (blockCoordinates.blockId -> block)
     blockCoordinates
   }
 
