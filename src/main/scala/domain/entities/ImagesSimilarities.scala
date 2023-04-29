@@ -106,13 +106,14 @@ object ReferencesManager {
   lazy val pixelsReferences: Map[Int, Map[Int, List[Pixel]]] = immutablePixelsDictionary(immutableImages.size)
 
   private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, List[Pixel]]] = {
-    val imagesPixels = immutableImages.map(immutableImage => intoPixelsChunks(immutableImage))
+    val imagesPixels = immutableImages
+      .map(immutableImage => intoPixelsChunks(immutableImage))
+      .zip((0 until populationSize).grouped(populationSize / immutableImages.size))
 
     val preliminaryDictionary = (for {
-      image <- imagesPixels
-      aRange <- (0 until populationSize).grouped(populationSize / imagesPixels.size)
+      (image, range) <- imagesPixels
     } yield {
-      image.indices.flatMap(blockId => aRange.map(imageId => (imageId -> (blockId -> image(blockId)))))
+      image.indices.flatMap(blockId => range.map(imageId => (imageId -> (blockId -> image(blockId)))))
     }).flatten
 
     preliminaryDictionary.foldLeft(Map(): Map[Int, Map[Int, List[Pixel]]]) {(result, nextEntry) =>
