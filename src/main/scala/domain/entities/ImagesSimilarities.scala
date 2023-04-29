@@ -72,6 +72,8 @@ case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom
   }
 }
 
+// TODO NOTA: LO QUE DEBE ESTAR ROMPIENDO ES LA SELECCIÓN NATURAL; cuando elimino individuos, estoy perdiendo coordenadas ejecutables. Tengo que dejarlas pero pintarlas en blanco
+// TODO: además, asegurarme de que se actualiza la variable global luego de la selección natural
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case aFrame: Success[Frame] => Image(aFrame)(customRandom)
