@@ -17,14 +17,16 @@ object CustomSsim extends App {
   
   val population = ReferencesManager.population(10)
 
-  val population3 = population.crossoverWith(population, 0.5)
+  val population3 = population
+    .crossoverWith(population.crossoverWith(population.crossoverWith(population, 0.5), 0.5), 0.5)
+    .mutate(0.5)
 
-  population3.individuals.foreach {case Image(Success(Frame(blocksCoordinates))) =>
+  population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(500, 500)
     blocksCoordinates.foreach { blockCoordinates =>
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
-    newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${blocksCoordinates.head.imageId}.png")
+    newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
   }
 
 

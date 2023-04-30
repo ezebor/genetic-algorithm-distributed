@@ -54,19 +54,19 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   lazy val mean: Double = block.mean
   lazy val standardDeviation: Double = block.standardDeviation
 
-  override def mutate: Gene = ReferencesManager.updatePixelsDictionary(this, block.mutate)
+  override def mutate: Gene = {
+    ReferencesManager.updatePixelsDictionary(imageId, blockId, block.mutate)
+    BlockCoordinates(imageId, blockId)
+  }
 
   override def toString: String = s"Block coordinates: $imageId $blockId"
 }
 
-// TODO: EL FRAME TIENE QUE TENER IMAGE ID --> cuando recibe el copyWith, tengo que agarrar los bloques y actualizarlos en su imagen, SIN CAMBIAR EL IMAGE ID
-// TODO: ASI COMO ESTA ESTOY DEJANDO TODO COMO ESTÁ, DADO QUE CADA COORDENADA AFECTA SIEMPRE A LA MISMA IMAGEN, INDEPENDIENTEMENTE DEL FRAME QUE LA CONTENGA
-case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
+case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocksCoordinates: List[BlockCoordinates] =>
-      // TODO: esto está bien, va a funcionar cuando prohíba que una imagen pueda modificar otras imágenes siguiendo solo las coordenadas del GEN
-      aBlocksCoordinates.foreach(aBlockCoordinates => ReferencesManager.updatePixelsDictionary(aBlockCoordinates, aBlockCoordinates.block))
-      Frame(ReferencesManager.refreshFromPixelsDictionary(blockCoordinates))
+      aBlocksCoordinates.foreach(aBlockCoordinates => ReferencesManager.updatePixelsDictionary(imageId, aBlockCoordinates.blockId, aBlockCoordinates.block))
+      Frame(imageId, ReferencesManager.blocksCoordinatesOf(imageId))
 
   protected override def calculateFitness: Double = blockCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     val referencesBlocks: List[Block] = ReferencesManager.referencesBlocksAt(blockCoordinates)
@@ -74,10 +74,10 @@ case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom
   }
 }
 
-// TODO NOTA: EL PROBLEMA NO ESTÁ EN LA SELECCIÓN NATURAL, TIENE QUE ESTAR EN EL CRUZAMIENTO Y EN COMO SE HACEN LOS COPY
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
-    case aFrame: Success[Frame] => Image(aFrame)
+    case Success(Frame(imageId, _)) =>
+      Image(Success(Frame(imageId, ReferencesManager.blocksCoordinatesOf(imageId))))
 }
 
 object ReferencesManager {
@@ -143,18 +143,21 @@ object ReferencesManager {
         val blocks: List[BlockCoordinates] = mutablePixelsDictionary(imageId)
           .toList
           .map((blockId, _) => BlockCoordinates(imageId, blockId))
-        Image(Success(Frame(blocks)))
+        Image(Success(Frame(imageId, blocks)))
       }).toList
     )
   }
 
-  def updatePixelsDictionary(blockCoordinates: BlockCoordinates, block: Block): BlockCoordinates = {
-    mutablePixelsDictionary(blockCoordinates.imageId)(blockCoordinates.blockId) = block
-    BlockCoordinates(blockCoordinates.imageId, blockCoordinates.blockId)
+  def updatePixelsDictionary(imageId: Int, blockId: Int, block: Block): BlockCoordinates = {
+    mutablePixelsDictionary(imageId)(blockId) = block
+    BlockCoordinates(imageId, blockId)
   }
 
-  def refreshFromPixelsDictionary(blocksCoordinates: List[BlockCoordinates]): List[BlockCoordinates] = {
-    blocksCoordinates.map(aBlockCoordinates => BlockCoordinates(aBlockCoordinates.imageId, aBlockCoordinates.blockId))
+  def blocksCoordinatesOf(imageId: Int): List[BlockCoordinates] = {
+    mutablePixelsDictionary(imageId)
+      .keys
+      .map(blockId => BlockCoordinates(imageId, blockId))
+      .toList
   }
 
   def blockAt(coordinates: BlockCoordinates): Block = mutablePixelsDictionary(coordinates.imageId)(coordinates.blockId)

@@ -21,13 +21,12 @@ class SolutionsPrinter extends Actor with ActorLogging {
       def online: Receive = {
         case Population(images: List[Image]) =>
           images
-            .zipWithIndex
-            .map { case (image, index) =>
+            .map { image =>
               val newImage = ImmutableImage.create(500, 500)
               image.frame match
-                case Success(Frame(blockCoordinates)) =>
+                case Success(Frame(imageId, blockCoordinates)) =>
                   blockCoordinates.flatMap(coordinates => coordinates.block.pixels).foreach(pixel => newImage.setPixel(pixel))
-                  newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
+                  newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
             }
         case solutions: Population =>
           log.info(s"Found solutions: $solutions")

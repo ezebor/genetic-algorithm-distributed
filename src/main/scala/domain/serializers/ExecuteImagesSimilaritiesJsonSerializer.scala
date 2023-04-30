@@ -26,9 +26,13 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   }
 
   protected override def deserializeIndividual = (coordinates: List[JsValue]) => {
-    Image(Success(Frame(
+    val blocksCoordinates: List[BlockCoordinates] =
       for case blockCoordinates: JsObject <- coordinates
-        yield buildBlockCoordinates(blockCoordinates)
+      yield buildBlockCoordinates(blockCoordinates)
+
+    Image(Success(Frame(
+      blocksCoordinates.head.imageId,
+      blocksCoordinates
     )))
   }
 }

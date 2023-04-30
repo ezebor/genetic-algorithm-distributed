@@ -112,6 +112,9 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     })
   }
 
+  // TODO: problema: la mutación no está agregando los nuevos individuos al mapa mutable
+  // TODO: solución: convertir la population en trait, y expandirla en el caso de las imágenes.
+  // TODO: El mutate dejarlo igual, pero agregar un método para agregar nuevos individuos a la population. Ese método debiera actualizar el mapa y traerse todo up to date
   def mutate(mutationLikelihood: Double): Population = {
     val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
     Population(
