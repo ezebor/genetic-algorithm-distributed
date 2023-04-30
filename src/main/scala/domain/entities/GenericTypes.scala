@@ -108,7 +108,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-      individual.crossoverWith(couple, crossoverLikelihood: Double)
+      individual.crossoverWith(couple, crossoverLikelihood)
     })
   }
 

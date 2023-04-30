@@ -59,10 +59,14 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   override def toString: String = s"Block coordinates: $imageId $blockId"
 }
 
+// TODO: EL FRAME TIENE QUE TENER IMAGE ID --> cuando recibe el copyWith, tengo que agarrar los bloques y actualizarlos en su imagen, SIN CAMBIAR EL IMAGE ID
+// TODO: ASI COMO ESTA ESTOY DEJANDO TODO COMO ESTÁ, DADO QUE CADA COORDENADA AFECTA SIEMPRE A LA MISMA IMAGEN, INDEPENDIENTEMENTE DEL FRAME QUE LA CONTENGA
 case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocksCoordinates: List[BlockCoordinates] =>
-      Frame(ReferencesManager.updatePixelsDictionary(aBlocksCoordinates))(customRandom)
+      // TODO: esto está bien, va a funcionar cuando prohíba que una imagen pueda modificar otras imágenes siguiendo solo las coordenadas del GEN
+      aBlocksCoordinates.foreach(aBlockCoordinates => ReferencesManager.updatePixelsDictionary(aBlockCoordinates, aBlockCoordinates.block))
+      Frame(ReferencesManager.refreshFromPixelsDictionary(blockCoordinates))
 
   protected override def calculateFitness: Double = blockCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     val referencesBlocks: List[Block] = ReferencesManager.referencesBlocksAt(blockCoordinates)
@@ -73,7 +77,7 @@ case class Frame(blockCoordinates: List[BlockCoordinates])(implicit customRandom
 // TODO NOTA: EL PROBLEMA NO ESTÁ EN LA SELECCIÓN NATURAL, TIENE QUE ESTAR EN EL CRUZAMIENTO Y EN COMO SE HACEN LOS COPY
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
-    case aFrame: Success[Frame] => Image(aFrame)(customRandom)
+    case aFrame: Success[Frame] => Image(aFrame)
 }
 
 object ReferencesManager {
@@ -145,12 +149,12 @@ object ReferencesManager {
   }
 
   def updatePixelsDictionary(blockCoordinates: BlockCoordinates, block: Block): BlockCoordinates = {
-    mutablePixelsDictionary(blockCoordinates.imageId) += (blockCoordinates.blockId -> block)
-    blockCoordinates
+    mutablePixelsDictionary(blockCoordinates.imageId)(blockCoordinates.blockId) = block
+    BlockCoordinates(blockCoordinates.imageId, blockCoordinates.blockId)
   }
 
-  def updatePixelsDictionary(blocksCoordinates: List[BlockCoordinates]): List[BlockCoordinates] = {
-    blocksCoordinates.map(blockCoordinates => updatePixelsDictionary(blockCoordinates, blockCoordinates.block))
+  def refreshFromPixelsDictionary(blocksCoordinates: List[BlockCoordinates]): List[BlockCoordinates] = {
+    blocksCoordinates.map(aBlockCoordinates => BlockCoordinates(aBlockCoordinates.imageId, aBlockCoordinates.blockId))
   }
 
   def blockAt(coordinates: BlockCoordinates): Block = mutablePixelsDictionary(coordinates.imageId)(coordinates.blockId)
