@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.routing.{FromConfig, RoundRobinGroup, RoundRobinPool}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
-import app.MasterRouteTree
+import app.{ExecutionScript, MasterRouteTree}
 import com.typesafe.config.ConfigFactory
 import domain.{Execute, PrinterOnline}
 import domain.Operators.*
@@ -50,7 +50,7 @@ class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRoute
       val master: ActorRef = testActorSystem.actorOf(EvolutionMaster.props(), "evolutionMaster")
       val solutionsPrinter: TestProbe = TestProbe("solutionsPrinter")(testActorSystem)
       val router: ActorRef = testActorSystem.actorOf(RoundRobinPool(50).props(EvolutionWorker.props()), "router")
-      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 50, "Basket")
+      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 50, ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME)
 
       Post("/api/evolution", EvolutionRequestBody()) ~> routesTree ~> check {
         status shouldBe StatusCodes.Created
@@ -70,7 +70,7 @@ class BasketsEvolutionSpec extends AnyWordSpec with Matchers with ScalatestRoute
       val master: ActorRef = testActorSystem.actorOf(EvolutionMaster.props(), "evolutionMaster")
       val solutionsPrinter: TestProbe = TestProbe("solutionsPrinter")(testActorSystem)
       val router: ActorRef = testActorSystem.actorOf(RoundRobinPool(100).props(EvolutionWorker.props()), "router")
-      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 100, "Basket")
+      val routesTree = MasterRouteTree(generationsManager, master, router, solutionsPrinter.ref, 50, ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME)
 
       Post("/api/evolution", EvolutionRequestBody()) ~> routesTree ~> check {
         status shouldBe StatusCodes.Created

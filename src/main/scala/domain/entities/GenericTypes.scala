@@ -1,6 +1,7 @@
 package domain.entities
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import app.ExecutionScript
 import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
@@ -103,8 +104,10 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     )
   }
 
+  // TODO: extender en la population de imágenes. El mapa se tiene que borrar y se tienen que insertar los elegidos
   def selectStrongerPopulation(size: Int): Population = randomSubPopulation(size)
 
+  // TODO: extender en la population de imágenes. Los children se tienen que agregar al mapa global
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     Population(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
@@ -191,11 +194,11 @@ trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJson
 
 object RandomPopulation {
   def apply(populationSize: Int, individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
-    case "Basket" => Population(
+    case ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME => Population(
       (1 to populationSize).map(i => Basket(
         Success(ItemsList(
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
-    case "ImagesSimilarities" => ReferencesManager.population(populationSize)
+    case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => ReferencesManager.population(populationSize)
 }

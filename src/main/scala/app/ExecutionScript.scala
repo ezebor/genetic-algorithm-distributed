@@ -1,11 +1,11 @@
 package app
 
 object ExecutionScript {
-  private val BASKET_INDIVIDUAL_TYPE_NAME = "Basket"
-  private val BASKET_SERIALIZATION_CONFIG = "executeBasketSerializationConfig"
+  val BASKET_INDIVIDUAL_TYPE_NAME = "Basket"
+  val BASKET_SERIALIZATION_CONFIG = "executeBasketSerializationConfig"
 
-  private val IMAGES_SIMILARITIES_TYPE_NAME = "ImagesSimilarities"
-  private val IMAGES_SIMILARITIES_SERIALIZATION_CONFIG = "executeImagesSimilaritiesSerializationConfig"
+  val IMAGES_SIMILARITIES_TYPE_NAME = "ImagesSimilarities"
+  val IMAGES_SIMILARITIES_SERIALIZATION_CONFIG = "executeImagesSimilaritiesSerializationConfig"
   
   val INDIVIDUAL_TYPE_NAME: String = IMAGES_SIMILARITIES_TYPE_NAME
   val SERIALIZATION_CONFIG: String = IMAGES_SIMILARITIES_SERIALIZATION_CONFIG

@@ -54,6 +54,7 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   lazy val mean: Double = block.mean
   lazy val standardDeviation: Double = block.standardDeviation
 
+  // TODO: no actualizar mapa global (eso lo hace Population)
   override def mutate: Gene = {
     ReferencesManager.updatePixelsDictionary(imageId, blockId, block.mutate)
     BlockCoordinates(imageId, blockId)
@@ -63,6 +64,7 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
 }
 
 case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
+  // TODO: no actualizar mapa global (eso lo hace Population)
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocksCoordinates: List[BlockCoordinates] =>
       aBlocksCoordinates.foreach(aBlockCoordinates => ReferencesManager.updatePixelsDictionary(imageId, aBlockCoordinates.blockId, aBlockCoordinates.block))
@@ -75,6 +77,7 @@ case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implici
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
+  // TODO: no actualizar mapa global (eso lo hace Population)
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case Success(Frame(imageId, _)) =>
       Image(Success(Frame(imageId, ReferencesManager.blocksCoordinatesOf(imageId))))
