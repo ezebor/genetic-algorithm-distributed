@@ -36,17 +36,19 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   implicit val standardRandom: Random = new Random()
 
-  def buildPopulation(individuals: List[Individual]) = new Population(individuals) {
-    override def copyWith(newIndividuals: List[Individual]): Population = this
+  def buildPopulation(individuals: List[Individual]): Population = new Population(individuals) {
+    override def copyWith(newIndividuals: List[Individual]): Population = buildPopulation(newIndividuals)
   }
 
-  def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = buildPopulation((1 to size).map { _ =>
+  def buildRandomPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = new Population((1 to size).map { _ =>
     buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, fitnessValue)(customRandom)))
-  }.toList)
+  }.toList) {
+    override def copyWith(newIndividuals: List[Individual]): Population = buildPopulation(newIndividuals)
+  }
 
   "Population" should {
     "build an accumulated fitness list with the same size than the individuals list when all the individuals have fitness greater than 0" in {
-      val population = buildPopulation(POPULATION_SIZE, 10)
+      val population = buildRandomPopulation(POPULATION_SIZE, 10)
       population.accumulatedFitness.last._2 should be(1)
       population.accumulatedFitness.size should be(population.individuals.size)
       population.accumulatedFitness.size should be(POPULATION_SIZE)
@@ -58,13 +60,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build an empty accumulated fitness list with the individuals list is empty" in {
-      val population = buildPopulation(0)
+      val population = buildRandomPopulation(0)
       assert(population.individuals.isEmpty)
       assert(population.accumulatedFitness.isEmpty)
     }
 
     "build an accumulated fitness list fewer than the individuals list when some individuals have fitness equals to 0" in {
-      val population = buildPopulation(buildPopulation(POPULATION_SIZE / 2).individuals ::: buildPopulation(POPULATION_SIZE / 2, 0).individuals)
+      val population = buildPopulation(buildRandomPopulation(POPULATION_SIZE / 2).individuals ::: buildRandomPopulation(POPULATION_SIZE / 2, 0).individuals)
 
       population.accumulatedFitness.last._2 should be(1)
       population.accumulatedFitness.size should be(population.individuals.size / 2)
@@ -79,7 +81,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "find an individual whose accumulated fitness includes a given fitness" in {
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
       population
         .individuals
         .zipWithIndex
@@ -95,7 +97,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "create an empty individual with a failure chromosome when the population is empty and tries to find an individual" in {
-      val population = buildPopulation(0)
+      val population = buildRandomPopulation(0)
       val hasFailureChromosome: Boolean = population.findIndividualWhoseAccumulatedFitnessWindowIncludes(10).getTryChromosome match
         case Failure(EmptyAccumulatedFitnessListException(population)) => true
         case _ => false
@@ -104,7 +106,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "create an empty individual with a failure chromosome when all the individuals of the population are unfit and tries to find an individual" in {
-      val population = buildPopulation(POPULATION_SIZE, 0)
+      val population = buildRandomPopulation(POPULATION_SIZE, 0)
 
       population.individuals.size should be(POPULATION_SIZE)
       population.accumulatedFitness.size should be(0)
@@ -118,7 +120,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "split up individuals list into chunks of populations whose individuals re-grouped are the original population" in {
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
       val chunks = population.intoChunks(CHUNKS_SIZE)
       chunks.size should be(POPULATION_SIZE / CHUNKS_SIZE + 1)
 
@@ -127,13 +129,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "create an empty chunk when the populatioon is empty" in {
-      val population = buildPopulation(0)
+      val population = buildRandomPopulation(0)
       val chunks = population.intoChunks(CHUNKS_SIZE)
       chunks.size should be(0)
     }
 
     "create a chunk with one population composed by one individual with a failure chromosome when the chunk size is 0" in {
-      val population: Population = buildPopulation(POPULATION_SIZE)
+      val population: Population = buildRandomPopulation(POPULATION_SIZE)
 
       val failurePopulation: List[Population] = population.intoChunks(0)
       failurePopulation.size should be(1)
@@ -150,7 +152,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 1
       }
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
 
       population.randomSubPopulation(0).individuals should be(List())
       population.randomSubPopulation(1).individuals.head should be(population.individuals.last)
@@ -162,7 +164,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0
       }
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
 
       population.randomSubPopulation(0).individuals should be(List())
       population.randomSubPopulation(1).individuals.head should be(population.individuals.head)
@@ -171,13 +173,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build an empty sub population when the population is empty" in {
-      buildPopulation(0).randomSubPopulation(0).individuals should be (List())
-      buildPopulation(0).randomSubPopulation(1).individuals should be (List())
+      buildRandomPopulation(0).randomSubPopulation(0).individuals should be (List())
+      buildRandomPopulation(0).randomSubPopulation(1).individuals should be (List())
     }
 
     "build an empty sub population when the individuals of the population are unfit" in {
-      buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(0).individuals should be (List())
-      buildPopulation(POPULATION_SIZE, 0).randomSubPopulation(1).individuals should be (List())
+      buildRandomPopulation(POPULATION_SIZE, 0).randomSubPopulation(0).individuals should be (List())
+      buildRandomPopulation(POPULATION_SIZE, 0).randomSubPopulation(1).individuals should be (List())
     }
 
     "build an empty sub population when an intermediate accumulated fitness list is empty" in {
@@ -201,8 +203,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         override def nextDouble(): Double = 0
         override def nextInt(n: Int): Int = 100
       }
-      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
-      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationA = buildRandomPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationB = buildRandomPopulation(POPULATION_SIZE / 2)
 
       val children = parentsPopulationA.crossoverWith(parentsPopulationB, CROSSOVER_LIKELIHOOD)
 
@@ -224,8 +226,8 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
         override def nextDouble(): Double = 0
         override def nextInt(n: Int): Int = 0
       }
-      val parentsPopulationA = buildPopulation(POPULATION_SIZE / 2)
-      val parentsPopulationB = buildPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationA = buildRandomPopulation(POPULATION_SIZE / 2)
+      val parentsPopulationB = buildRandomPopulation(POPULATION_SIZE / 2)
 
       val children = parentsPopulationA.crossoverWith(parentsPopulationB, CROSSOVER_LIKELIHOOD)
 
@@ -244,7 +246,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 100
       }
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
 
       population.mutate(MUTATION_LIKELIHOOD).individuals should be(List())
     }
@@ -253,7 +255,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextInt(n: Int): Int = 0
       }
-      val population = buildPopulation(POPULATION_SIZE)
+      val population = buildRandomPopulation(POPULATION_SIZE)
 
       population.mutate(MUTATION_LIKELIHOOD).individuals.size should be(population.individuals.size)
     }

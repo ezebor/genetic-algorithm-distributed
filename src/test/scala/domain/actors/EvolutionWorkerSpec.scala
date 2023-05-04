@@ -67,7 +67,7 @@ class EvolutionWorkerSpec
       val executeMessage = expectMsgType[Execute]
 
       executeMessage.operatorName should be(ADD_POPULATION)
-      assert(executeMessage.population.individuals.size <= (POPULATION_SIZE * (MUTATION_LIKELIHOOD + 0.03)).toInt)
+      assert(executeMessage.population.individuals.size <= (POPULATION_SIZE * MUTATION_LIKELIHOOD).toInt)
     }
   }
 }
