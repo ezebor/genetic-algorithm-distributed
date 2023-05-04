@@ -4,7 +4,7 @@ import akka.actor.*
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import domain.PrinterOnline
-import domain.entities.{BlockCoordinates, Frame, Image, Population}
+import domain.entities.{BasketsPopulation, BlockCoordinates, Frame, Image, ImagesPopulation, Population}
 
 import scala.util.Success
 
@@ -19,7 +19,7 @@ class SolutionsPrinter extends Actor with ActorLogging {
   def offline: Receive = {
     case PrinterOnline => {
       def online: Receive = {
-        case Population(images: List[Image]) =>
+        case ImagesPopulation(images) =>
           images
             .map { image =>
               val newImage = ImmutableImage.create(500, 500)
@@ -28,8 +28,8 @@ class SolutionsPrinter extends Actor with ActorLogging {
                   blockCoordinates.flatMap(coordinates => coordinates.block.pixels).foreach(pixel => newImage.setPixel(pixel))
                   newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
             }
-        case solutions: Population =>
-          log.info(s"Found solutions: $solutions")
+        case BasketsPopulation(baskets) =>
+          log.info(s"Found solutions: $baskets")
       }
 
       context.become(online)

@@ -40,7 +40,10 @@ object AlgorithmConfig {
   implicit val random: Random = new Random()
 }
 
-case class Population(individuals: List[Individual])(implicit random: Random) {
+trait Population(internalIndividuals: List[Individual])(implicit random: Random) {
+  def copyWith(newIndividuals: List[Individual]): Population
+  def individuals: List[Individual] = internalIndividuals
+
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
@@ -79,7 +82,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
     if(chunkSize == 0) List(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
     else individuals
       .grouped(chunkSize)
-      .map(anIndividuals => Population(anIndividuals))
+      .map(anIndividuals => copyWith(anIndividuals))
       .toList
 
   def randomSubPopulation(size: Int): Population = {
@@ -90,8 +93,8 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
         val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
 
         recRandomSubPopulation(
-          Population(sourcePopulation.individuals.filter(_ != foundIndividual)),
-          Population(sinkPopulation.individuals ::: List(foundIndividual)),
+          copyWith(sourcePopulation.individuals.filter(_ != foundIndividual)),
+          copyWith(sinkPopulation.individuals ::: List(foundIndividual)),
           aSize - 1
         )
       }
@@ -99,7 +102,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 
     recRandomSubPopulation(
       this,
-      Population(List()),
+      copyWith(List()),
       size
     )
   }
@@ -109,7 +112,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
 
   // TODO: extender en la population de imágenes. Los children se tienen que agregar al mapa global
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
-    Population(individuals.flatMap { individual =>
+    copyWith(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
       individual.crossoverWith(couple, crossoverLikelihood)
     })
@@ -120,7 +123,7 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
   // TODO: El mutate dejarlo igual, pero agregar un método para agregar nuevos individuos a la population. Ese método debiera actualizar el mapa y traerse todo up to date
   def mutate(mutationLikelihood: Double): Population = {
     val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
-    Population(
+    copyWith(
       individualsToMutate.map(individual => individual.mutate)
     )
   }
@@ -139,8 +142,6 @@ case class Population(individuals: List[Individual])(implicit random: Random) {
       else secondIndividual
     }
   }
-
-  def copyWith(newIndividuals: List[Individual]): Population = Population(newIndividuals)(random)
 }
 
 object Individual {
@@ -194,11 +195,15 @@ trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJson
 
 object RandomPopulation {
   def apply(populationSize: Int, individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
-    case ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME => Population(
+    case ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME => BasketsPopulation(
       (1 to populationSize).map(i => Basket(
         Success(ItemsList(
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
     case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => ReferencesManager.population(populationSize)
+}
+
+case object EmptyPopulation extends Population(List()) {
+  override def copyWith(newIndividuals: List[Individual]): Population = this
 }

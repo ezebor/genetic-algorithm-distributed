@@ -31,7 +31,7 @@ class EvolutionMaster() extends Actor with ActorLogging {
       def online: Receive = { message =>
         def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
           case Execute(ADD_POPULATION, newPopulation: Population) =>
-            val finalPopulation = Population(evolvedPopulation.individuals ::: newPopulation.individuals)
+            val finalPopulation = evolvedPopulation.copyWith(evolvedPopulation.individuals ::: newPopulation.individuals)
             if (pendingWorkers == 1) {
               context.become(online)
               self ! Execute(nextOperatorName, finalPopulation)
@@ -47,7 +47,7 @@ class EvolutionMaster() extends Actor with ActorLogging {
             manager ! GenerationBuilt(population)
           case Execute(currentOperatorName: String, population: Population) =>
             val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
-              case NATURAL_SELECTION => (Population(List()), CROSSOVER)
+              case NATURAL_SELECTION => (population.copyWith(List()), CROSSOVER)
               case CROSSOVER => (population, MUTATION)
               case MUTATION => (population, STOP)
 

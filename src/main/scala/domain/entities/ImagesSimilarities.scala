@@ -139,7 +139,7 @@ object ReferencesManager {
       }
     }
 
-    Population(
+    ImagesPopulation(
       (for {
         imageId <- mutablePixelsDictionary.keys
       } yield {
@@ -171,4 +171,9 @@ object ReferencesManager {
       .map(_.getOrElse(coordinates.blockId, Block(List())))
       .toList
   }
+}
+
+case class ImagesPopulation(images: List[Image]) extends Population(images) {
+  override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
+    case images: List[Image] => ImagesPopulation(images)
 }

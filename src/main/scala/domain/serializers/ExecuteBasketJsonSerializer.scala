@@ -13,6 +13,9 @@ class ExecuteBasketJsonSerializer extends ExecuteJsonSerializer {
     case Basket(Success(itemsList)) => itemsList.items
   }
 
+  override def createPopulation(individuals: List[Individual]): Population = individuals match
+    case baskets: List[Basket] => BasketsPopulation(baskets)
+
   protected override def serializeGene = (gene: Gene) => gene match {
     case Item(name, price, satisfaction) => JsObject(
       "name" -> JsString(name),

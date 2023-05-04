@@ -36,9 +36,13 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
   implicit val standardRandom: Random = new Random()
 
-  def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = Population((1 to size).map { _ =>
+  def buildPopulation(individuals: List[Individual]) = new Population(individuals) {
+    override def copyWith(newIndividuals: List[Individual]): Population = this
+  }
+
+  def buildPopulation(size: Int, fitnessValue: Double = 10)(implicit customRandom: Random = standardRandom): Population = buildPopulation((1 to size).map { _ =>
     buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, fitnessValue)(customRandom)))
-  }.toList)(customRandom)
+  }.toList)
 
   "Population" should {
     "build an accumulated fitness list with the same size than the individuals list when all the individuals have fitness greater than 0" in {
@@ -60,7 +64,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     }
 
     "build an accumulated fitness list fewer than the individuals list when some individuals have fitness equals to 0" in {
-      val population = Population(buildPopulation(POPULATION_SIZE / 2).individuals ::: buildPopulation(POPULATION_SIZE / 2, 0).individuals)
+      val population = buildPopulation(buildPopulation(POPULATION_SIZE / 2).individuals ::: buildPopulation(POPULATION_SIZE / 2, 0).individuals)
 
       population.accumulatedFitness.last._2 should be(1)
       population.accumulatedFitness.size should be(population.individuals.size / 2)
@@ -180,7 +184,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
       implicit case object CustomRandom extends Random {
         override def nextDouble(): Double = 0.5
       }
-      val population = Population(List(
+      val population = buildPopulation(List(
         buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, 0))),
         buildIndividual(Success(buildChromosome(buildDefaultListOfGenes, 0))),
         buildIndividual(Success(buildChromosome(buildDefaultListOfGenes)))

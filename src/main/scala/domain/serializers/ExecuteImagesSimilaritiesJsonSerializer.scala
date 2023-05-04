@@ -14,6 +14,9 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
     case Image(Success(frame)) => frame.getGenes
   }
 
+  override def createPopulation(individuals: List[Individual]): Population = individuals match
+    case images: List[Image] => ImagesPopulation(images)
+
   protected override def serializeGene = (gene: Gene) => gene match {
     case BlockCoordinates(imageId, blockId) => JsObject(
       "imageId" -> JsNumber(imageId),

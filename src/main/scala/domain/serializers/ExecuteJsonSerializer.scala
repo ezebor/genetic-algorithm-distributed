@@ -11,6 +11,7 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
   protected def chromosomeOf: Individual => List[Gene]
   protected def serializeGene: Gene => JsValue
   protected def deserializeIndividual: List[JsValue] => Individual
+  protected def createPopulation(individuals: List[Individual]): Population
 
   def write(command: Execute) = command match {
     case Execute(operatorName: String, population: Population) =>
@@ -38,7 +39,7 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
     value.asJsObject.getFields("operatorName", "population") match {
       case Seq(JsString(operatorName), JsArray(population)) =>
         Execute(operatorName,
-          Population(
+          createPopulation(
             for {
               case chromosome: JsValue <- population.toList
               case JsArray(genes) <- chromosome.asJsObject.getFields("chromosome")
