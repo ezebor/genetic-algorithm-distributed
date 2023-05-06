@@ -186,6 +186,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
 
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     // TODO: generar los children a partir de los padres para que no queden huecos negros en los children
+    // TODO: recuperar al padre del image id que viene en el blockCoordinate
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
       case children: ImagesPopulation => {
         children.copyWith(
