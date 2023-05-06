@@ -84,6 +84,7 @@ object ReferencesManager {
       .sortWith((a, b) => a <= b)
       .grouped(chunkSize).toList
 
+    // TODO: optimizar usando for comprehension con tuplas, evitando recorrer 2 veces los píxeles de la imagen con dimensionOrderedIndexes (que devuelva la tupla (x, y))
     val rows: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.x)
     val columns: List[List[Int]] = dimensionOrderedIndexes(pixel => pixel.y)
 
@@ -126,6 +127,7 @@ object ReferencesManager {
     }
   }
 
+  // TODO: optimizar
   def population(populationSize: Int): Population = {
     val immutableDictionary = immutablePixelsDictionary(populationSize)
     immutableDictionary.keys.foreach { case imageId =>
@@ -183,6 +185,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   }
 
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
+    // TODO: generar los children a partir de los padres para que no queden huecos negros en los children
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
       case children: ImagesPopulation => {
         children.copyWith(

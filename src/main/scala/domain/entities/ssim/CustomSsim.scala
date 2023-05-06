@@ -17,7 +17,7 @@ object CustomSsim extends App {
 
   val population = ReferencesManager.population(10)
   val population3 = population.crossoverWith(population, 0.5)
-    //.mutate(0.5)
+    .mutate(0.5)
 
 
   population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
