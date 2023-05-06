@@ -14,12 +14,12 @@ import scala.util.{Random, Success}
 object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
-  
-  val population = ReferencesManager.population(10)
 
+  val population = ReferencesManager.population(10)
+  println(population.individuals.size)
   val population3 = population
-    .crossoverWith(population.crossoverWith(population.crossoverWith(population, 0.5), 0.5), 0.5)
-    .mutate(0.5)
+  //  .crossoverWith(population, 0.5)//.crossoverWith(population.crossoverWith(population, 0.5), 0.5), 0.5)
+    //.mutate(0.5)
 
   population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(500, 500)

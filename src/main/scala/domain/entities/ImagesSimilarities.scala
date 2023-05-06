@@ -54,21 +54,15 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   lazy val mean: Double = block.mean
   lazy val standardDeviation: Double = block.standardDeviation
 
-  // TODO: no actualizar mapa global (eso lo hace Population)
-  override def mutate: Gene = {
-    ReferencesManager.updatePixelsDictionary(imageId, blockId, block.mutate)
-    BlockCoordinates(imageId, blockId)
-  }
+  override def mutate: Gene = BlockCoordinates(imageId, blockId)
 
   override def toString: String = s"Block coordinates: $imageId $blockId"
 }
 
 case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
-  // TODO: no actualizar mapa global (eso lo hace Population)
   override def copyWith(genes: List[Gene]): Chromosome = genes match
-    case aBlocksCoordinates: List[BlockCoordinates] =>
-      aBlocksCoordinates.foreach(aBlockCoordinates => ReferencesManager.updatePixelsDictionary(imageId, aBlockCoordinates.blockId, aBlockCoordinates.block))
-      Frame(imageId, ReferencesManager.blocksCoordinatesOf(imageId))
+    case aBlocksCoordinates: List[BlockCoordinates] => Frame(imageId, aBlocksCoordinates.map(aBlockCoordinates => BlockCoordinates(imageId, aBlockCoordinates.blockId)))
+
 
   protected override def calculateFitness: Double = blockCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     val referencesBlocks: List[Block] = ReferencesManager.referencesBlocksAt(blockCoordinates)
@@ -77,10 +71,9 @@ case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implici
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
-  // TODO: no actualizar mapa global (eso lo hace Population)
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
-    case Success(Frame(imageId, _)) =>
-      Image(Success(Frame(imageId, ReferencesManager.blocksCoordinatesOf(imageId))))
+    case Success(Frame(imageId, blocksCoordinates)) =>
+      Image(Success(Frame(imageId, blocksCoordinates)))
 }
 
 object ReferencesManager {
@@ -110,21 +103,26 @@ object ReferencesManager {
 
   var mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   lazy val pixelsReferences: Map[Int, Map[Int, Block]] = immutablePixelsDictionary(immutableImages.size)
+  var currentId: Int = 1
+  def nextId: Unit = currentId += 1
 
   private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, Block]] = {
     val imagesPixels = immutableImages
       .map(immutableImage => intoPixelsChunks(immutableImage))
-      .zip((0 until populationSize).grouped(populationSize / immutableImages.size))
-
-    val preliminaryDictionary = (for {
-      (image, range) <- imagesPixels
-    } yield {
-      image.indices.flatMap(blockId => range.map(imageId => (imageId -> (blockId -> image(blockId)))))
-    }).flatten
-
-    preliminaryDictionary.foldLeft(Map(): Map[Int, Map[Int, Block]]) {(result, nextEntry) =>
-      val block: Map[Int, Block] = result.getOrElse(nextEntry._1, Map())
-      result.updated(nextEntry._1, block.updated(nextEntry._2._1, nextEntry._2._2))
+      .zip((1 to populationSize).grouped(populationSize / immutableImages.size))
+      .flatMap { case (blocks, timesToRepeat) =>
+        timesToRepeat.map(_ => blocks)
+      }
+    
+    imagesPixels.foldLeft(Map(): Map[Int, Map[Int, Block]]) { case (result, blocks) =>
+      val partialResult = blocks
+        .zipWithIndex
+        .foldLeft(result) { case (partialResult, (block, blockId)) =>
+          val blockEntry: Map[Int, Block] = partialResult.getOrElse(currentId, Map())
+          partialResult.updated(currentId, blockEntry.updated(blockId, block))
+        }
+      nextId
+      partialResult
     }
   }
 
@@ -151,10 +149,7 @@ object ReferencesManager {
     )
   }
 
-  def updatePixelsDictionary(imageId: Int, blockId: Int, block: Block): BlockCoordinates = {
-    mutablePixelsDictionary(imageId)(blockId) = block
-    BlockCoordinates(imageId, blockId)
-  }
+  def addBlock(imageId: Int, block: Block): Unit = mutablePixelsDictionary(imageId)(block.hashCode()) = block
 
   def blocksCoordinatesOf(imageId: Int): List[BlockCoordinates] = {
     mutablePixelsDictionary(imageId)
@@ -176,4 +171,18 @@ object ReferencesManager {
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case images: List[Image] => ImagesPopulation(images)
+
+  override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
+    super.crossoverWith(otherPopulation, crossoverLikelihood)/* match
+      case children: ImagesPopulation => {
+        for {
+          case Image(Success(Frame(imageId, blocksCoordinates))) <- children.images
+          blocksCoordinates <- blocksCoordinates
+        } yield {
+          ReferencesManager.addBlock(imageId, blocksCoordinates.block)
+        }
+
+        children
+      }*/
+  }
 }
