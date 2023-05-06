@@ -59,12 +59,12 @@ case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: R
   override def toString: String = s"Block coordinates: $imageId $blockId"
 }
 
-case class Frame(imageId: Int, blockCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blockCoordinates)(customRandom) {
+case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implicit customRandom: Random = random) extends Chromosome(blocksCoordinates)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
-    case aBlocksCoordinates: List[BlockCoordinates] => Frame(imageId, aBlocksCoordinates.map(aBlockCoordinates => BlockCoordinates(imageId, aBlockCoordinates.blockId)))
+    case aBlocksCoordinates: List[BlockCoordinates] => Frame(imageId, aBlocksCoordinates)
 
 
-  protected override def calculateFitness: Double = blockCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
+  protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     val referencesBlocks: List[Block] = ReferencesManager.referencesBlocksAt(blockCoordinates)
     total + (referencesBlocks.map(referenceBlock => referenceBlock.ssim(blockCoordinates.block)).sum / blockCoordinates.block.size)
   }
@@ -113,7 +113,7 @@ object ReferencesManager {
       .flatMap { case (blocks, timesToRepeat) =>
         timesToRepeat.map(_ => blocks)
       }
-    
+
     imagesPixels.foldLeft(Map(): Map[Int, Map[Int, Block]]) { case (result, blocks) =>
       val partialResult = blocks
         .zipWithIndex
@@ -149,7 +149,12 @@ object ReferencesManager {
     )
   }
 
-  def addBlock(imageId: Int, block: Block): Unit = mutablePixelsDictionary(imageId)(block.hashCode()) = block
+  def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
+    if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+    val blocksEntry = mutablePixelsDictionary(imageId)
+    blocksEntry += (blockId -> block)
+    mutablePixelsDictionary += (imageId -> blocksEntry)
+  }
 
   def blocksCoordinatesOf(imageId: Int): List[BlockCoordinates] = {
     mutablePixelsDictionary(imageId)
@@ -172,17 +177,24 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case images: List[Image] => ImagesPopulation(images)
 
-  override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
-    super.crossoverWith(otherPopulation, crossoverLikelihood)/* match
-      case children: ImagesPopulation => {
-        for {
-          case Image(Success(Frame(imageId, blocksCoordinates))) <- children.images
-          blocksCoordinates <- blocksCoordinates
-        } yield {
-          ReferencesManager.addBlock(imageId, blocksCoordinates.block)
-        }
+  override def individuals: List[Individual] = images.map { case Image(Success(Frame(imageId, _))) =>
+    val indexedBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.mutablePixelsDictionary(imageId)
+    Image(Success(Frame(imageId, indexedBlocks.keys.map(blockId => BlockCoordinates(imageId, blockId)).toList)))
+  }
 
-        children
-      }*/
+  override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
+    super.crossoverWith(otherPopulation, crossoverLikelihood) match
+      case children: ImagesPopulation => {
+        children.copyWith(
+          children.images.map { case Image(Success(Frame(_, blocksCoordinates))) =>
+            ReferencesManager.nextId
+            val newBlocksCoordinates = blocksCoordinates.map { case blocksCoordinates @ BlockCoordinates(_, blockId) =>
+              ReferencesManager.addBlock(ReferencesManager.currentId, blockId, blocksCoordinates.block)
+              BlockCoordinates(ReferencesManager.currentId, blockId)
+            }
+            Image(Success(Frame(ReferencesManager.currentId, newBlocksCoordinates)))
+          }
+        )
+      }
   }
 }
