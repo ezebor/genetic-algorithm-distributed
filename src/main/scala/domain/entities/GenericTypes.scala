@@ -188,7 +188,7 @@ trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJson
   implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat6(EvolutionRequestBody.apply)
 }
 
-object RandomPopulation {
+object InitialPopulation {
   def apply(populationSize: Int, individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
     case ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME => BasketsPopulation(
       (1 to populationSize).map(i => Basket(
@@ -197,7 +197,7 @@ object RandomPopulation {
         )(customRandom))
       )).toList)
     case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => 
-      ReferencesManager.createPopulation(populationSize)
+      ImagesManager.initialPopulation(populationSize)
 }
 
 case object EmptyPopulation extends Population(List()) {

@@ -40,7 +40,7 @@ class EvolutionWorkerSpec
   val worker: ActorRef = system.actorOf(EvolutionWorker.props(), "evolutionWorker")
   worker ? WorkerOnline(SURVIVAL_POPULATION_SIZE, CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD)
 
-  val population: Population = RandomPopulation(POPULATION_SIZE, "Basket")
+  val population: Population = InitialPopulation(POPULATION_SIZE, "Basket")
 
   "Evolution worker" should {
     "execute natural selection when receives 'natural_selection' operator" in {

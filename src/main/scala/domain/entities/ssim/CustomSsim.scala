@@ -6,7 +6,7 @@ import com.sksamuel.scrimage.filter.BlurFilter
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
-import domain.entities.{Image, BlockCoordinates, Frame, ReferencesManager}
+import domain.entities.{BlockCoordinates, Frame, Image, ImagesManager, PersistenceManager}
 
 import java.awt.Color
 import scala.util.{Random, Success}
@@ -15,10 +15,13 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ReferencesManager.createPopulation(10)
-  val population3 = population.crossoverWith(population, 0.5)
+  val population = ImagesManager.initialPopulation(10)
+  /*val population3 = population.crossoverWith(population, 0.5)
     .mutate(0.5)
+*/
 
+  println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
+  /*
 
   population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(500, 500)
@@ -26,7 +29,7 @@ object CustomSsim extends App {
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
-  }
+  }*/
 
 
   /*

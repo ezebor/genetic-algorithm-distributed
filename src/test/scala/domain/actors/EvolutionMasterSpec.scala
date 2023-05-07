@@ -25,7 +25,7 @@ class EvolutionMasterSpec
   val POPULATION_SIZE = 200
   val QUANTITY_OF_CHUNKS = 4 // (200 / 3) + 1 (because of the 20 leftover individuals)
 
-  val population: Population = RandomPopulation(POPULATION_SIZE, "Basket")
+  val population: Population = InitialPopulation(POPULATION_SIZE, "Basket")
   val router: TestProbe = TestProbe("router")
   val master: ActorRef = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
 

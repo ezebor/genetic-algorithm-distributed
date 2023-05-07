@@ -37,11 +37,12 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
     Block(newPixels)
   }
 
-  def luminance(reference: Block): Double = (2 * mean * reference.mean + C1) / (Math.pow(mean, 2) + Math.pow(reference.mean, 2) + C1)
-  def contrast(reference: Block): Double = (2 * standardDeviation * reference.standardDeviation + C2) / (Math.pow(standardDeviation, 2) + Math.pow(reference.standardDeviation, 2) + C2)
-  def structure(reference: Block): Double = (covariance(reference) + C3) / (standardDeviation * reference.standardDeviation + C3)
+  private def luminance(reference: Block): Double = (2 * mean * reference.mean + C1) / (Math.pow(mean, 2) + Math.pow(reference.mean, 2) + C1)
+  private def contrast(reference: Block): Double = (2 * standardDeviation * reference.standardDeviation + C2) / (Math.pow(standardDeviation, 2) + Math.pow(reference.standardDeviation, 2) + C2)
+  private def structure(reference: Block): Double = (covariance(reference) + C3) / (standardDeviation * reference.standardDeviation + C3)
 
   def ssim: Block => Double = { reference =>
+    // TODO: precálculo de las variables recorriendo una sola vez los pixels
     luminance(reference) * contrast(reference) * structure(reference)
   }
 
@@ -50,7 +51,7 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
 
 case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: Random = random) extends Gene {
 
-  lazy val block: Block = ReferencesManager.blockAt(imageId, blockId)
+  lazy val block: Block = PersistenceManager.blockAt(imageId, blockId)
 
   override def mutate: Gene = BlockCoordinates(imageId, blockId)
 
@@ -63,7 +64,7 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
 
 
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
-    val referencesBlocks: List[Block] = ReferencesManager.blocksAt(blockCoordinates.blockId)
+    val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
     total + (referencesBlocks.map(referenceBlock => referenceBlock.ssim(blockCoordinates.block)).sum / blockCoordinates.block.size)
   }
 }
@@ -75,15 +76,70 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 }
 
 // TODO: manejar 2 objetos: uno para manipular la persistencia (ImagesPersistentManager) y otro para manipular la población (ImagesPopulationManager)
+type DataModel = Map[Int, Map[Int, Block]]
 
-object ReferencesManager {
+object PersistenceManager {
+  private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
+  var currentId: Int = 1
+
+  val immutableImages: List[ImmutableImage] = List(
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
+  )
+
+  def nextId: Unit = currentId += 1
+
+  def reset(): Unit = mutablePixelsDictionary.clear()
+
+  def imagesIds: List[Int] = mutablePixelsDictionary.keys.toList
+  def coordinatesOf(imageId: Int) = (for {
+    (blockId, _) <- blocksOf(imageId)
+  } yield BlockCoordinates(imageId, blockId)).toList
+  def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
+  def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(List()))
+  def blocksAt(blockId: Int): List[Block] = mutablePixelsDictionary
+    .values
+    .map(_.getOrElse(blockId, Block(List())))
+    .toList
+
+  def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
+    if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+    val blocksEntry = blocksOf(imageId)
+    blocksEntry += (blockId -> block)
+    mutablePixelsDictionary += (imageId -> blocksEntry)
+  }
+
+  def createDataModel(dataModel: DataModel): Unit = {
+    mutablePixelsDictionary.clear()
+    dataModel.keys.foreach { case imageId =>
+      if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+
+      val blocks = dataModel(imageId)
+      blocks.foreach { case (blockId, block) =>
+        if (!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(List()))
+        mutablePixelsDictionary(imageId) += (blockId -> block)
+      }
+    }
+  }
+
+  def toDataModel(population: ImagesPopulation): DataModel = {
+    population.individuals.foldLeft(Map[Int, Map[Int, Block]]()) { case (result, Image(Success(Frame(imageId, blocksCoordinates)))) =>
+      val blocksEntries: Map[Int, Block] = blocksCoordinates.foldLeft(result.getOrElse(imageId, Map())) { case (result, blockCoordinates @ BlockCoordinates(_, blockId)) =>
+        result.updated(blockId, blockCoordinates.block)
+      }
+      result.updated(imageId, blocksEntries)
+    }
+  }
+}
+
+object ImagesManager {
   private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[Block] = {
     def sortAndGroupDimension(dimension: List[Int]): List[List[Int]] =
       Set
-      .from(dimension)
-      .toList
-      .sortWith((a, b) => a <= b)
-      .grouped(chunkSize).toList
+        .from(dimension)
+        .toList
+        .sortWith((a, b) => a <= b)
+        .grouped(chunkSize).toList
 
     lazy val orderedPixelsTable: (List[List[Int]], List[List[Int]]) = {
       val table: (List[Int], List[Int]) = immutableImage.pixels().foldLeft((List[Int](), List[Int]())) { (table, pixel) =>
@@ -102,75 +158,46 @@ object ReferencesManager {
     }
   }
 
-  private val immutableImages: List[ImmutableImage] = List(
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
-  )
-
-  private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
-  var currentId: Int = 1
-  def nextId: Unit = currentId += 1
-
-  def reset(): Unit = mutablePixelsDictionary.clear()
-
-  private def coordinatesOf(imageId: Int) = (for {
-    (blockId, _) <- blocksOf(imageId)
-  } yield BlockCoordinates(imageId, blockId)).toList
-  def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
-  def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(List()))
-  def blocksAt(blockId: Int): List[Block] = mutablePixelsDictionary
-    .values
-    .map(_.getOrElse(blockId, Block(List())))
-    .toList
-
-  private def indexedImagesWithBlocks(populationSize: Int): Map[Int, Map[Int, Block]] = {
-    val imagesPixels = immutableImages
+  private def generateInitialPopulation(populationSize: Int): DataModel = {
+    val imagesPixels = PersistenceManager.immutableImages
       .map(immutableImage => intoPixelsChunks(immutableImage))
-      .zip((1 to populationSize).grouped(populationSize / immutableImages.size))
+      .zip((1 to populationSize).grouped(populationSize / PersistenceManager.immutableImages.size))
       .flatMap { case (blocks, timesToRepeat) =>
         timesToRepeat.map(_ => blocks)
       }
 
-    imagesPixels.foldLeft(Map(): Map[Int, Map[Int, Block]]) { case (result, blocks) =>
+    imagesPixels.foldLeft(Map(): DataModel) { case (result, blocks) =>
       val partialResult = blocks
         .zipWithIndex
         .foldLeft(result) { case (partialResult, (block, blockId)) =>
-          val blockEntry: Map[Int, Block] = partialResult.getOrElse(currentId, Map())
-          partialResult.updated(currentId, blockEntry.updated(blockId, block))
+          val blockEntry: Map[Int, Block] = partialResult.getOrElse(PersistenceManager.currentId, Map())
+          partialResult.updated(PersistenceManager.currentId, blockEntry.updated(blockId, block))
         }
-      nextId
+      PersistenceManager.nextId
       partialResult
     }
   }
 
-  private def createRandomPopulation(populationSize: Int): Unit = {
-    val immutableDictionary = indexedImagesWithBlocks(populationSize)
-    immutableDictionary.keys.foreach { case imageId =>
-      if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
-
-      val blocks = immutableDictionary(imageId)
-      blocks.foreach { case (blockId, block) =>
-        mutablePixelsDictionary(imageId) += (blockId -> block)
-      }
-    }
+  def initialPopulation(populationSize: Int): Population = {
+    PersistenceManager.createDataModel(generateInitialPopulation(populationSize))
+    population()
   }
 
-  def createPopulation(populationSize: Int): Population = {
-    createRandomPopulation(populationSize)
-
+  def population(): ImagesPopulation = {
     ImagesPopulation(
-      mutablePixelsDictionary
-        .keys
-        .toList
-        .map(imageId => Image(Success(Frame(imageId, coordinatesOf(imageId)))))
+      PersistenceManager.imagesIds.map(imageId =>
+        Image(
+          Success(
+            Frame(imageId, PersistenceManager.coordinatesOf(imageId))
+          )
+        )
+      )
     )
   }
 
-  def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
-    if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
-    val blocksEntry = blocksOf(imageId)
-    blocksEntry += (blockId -> block)
-    mutablePixelsDictionary += (imageId -> blocksEntry)
+  def save(imagesPopulation: ImagesPopulation): ImagesPopulation = {
+    PersistenceManager.createDataModel(PersistenceManager.toDataModel(imagesPopulation))
+    population()
   }
 }
 
@@ -178,44 +205,44 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case images: List[Image] => ImagesPopulation(images)
 
-  private lazy val inMemoryImages: List[Image] = images.map { case Image(Success(Frame(imageId, _))) =>
-    val indexedBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.blocksOf(imageId)
-    Image(Success(Frame(imageId, indexedBlocks.keys.map(blockId => BlockCoordinates(imageId, blockId)).toList)))
+  private lazy val inMemoryImages: List[Image] = images.map {
+    case Image(Success(Frame(imageId, _))) =>
+      val indexedBlocks: collection.mutable.Map[Int, Block] = PersistenceManager.blocksOf(imageId)
+      Image(Success(Frame(imageId, indexedBlocks.keys.map(blockId => BlockCoordinates(imageId, blockId)).toList)))
   }
 
   override def individuals: List[Individual] = inMemoryImages
 
-  override def selectStrongerPopulation(size: Int): Population = {
-    // TODO: optimizar
-    ReferencesManager.reset()
-    super.selectStrongerPopulation(size) match
-      case population: ImagesPopulation => population.copyWith(save(population.images))
-  }
+  override def selectStrongerPopulation(size: Int): Population = super.selectStrongerPopulation(size) match
+    case population: ImagesPopulation => ImagesManager.save(population)
 
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
+      // TODO: arreglar llamada
       case children: ImagesPopulation => children.copyWith(save(children.images))
   }
 
   override def mutate(mutationLikelihood: Double): Population = {
     super.mutate(mutationLikelihood) match
+      // TODO: arreglar llamada
       case mutants: ImagesPopulation => mutants.copyWith(save(mutants.images))
   }
 
+  // TODO: llevar a ImagesManager + refactorizar
   private def save(images: List[Image]): List[Image] = {
     images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
-      val parentBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.blocksOf(parentImageId)
+      val parentBlocks: collection.mutable.Map[Int, Block] = PersistenceManager.blocksOf(parentImageId)
       val mutants = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates) =>
         result += aBlockCoordinates.blockId -> aBlockCoordinates.block
       }
 
-      ReferencesManager.nextId
+      PersistenceManager.nextId
       val newBlocksCoordinates = mutants.map { case (blockId, block) =>
-        ReferencesManager.addBlock(ReferencesManager.currentId, blockId, block)
-        BlockCoordinates(ReferencesManager.currentId, blockId)
+        PersistenceManager.addBlock(PersistenceManager.currentId, blockId, block)
+        BlockCoordinates(PersistenceManager.currentId, blockId)
       }.toList
 
-      Image(Success(Frame(ReferencesManager.currentId, newBlocksCoordinates)))
+      Image(Success(Frame(PersistenceManager.currentId, newBlocksCoordinates)))
     }
   }
 }

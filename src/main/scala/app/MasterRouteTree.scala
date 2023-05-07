@@ -50,7 +50,7 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
           solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
           master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, populationSize, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
-          generationsManager ? BuildNewGeneration(RandomPopulation(populationSize, individualTypeName))
+          generationsManager ? BuildNewGeneration(InitialPopulation(populationSize, individualTypeName))
           complete(StatusCodes.Created, "Evolution has started")
         }
       }
