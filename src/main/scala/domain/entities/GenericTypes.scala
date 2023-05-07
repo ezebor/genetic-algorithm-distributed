@@ -196,7 +196,8 @@ object RandomPopulation {
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
-    case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => ReferencesManager.population(populationSize)
+    case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => 
+      ReferencesManager.createPopulation(populationSize)
 }
 
 case object EmptyPopulation extends Population(List()) {

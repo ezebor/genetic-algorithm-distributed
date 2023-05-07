@@ -51,8 +51,6 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
 case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: Random = random) extends Gene {
 
   lazy val block: Block = ReferencesManager.blockAt(imageId, blockId)
-  lazy val mean: Double = block.mean
-  lazy val standardDeviation: Double = block.standardDeviation
 
   override def mutate: Gene = BlockCoordinates(imageId, blockId)
 
@@ -75,6 +73,8 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
     case Success(Frame(imageId, blocksCoordinates)) =>
       Image(Success(Frame(imageId, blocksCoordinates)))
 }
+
+// TODO: manejar 2 objetos: uno para manipular la persistencia (mapa) y otro para manipular la población (usar el ImagesPopulation)
 
 object ReferencesManager {
   private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[Block] = {
@@ -108,11 +108,10 @@ object ReferencesManager {
   )
 
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
-  lazy val pixelsReferences: Map[Int, Map[Int, Block]] = immutablePixelsDictionary(immutableImages.size)
   var currentId: Int = 1
   def nextId: Unit = currentId += 1
 
-  def coordinatesOf(imageId: Int) = (for {
+  private def coordinatesOf(imageId: Int) = (for {
     (blockId, _) <- blocksOf(imageId)
   } yield BlockCoordinates(imageId, blockId)).toList
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
@@ -122,7 +121,7 @@ object ReferencesManager {
     .map(_.getOrElse(blockId, Block(List())))
     .toList
 
-  private def immutablePixelsDictionary(populationSize: Int): Map[Int, Map[Int, Block]] = {
+  private def indexedImagesWithBlocks(populationSize: Int): Map[Int, Map[Int, Block]] = {
     val imagesPixels = immutableImages
       .map(immutableImage => intoPixelsChunks(immutableImage))
       .zip((1 to populationSize).grouped(populationSize / immutableImages.size))
@@ -142,16 +141,22 @@ object ReferencesManager {
     }
   }
 
-  def population(populationSize: Int): Population = {
-    val immutableDictionary = immutablePixelsDictionary(populationSize)
+  private def createRandomPopulation(populationSize: Int): Unit = {
+    val immutableDictionary = indexedImagesWithBlocks(populationSize)
     immutableDictionary.keys.foreach { case imageId =>
-      if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+      if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
 
       val blocks = immutableDictionary(imageId)
       blocks.foreach { case (blockId, block) =>
         mutablePixelsDictionary(imageId) += (blockId -> block)
       }
     }
+  }
+
+
+
+  def createPopulation(populationSize: Int): Population = {
+    createRandomPopulation(populationSize)
 
     ImagesPopulation(
       mutablePixelsDictionary
@@ -173,31 +178,37 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case images: List[Image] => ImagesPopulation(images)
 
-  override def individuals: List[Individual] = images.map { case Image(Success(Frame(imageId, _))) =>
+  private lazy val inMemoryImages: List[Image] = images.map { case Image(Success(Frame(imageId, _))) =>
     val indexedBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.blocksOf(imageId)
     Image(Success(Frame(imageId, indexedBlocks.keys.map(blockId => BlockCoordinates(imageId, blockId)).toList)))
   }
 
+  override def individuals: List[Individual] = inMemoryImages
+
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
-      case children: ImagesPopulation => {
-        children.copyWith(
-          children.images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
-            // TODO: refactorizar + reutilizar en mutación
-            val parentBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.blocksOf(parentImageId)
-            val blend = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates) =>
-              result += aBlockCoordinates.blockId -> aBlockCoordinates.block
-            }
+      case children: ImagesPopulation => children.copyWith(save(children.images))
+  }
 
-            ReferencesManager.nextId
-            val newBlocksCoordinates = blend.map { case (blockId, block) =>
-              ReferencesManager.addBlock(ReferencesManager.currentId, blockId, block)
-              BlockCoordinates(ReferencesManager.currentId, blockId)
-            }.toList
+  override def mutate(mutationLikelihood: Double): Population = {
+    super.mutate(mutationLikelihood) match
+      case mutants: ImagesPopulation => mutants.copyWith(save(mutants.images))
+  }
 
-            Image(Success(Frame(ReferencesManager.currentId, newBlocksCoordinates)))
-          }
-        )
+  private def save(images: List[Image]): List[Image] = {
+    images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
+      val parentBlocks: collection.mutable.Map[Int, Block] = ReferencesManager.blocksOf(parentImageId)
+      val mutants = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates) =>
+        result += aBlockCoordinates.blockId -> aBlockCoordinates.block
       }
+
+      ReferencesManager.nextId
+      val newBlocksCoordinates = mutants.map { case (blockId, block) =>
+        ReferencesManager.addBlock(ReferencesManager.currentId, blockId, block)
+        BlockCoordinates(ReferencesManager.currentId, blockId)
+      }.toList
+
+      Image(Success(Frame(ReferencesManager.currentId, newBlocksCoordinates)))
+    }
   }
 }
