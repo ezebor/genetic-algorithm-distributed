@@ -74,7 +74,7 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
       Image(Success(Frame(imageId, blocksCoordinates)))
 }
 
-// TODO: manejar 2 objetos: uno para manipular la persistencia (mapa) y otro para manipular la población (usar el ImagesPopulation)
+// TODO: manejar 2 objetos: uno para manipular la persistencia (ImagesPersistentManager) y otro para manipular la población (ImagesPopulationManager)
 
 object ReferencesManager {
   private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[Block] = {
@@ -110,6 +110,8 @@ object ReferencesManager {
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   var currentId: Int = 1
   def nextId: Unit = currentId += 1
+
+  def reset(): Unit = mutablePixelsDictionary.clear()
 
   private def coordinatesOf(imageId: Int) = (for {
     (blockId, _) <- blocksOf(imageId)
@@ -153,8 +155,6 @@ object ReferencesManager {
     }
   }
 
-
-
   def createPopulation(populationSize: Int): Population = {
     createRandomPopulation(populationSize)
 
@@ -184,6 +184,13 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   }
 
   override def individuals: List[Individual] = inMemoryImages
+
+  override def selectStrongerPopulation(size: Int): Population = {
+    // TODO: optimizar
+    ReferencesManager.reset()
+    super.selectStrongerPopulation(size) match
+      case population: ImagesPopulation => population.copyWith(save(population.images))
+  }
 
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
