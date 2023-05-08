@@ -28,6 +28,11 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
     val valuesSum = referenceValues.indices.map(index => (referenceValues(index) - reference.mean) * (selfValues(index) - mean)).sum
     valuesSum / (size - 1)
   }
+  /*private lazy val covariance: Block => Double = { reference =>
+    val referenceValues = reference.pixels.map(_.average()).toArray
+    val selfValues = pixels.map(_.average()).toArray
+    (referenceValues.indices.map(index => referenceValues(index) * selfValues(index)).sum / (size - 1)) - (referenceValues.indices.map(index => referenceValues(index)).sum * referenceValues.indices.map(index => selfValues(index)).sum) / (Math.pow(size, 2) - size)
+  }*/
 
   def mutate: Block = {
     val newPixels: List[Pixel] = pixels

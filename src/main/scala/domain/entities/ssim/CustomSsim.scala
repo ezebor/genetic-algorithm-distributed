@@ -17,11 +17,16 @@ object CustomSsim extends App {
 
   val population = ImagesManager.initialPopulation(10)
 
+  println(population.individuals.head.fitness.get)
+// 232.85881033242242
+// 230.63930009040476
+
+
   /*val population3 = population.crossoverWith(population, 0.5)
     .mutate(0.5)
 */
 
-  println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
+  //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
   /*
 
   population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
