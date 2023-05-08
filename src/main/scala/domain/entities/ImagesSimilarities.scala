@@ -21,6 +21,7 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) ex
 
   lazy val mean: Double = pixels.foldLeft(0)((total, aPixel) => total + aPixel.average()) / size
   lazy val standardDeviation: Double = Math.sqrt(pixels.map(pixel => Math.pow(pixel.average() - mean, 2)).sum / (size - 1))
+  //lazy val standardDeviation: Double = Math.sqrt((pixels.map(p => Math.pow(p.average(), 2)).sum / (size - 1)) - (Math.pow(pixels.map(_.average()).sum, 2) / (Math.pow(size, 2) - size)))
   private lazy val covariance: Block => Double = { reference =>
     val referenceValues = reference.pixels.map(_.average()).toArray
     val selfValues = pixels.map(_.average()).toArray

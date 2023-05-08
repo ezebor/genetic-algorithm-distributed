@@ -16,6 +16,7 @@ object CustomSsim extends App {
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
   val population = ImagesManager.initialPopulation(10)
+
   /*val population3 = population.crossoverWith(population, 0.5)
     .mutate(0.5)
 */
