@@ -10,7 +10,6 @@ import domain.entities.AlgorithmConfig.*
 
 import scala.util.{Random, Success, Try}
 
-// TODO: herencia con 2 tipos de bloques: los comunes y los de referencia. Los comunes calculan la covarianza, y a partir de ahí generan todos los términos. Los bloques referencia no calculan covarianza
 case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
 
   private val K1: Double = 0.01
@@ -50,6 +49,7 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
 
   def ssim: Block => Double = { reference =>
     // TODO: precálculo de las variables recorriendo una sola vez los pixels
+    // TODO: pasar por parámetro una tupla con todos los térmions calculados, incluso los que involucran a ambos bloques, recorriendo 1 sola vez ambas estructuras
     luminance(reference) * contrast(reference) * structure(reference)
   }
 
