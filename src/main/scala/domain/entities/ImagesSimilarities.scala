@@ -105,6 +105,8 @@ object PersistenceManager {
   } yield BlockCoordinates(imageId, blockId)).toList
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
   def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(List()))
+
+  // TODO: hacer el blocksAt pero para references
   def blocksAt(blockId: Int): List[Block] = mutablePixelsDictionary
     .values
     .map(_.getOrElse(blockId, Block(List())))
