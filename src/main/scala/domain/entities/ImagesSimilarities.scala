@@ -10,7 +10,8 @@ import domain.entities.AlgorithmConfig.*
 
 import scala.util.{Random, Success, Try}
 
-case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) extends Gene {
+// TODO: herencia con 2 tipos de bloques: los comunes y los de referencia. Los comunes calculan la covarianza, y a partir de ahí generan todos los términos. Los bloques referencia no calculan covarianza
+case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
 
   private val K1: Double = 0.01
   private val K2: Double = 0.03f
@@ -70,6 +71,7 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
 
 
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
+    // TODO: los bloques referencia tienen que venir de las imágenes de referencia, no del mapa mutable. Cambiar esto + que sus bloques ya tengan todo calculado
     val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
     total + (referencesBlocks.map(referenceBlock => referenceBlock.ssim(blockCoordinates.block)).sum / blockCoordinates.block.size)
   }
