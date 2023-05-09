@@ -15,7 +15,7 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ImagesManager.initialPopulation(10)
+  val population = ImagesManager.initialPopulation(100)
 
   println(population.individuals.map(i => i.fitness.get))
 // 232.85881033242242

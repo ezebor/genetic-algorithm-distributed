@@ -82,6 +82,7 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
     case aBlocksCoordinates: List[BlockCoordinates] => Frame(imageId, aBlocksCoordinates)
 
 
+  // TODO: obtener el fitness de la persistencia
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     // TODO: los bloques referencia tienen que venir de las imágenes de referencia, no del mapa mutable. Cambiar esto + que sus bloques ya tengan todo calculado
     val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
@@ -124,10 +125,12 @@ object PersistenceManager {
     .map(_.getOrElse(blockId, Block(Vector())()))
     .toList
 
+  // TODO: persistir junto con el bloque, su fitness (calcularla en esta función)
   def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
     if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
     val blocksEntry = blocksOf(imageId)
     blocksEntry += (blockId -> block)
+    // TODO: al persistir el bloque, calcular sus valores estadísticos
     mutablePixelsDictionary += (imageId -> blocksEntry)
   }
 
@@ -138,6 +141,7 @@ object PersistenceManager {
 
       val blocks = dataModel(imageId)
       blocks.foreach { case (blockId, block) =>
+        // TODO: usar addBlock
         if (!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
         mutablePixelsDictionary(imageId) += (blockId -> block)
       }
