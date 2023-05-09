@@ -10,7 +10,7 @@ import domain.entities.AlgorithmConfig.*
 
 import scala.util.{Random, Success, Try}
 
-case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
+case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) {
 
   private val K1: Double = 0.01
   private val K2: Double = 0.03f
@@ -20,7 +20,7 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
   private val C3: Double = C2 / 2
 
   def mutate: Block = {
-    val newPixels: List[Pixel] = pixels
+    val newPixels: Vector[Pixel] = pixels
       .map(pixel => (customRandom.nextDouble(), pixel))
       .sortWith { case ((randomA, _), (randomB, _)) => randomA <= randomB}
       .map((_, pixel) => pixel)
@@ -37,10 +37,10 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
 
   case class StatisticsTerms(meanA: Double, meanB: Double, standardDeviationA: Double, standardDeviationB: Double, covariance: Double)
   private def generateStatisticsTerms(blockB: Block): StatisticsTerms = {
-    val pixelsA = pixels.toVector
-    val pixelsB = blockB.pixels.toVector
+    val pixelsA = pixels
+    val pixelsB = blockB.pixels
 
-    val terms = pixels.toVector.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB), index) =>
+    val terms = pixels.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB), index) =>
       (
         sumPixelsA + pixelsA(index).average(),
         sumSquarePixelsA + Math.pow(pixelsA(index).average(), 2),
@@ -116,12 +116,12 @@ object PersistenceManager {
     (blockId, _) <- blocksOf(imageId)
   } yield BlockCoordinates(imageId, blockId)).toList
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
-  def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(List()))
+  def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(Vector())())
 
   // TODO: hacer el blocksAt pero para references
   def blocksAt(blockId: Int): List[Block] = mutablePixelsDictionary
     .values
-    .map(_.getOrElse(blockId, Block(List())))
+    .map(_.getOrElse(blockId, Block(Vector())()))
     .toList
 
   def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
@@ -138,7 +138,7 @@ object PersistenceManager {
 
       val blocks = dataModel(imageId)
       blocks.foreach { case (blockId, block) =>
-        if (!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(List()))
+        if (!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
         mutablePixelsDictionary(imageId) += (blockId -> block)
       }
     }
@@ -155,17 +155,18 @@ object PersistenceManager {
 }
 
 object ImagesManager {
-  private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): List[Block] = {
-    def sortAndGroupDimension(dimension: List[Int]): List[List[Int]] =
+  private def intoPixelsChunks(immutableImage: ImmutableImage, chunkSize: Int = 11): Vector[Block] = {
+    def sortAndGroupDimension(dimension: Vector[Int]): Vector[Vector[Int]] =
       Set
         .from(dimension)
-        .toList
+        .toVector
         .sortWith((a, b) => a <= b)
-        .grouped(chunkSize).toList
+        .grouped(chunkSize)
+        .toVector
 
-    lazy val orderedPixelsTable: (List[List[Int]], List[List[Int]]) = {
-      val table: (List[Int], List[Int]) = immutableImage.pixels().foldLeft((List[Int](), List[Int]())) { (table, pixel) =>
-        (pixel.x :: table._1, pixel.y :: table._2)
+    lazy val orderedPixelsTable: (Vector[Vector[Int]], Vector[Vector[Int]]) = {
+      val table: (Vector[Int], Vector[Int]) = immutableImage.pixels().foldLeft((Vector[Int](), Vector[Int]())) { (table, pixel) =>
+        (pixel.x +: table._1, pixel.y +: table._2)
       }
 
       (sortAndGroupDimension(table._1), sortAndGroupDimension(table._2))
