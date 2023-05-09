@@ -19,21 +19,6 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
   private val C2: Double = Math.pow(K2 * L, 2)
   private val C3: Double = C2 / 2
 
-  lazy val mean: Double = pixels.foldLeft(0)((total, aPixel) => total + aPixel.average()) / size
-  lazy val standardDeviation: Double = Math.sqrt(pixels.map(pixel => Math.pow(pixel.average() - mean, 2)).sum / (size - 1))
-  //lazy val standardDeviation: Double = Math.sqrt((pixels.map(p => Math.pow(p.average(), 2)).sum / (size - 1)) - (Math.pow(pixels.map(_.average()).sum, 2) / (Math.pow(size, 2) - size)))
-  private lazy val covariance: Block => Double = { reference =>
-    val referenceValues = reference.pixels.map(_.average()).toArray
-    val selfValues = pixels.map(_.average()).toArray
-    val valuesSum = referenceValues.indices.map(index => (referenceValues(index) - reference.mean) * (selfValues(index) - mean)).sum
-    valuesSum / (size - 1)
-  }
-  /*private lazy val covariance: Block => Double = { reference =>
-    val referenceValues = reference.pixels.map(_.average()).toArray
-    val selfValues = pixels.map(_.average()).toArray
-    (referenceValues.indices.map(index => referenceValues(index) * selfValues(index)).sum / (size - 1)) - (referenceValues.indices.map(index => referenceValues(index)).sum * referenceValues.indices.map(index => selfValues(index)).sum) / (Math.pow(size, 2) - size)
-  }*/
-
   def mutate: Block = {
     val newPixels: List[Pixel] = pixels
       .map(pixel => (customRandom.nextDouble(), pixel))
@@ -43,14 +28,41 @@ case class Block(pixels: List[Pixel])(implicit customRandom: Random = random) {
     Block(newPixels)
   }
 
-  private def luminance(reference: Block): Double = (2 * mean * reference.mean + C1) / (Math.pow(mean, 2) + Math.pow(reference.mean, 2) + C1)
-  private def contrast(reference: Block): Double = (2 * standardDeviation * reference.standardDeviation + C2) / (Math.pow(standardDeviation, 2) + Math.pow(reference.standardDeviation, 2) + C2)
-  private def structure(reference: Block): Double = (covariance(reference) + C3) / (standardDeviation * reference.standardDeviation + C3)
+  private def luminance(terms: StatisticsTerms): Double = terms match
+    case StatisticsTerms(meanA, meanB, _, _, _) => (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
+  private def contrast(terms: StatisticsTerms): Double = terms match
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, _) => (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
+  private def structure(terms: StatisticsTerms): Double = terms match
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => (covariance + C3) / (standardDeviationA * standardDeviationB + C3)
+
+  case class StatisticsTerms(meanA: Double, meanB: Double, standardDeviationA: Double, standardDeviationB: Double, covariance: Double)
+  private def generateStatisticsTerms(blockB: Block): StatisticsTerms = {
+    val pixelsA = pixels.toVector
+    val pixelsB = blockB.pixels.toVector
+
+    val terms = pixels.toVector.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB), index) =>
+      (
+        sumPixelsA + pixelsA(index).average(),
+        sumSquarePixelsA + Math.pow(pixelsA(index).average(), 2),
+        sumPixelsB + pixelsB(index).average(),
+        sumSquarePixelsB + Math.pow(pixelsB(index).average(), 2),
+        sumPixelAByPixelB + pixelsA(index).average() * pixelsB(index).average()
+      )
+    }
+
+    terms match
+      case (sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB) => StatisticsTerms(
+        sumPixelsA / size,
+        sumPixelsB / size,
+        Math.sqrt((sumSquarePixelsA / (size - 1)) - (Math.pow(sumPixelsA, 2) / (Math.pow(size, 2) - size))),
+        Math.sqrt((sumSquarePixelsB / (size - 1)) - (Math.pow(sumPixelsB, 2) / (Math.pow(size, 2) - size))),
+        (sumPixelAByPixelB / (size - 1)) - (sumPixelsA * sumPixelsB / (Math.pow(size, 2) - size))
+    )
+  }
 
   def ssim: Block => Double = { reference =>
-    // TODO: precálculo de las variables recorriendo una sola vez los pixels
-    // TODO: pasar por parámetro una tupla con todos los térmions calculados, incluso los que involucran a ambos bloques, recorriendo 1 sola vez ambas estructuras
-    luminance(reference) * contrast(reference) * structure(reference)
+    val terms = generateStatisticsTerms(reference)
+    luminance(terms) * contrast(terms) * structure(terms)
   }
 
   lazy val size: Int = pixels.size
@@ -73,7 +85,7 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     // TODO: los bloques referencia tienen que venir de las imágenes de referencia, no del mapa mutable. Cambiar esto + que sus bloques ya tengan todo calculado
     val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
-    total + (referencesBlocks.map(referenceBlock => referenceBlock.ssim(blockCoordinates.block)).sum / blockCoordinates.block.size)
+    total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blockCoordinates.block.size)
   }
 }
 

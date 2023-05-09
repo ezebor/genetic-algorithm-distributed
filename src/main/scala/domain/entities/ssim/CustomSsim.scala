@@ -17,7 +17,7 @@ object CustomSsim extends App {
 
   val population = ImagesManager.initialPopulation(10)
 
-  println(population.individuals.head.fitness.get)
+  println(population.individuals.map(i => i.fitness.get))
 // 232.85881033242242
 // 230.63930009040476
 
