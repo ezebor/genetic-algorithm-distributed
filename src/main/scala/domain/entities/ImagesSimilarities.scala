@@ -244,6 +244,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def selectStrongerPopulation(size: Int): Population = super.selectStrongerPopulation(size) match
     case population: ImagesPopulation => ImagesManager.save(population)
 
+  // TODO: agregar lógica para incorporar todos los genes (que no se pisen bloques con mismo blockId
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
       // TODO: arreglar llamada
