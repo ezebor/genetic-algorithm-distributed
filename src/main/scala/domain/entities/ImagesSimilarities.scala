@@ -20,6 +20,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private val C3: Double = C2 / 2
 
   def mutate: Block = {
+    // TODO: optimizar para no recorrer 2 veces el vector de píxeles (shuffle de random)
     val newPixels: Vector[Pixel] = pixels
       .map(pixel => (customRandom.nextDouble(), pixel))
       .sortWith { case ((randomA, _), (randomB, _)) => randomA <= randomB}
@@ -230,7 +231,7 @@ object ImagesManager {
 
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
-    case images: List[Image] => ImagesPopulation(images)
+    case newImages: List[Image] => ImagesPopulation(newImages)
 
   private lazy val inMemoryImages: List[Image] = images.map {
     case Image(Success(Frame(imageId, _))) =>
@@ -246,13 +247,13 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
       // TODO: arreglar llamada
-      case children: ImagesPopulation => children.copyWith(save(children.images))
+      case children: ImagesPopulation => copyWith(save(children.images))
   }
 
   override def mutate(mutationLikelihood: Double): Population = {
     super.mutate(mutationLikelihood) match
-      // TODO: arreglar llamada
-      case mutants: ImagesPopulation => mutants.copyWith(save(mutants.images))
+      // TODO: hacer el mutate del bloque acá
+      case mutants: ImagesPopulation => copyWith(save(mutants.images))
   }
 
   // TODO: llevar a ImagesManager + refactorizar

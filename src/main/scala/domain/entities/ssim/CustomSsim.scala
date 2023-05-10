@@ -17,26 +17,25 @@ object CustomSsim extends App {
 
   val population = ImagesManager.createInitialPopulation(10)
 
-  println(population.individuals.map(i => i.fitness.get))
 // 232.85881033242242
 // 230.63930009040476
 
 
-  /*val population3 = population.crossoverWith(population, 0.5)
-    .mutate(0.5)
-*/
+  val population2 = population.crossoverWith(population, 0.5)
+    //.mutate(0.5)
+  println(population.individuals.map(i => i.fitness.get))
+  println(population2.individuals.map(i => i.fitness.get))
+  println(ImagesManager.population().individuals.map(i => i.fitness.get))
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-/*
-  population.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
+  population2.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(500, 500)
     blocksCoordinates.foreach { blockCoordinates =>
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
-  }*/
-
+  }
 
   /*
   // TODO: crear nueva imagen a partir de píxeles
