@@ -15,7 +15,7 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ImagesManager.initialPopulation(100)
+  val population = ImagesManager.createInitialPopulation(10)
 
   println(population.individuals.map(i => i.fitness.get))
 // 232.85881033242242
@@ -27,9 +27,9 @@ object CustomSsim extends App {
 */
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
-  /*
 
-  population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
+/*
+  population.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(500, 500)
     blocksCoordinates.foreach { blockCoordinates =>
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))

@@ -84,9 +84,9 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
 
   // TODO: obtener el fitness de la persistencia
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
-    // TODO: los bloques referencia tienen que venir de las imágenes de referencia, no del mapa mutable. Cambiar esto + que sus bloques ya tengan todo calculado
+    // TODO: que sus bloques ya tengan todo calculado
     val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
-    total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blockCoordinates.block.size)
+    total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blocksCoordinates.size)
   }
 }
 
@@ -96,11 +96,12 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
       Image(Success(Frame(imageId, blocksCoordinates)))
 }
 
-// TODO: manejar 2 objetos: uno para manipular la persistencia (ImagesPersistentManager) y otro para manipular la población (ImagesPopulationManager)
+// TODO: incluir el fitness del block (tupla con mean, sd y covariance respecto a las referencias)
 type DataModel = Map[Int, Map[Int, Block]]
 
 object PersistenceManager {
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
+  private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size)
   var currentId: Int = 1
 
   val immutableImages: List[ImmutableImage] = List(
@@ -119,8 +120,7 @@ object PersistenceManager {
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
   def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(Vector())())
 
-  // TODO: hacer el blocksAt pero para references
-  def blocksAt(blockId: Int): List[Block] = mutablePixelsDictionary
+  def blocksAt(blockId: Int): List[Block] = references
     .values
     .map(_.getOrElse(blockId, Block(Vector())()))
     .toList
@@ -142,7 +142,7 @@ object PersistenceManager {
       val blocks = dataModel(imageId)
       blocks.foreach { case (blockId, block) =>
         // TODO: usar addBlock
-        if (!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
+        if(!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
         mutablePixelsDictionary(imageId) += (blockId -> block)
       }
     }
@@ -185,7 +185,7 @@ object ImagesManager {
     }
   }
 
-  private def generateInitialPopulation(populationSize: Int): DataModel = {
+  def initialDataModel(populationSize: Int): DataModel = {
     val imagesPixels = PersistenceManager.immutableImages
       .map(immutableImage => intoPixelsChunks(immutableImage))
       .zip((1 to populationSize).grouped(populationSize / PersistenceManager.immutableImages.size))
@@ -205,8 +205,8 @@ object ImagesManager {
     }
   }
 
-  def initialPopulation(populationSize: Int): Population = {
-    PersistenceManager.createDataModel(generateInitialPopulation(populationSize))
+  def createInitialPopulation(populationSize: Int): Population = {
+    PersistenceManager.createDataModel(initialDataModel(populationSize))
     population()
   }
 
