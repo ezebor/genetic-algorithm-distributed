@@ -273,18 +273,19 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   private def save(images: List[Image]): List[Image] = {
     images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
       val parentBlocks = PersistenceManager.blocksOf(parentImageId)
-      val childCoordinates = blocksCoordinates.toVector
       PersistenceManager.nextId
-      val newBlocksCoordinates = parentBlocks
-        .keys
-        .take(Math.min(parentBlocks.keys.size, blocksCoordinates.size))
-        .map { blockId =>
-          val newBlock = parentBlocks(blockId).copyWith(childCoordinates(blockId).block)
-          PersistenceManager.addBlock(PersistenceManager.currentId, blockId, newBlock)
+
+      val fusions = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates)  =>
+          result += aBlockCoordinates.blockId -> aBlockCoordinates.block
+      }
+
+      Image(Success(Frame(
+        PersistenceManager.currentId,
+        fusions.map { case (blockId, block) =>
+          PersistenceManager.addBlock(PersistenceManager.currentId, blockId, block)
           BlockCoordinates(PersistenceManager.currentId, blockId)
         }.toList
-
-      Image(Success(Frame(PersistenceManager.currentId, newBlocksCoordinates)))
+      )))
     }
   }
 }

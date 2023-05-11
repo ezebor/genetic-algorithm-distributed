@@ -22,7 +22,7 @@ object CustomSsim extends App {
 
 
   val population2 = population.crossoverWith(population, 0.5)
-    .mutate(0.5)
+  //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
   println(population2.individuals.map(i => i.fitness.get))
 
