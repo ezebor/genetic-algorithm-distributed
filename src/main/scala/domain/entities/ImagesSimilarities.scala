@@ -268,7 +268,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
 
   // TODO: llevar a ImagesManager (parametrizando la función de mutate de la de crossover --> copyWith)
   // TODO: este save hace un crossover. Separar la parte de crossover (mingle de bloques) de la de mutation (hacerle mutate al block).
-  // TODO: SOLUCION: RESOLVER USANDO MUTACIÓN (SHUFFLE DE LOS BLOQUES, ALINEANDO PÍXELES)
+  // TODO: SOLUCION: RESOLVER USANDO MUTACIÓN (SHUFFLE DE LAS COORDENADAS DE LOS PÍXELES)
   private def save(images: List[Image]): List[Image] = {
     images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
       val parentBlocks = PersistenceManager.blocksOf(parentImageId)
