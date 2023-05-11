@@ -19,6 +19,14 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private val C2: Double = Math.pow(K2 * L, 2)
   private val C3: Double = C2 / 2
 
+  def copyWith(otherBlock: Block): Block = Block(
+    pixels.indices.map { index =>
+      val thisPixel = pixels(index)
+      val otherPixel = otherBlock.pixels(index)
+      Pixel(thisPixel.x, thisPixel.y, otherPixel.argb)
+    }.toVector
+  )
+
   def mutate: Block = {
     // TODO: optimizar para no recorrer 2 veces el vector de píxeles (shuffle de random)
     val newPixels: Vector[Pixel] = pixels
@@ -106,8 +114,9 @@ object PersistenceManager {
   var currentId: Int = 1
 
   val immutableImages: List[ImmutableImage] = List(
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png"),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png")
+    // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(550, 550),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
   )
 
   def nextId: Unit = currentId += 1
@@ -257,19 +266,21 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       case mutants: ImagesPopulation => copyWith(save(mutants.images))
   }
 
-  // TODO: llevar a ImagesManager + refactorizar
+  // TODO: llevar a ImagesManager (parametrizando la función de mutate de la de crossover --> copyWith)
+  // TODO: este save hace un crossover. Separar la parte de crossover (mingle de bloques) de la de mutation (hacerle mutate al block).
   private def save(images: List[Image]): List[Image] = {
     images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
-      val parentBlocks: collection.mutable.Map[Int, Block] = PersistenceManager.blocksOf(parentImageId)
-      val mutants = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates) =>
-        result += aBlockCoordinates.blockId -> aBlockCoordinates.block
-      }
-
+      val parentBlocks = PersistenceManager.blocksOf(parentImageId)
+      val childCoordinates = blocksCoordinates.toVector
       PersistenceManager.nextId
-      val newBlocksCoordinates = mutants.map { case (blockId, block) =>
-        PersistenceManager.addBlock(PersistenceManager.currentId, blockId, block)
-        BlockCoordinates(PersistenceManager.currentId, blockId)
-      }.toList
+      val newBlocksCoordinates = parentBlocks
+        .keys
+        .take(Math.min(parentBlocks.keys.size, blocksCoordinates.size))
+        .map { blockId =>
+          val newBlock = parentBlocks(blockId).copyWith(childCoordinates(blockId).block)
+          PersistenceManager.addBlock(PersistenceManager.currentId, blockId, newBlock)
+          BlockCoordinates(PersistenceManager.currentId, blockId)
+        }.toList
 
       Image(Success(Frame(PersistenceManager.currentId, newBlocksCoordinates)))
     }
