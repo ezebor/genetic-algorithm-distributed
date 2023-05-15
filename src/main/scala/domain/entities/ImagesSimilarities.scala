@@ -120,7 +120,7 @@ type DataModel = Map[Int, Map[Int, Block]]
 
 object PersistenceManager {
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
-  private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size)
+  private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size, immutableImages, currentId)
   var currentId: Int = 1
 
   val immutableImages: List[ImmutableImage] = List(
@@ -129,7 +129,7 @@ object PersistenceManager {
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
   )
 
-  def nextId: Unit = currentId += 1
+  def nextId(): Unit = currentId += 1
 
   def reset(): Unit = mutablePixelsDictionary.clear()
 
@@ -157,6 +157,7 @@ object PersistenceManager {
 
   def create(dataModel: DataModel): Unit = {
     mutablePixelsDictionary.clear()
+    currentId = 0
     dataModel.keys.foreach { case imageId =>
       if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
 
@@ -166,6 +167,8 @@ object PersistenceManager {
         if(!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
         mutablePixelsDictionary(imageId) += (blockId -> block)
       }
+
+      nextId()
     }
   }
 
@@ -180,12 +183,12 @@ object PersistenceManager {
 
   def append(images: List[Image]): List[Image] = {
     images.map { case Image(Success(Frame(_, blocksCoordinates))) =>
-      PersistenceManager.nextId
+      nextId()
       Image(Success(Frame(
-        PersistenceManager.currentId,
+        currentId,
         blocksCoordinates.map { case aBlockCoordinates @ BlockCoordinates(_, blockId) =>
-          PersistenceManager.append(PersistenceManager.currentId, blockId, aBlockCoordinates.block)
-          BlockCoordinates(PersistenceManager.currentId, blockId)
+          PersistenceManager.append(currentId, blockId, aBlockCoordinates.block)
+          BlockCoordinates(currentId, blockId)
         }
       )))
     }
@@ -213,7 +216,7 @@ object PersistenceManager {
   }
 
   def createInitialPopulation(populationSize: Int): ImagesPopulation = {
-    save(ImagesManager.initialDataModel(populationSize))
+    save(ImagesManager.initialDataModel(populationSize, immutableImages, currentId))
   }
 }
 
@@ -244,24 +247,24 @@ object ImagesManager {
     }
   }
 
-  def initialDataModel(populationSize: Int): DataModel = {
-    val imagesPixels = PersistenceManager.immutableImages
+  def initialDataModel(populationSize: Int, references: List[ImmutableImage], initialId: Int): DataModel = {
+    val imagesPixels = references
       .map(immutableImage => intoPixelsChunks(immutableImage))
-      .zip((1 to populationSize).grouped(populationSize / PersistenceManager.immutableImages.size))
+      .zip((1 to populationSize).grouped(populationSize / references.size))
       .flatMap { case (blocks, timesToRepeat) =>
         timesToRepeat.map(_ => blocks)
       }
 
-    imagesPixels.foldLeft(Map(): DataModel) { case (result, blocks) =>
+    imagesPixels.foldLeft((initialId, Map(): DataModel)){ case ((currentId, result), blocks) =>
       val partialResult = blocks
         .zipWithIndex
         .foldLeft(result) { case (partialResult, (block, blockId)) =>
-          val blockEntry: Map[Int, Block] = partialResult.getOrElse(PersistenceManager.currentId, Map())
-          partialResult.updated(PersistenceManager.currentId, blockEntry.updated(blockId, block))
+          val blockEntry: Map[Int, Block] = partialResult.getOrElse(currentId, Map())
+          partialResult.updated(currentId, blockEntry.updated(blockId, block))
         }
-      PersistenceManager.nextId
-      partialResult
-    }
+
+      (currentId + 1, partialResult)
+    }._2
   }
 }
 
