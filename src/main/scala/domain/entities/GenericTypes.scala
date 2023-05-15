@@ -196,8 +196,8 @@ object InitialPopulation {
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
-    case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME => 
-      ImagesManager.createInitialPopulation(populationSize)
+    case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME =>
+      PersistenceManager.save(ImagesManager.initialDataModel(populationSize))
 }
 
 case object EmptyPopulation extends Population(List()) {

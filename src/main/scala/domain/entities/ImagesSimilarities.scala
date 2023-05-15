@@ -190,6 +190,31 @@ object PersistenceManager {
       )))
     }
   }
+
+  def population(): ImagesPopulation = {
+    ImagesPopulation(
+      PersistenceManager.imagesIds.map(imageId =>
+        Image(
+          Success(
+            Frame(imageId, PersistenceManager.coordinatesOf(imageId))
+          )
+        )
+      )
+    )
+  }
+
+  def save(dataModel: DataModel): ImagesPopulation = {
+    create(dataModel)
+    population()
+  }
+
+  def save(imagesPopulation: ImagesPopulation): ImagesPopulation = {
+    save(PersistenceManager.toDataModel(imagesPopulation))
+  }
+
+  def createInitialPopulation(populationSize: Int): ImagesPopulation = {
+    save(ImagesManager.initialDataModel(populationSize))
+  }
 }
 
 object ImagesManager {
@@ -238,28 +263,6 @@ object ImagesManager {
       partialResult
     }
   }
-
-  def createInitialPopulation(populationSize: Int): Population = {
-    PersistenceManager.create(initialDataModel(populationSize))
-    population()
-  }
-
-  def population(): ImagesPopulation = {
-    ImagesPopulation(
-      PersistenceManager.imagesIds.map(imageId =>
-        Image(
-          Success(
-            Frame(imageId, PersistenceManager.coordinatesOf(imageId))
-          )
-        )
-      )
-    )
-  }
-
-  def save(imagesPopulation: ImagesPopulation): ImagesPopulation = {
-    PersistenceManager.create(PersistenceManager.toDataModel(imagesPopulation))
-    population()
-  }
 }
 
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
@@ -275,7 +278,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def individuals: List[Individual] = inMemoryImages
 
   override def selectStrongerPopulation(size: Int): Population = super.selectStrongerPopulation(size) match
-    case population: ImagesPopulation => ImagesManager.save(population)
+    case population: ImagesPopulation => PersistenceManager.save(population)
 
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match

@@ -15,14 +15,15 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ImagesManager.createInitialPopulation(10)
+  PersistenceManager.create(ImagesManager.initialDataModel(10))
+  val population = PersistenceManager.population()
 
 // 232.85881033242242
 // 230.63930009040476
 
 
-  val population2 = population//.crossoverWith(population, 0.5)
-  .mutate(0.5)
+  val population2 = population.crossoverWith(population, 0.5)
+  //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
   println(population2.individuals.map(i => i.fitness.get))
 
