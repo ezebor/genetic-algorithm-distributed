@@ -100,12 +100,10 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
 
   override def mutate: Chromosome = {
     // TODO: actualizar las coordenadas de cada pixel de cada bloque. Usar el número de bloque y el tamaño de bloque = 11 para calcular las nuevas coordenadas del pixel dentro del bloque reubicado
-    val shuffledBlocks = random
-      .shuffle(blocksCoordinates)
-      .zipWithIndex
-      // TODO: llevar a const el tamaño de bloque
-
-      this
+    // TODO: llevar a const el tamaño de bloque
+    copyWith(
+      ImagesManager.shufflePixelsOf(blocksCoordinates)
+    )
   }
 }
 
@@ -266,6 +264,8 @@ object ImagesManager {
       (currentId + 1, partialResult)
     }._2
   }
+
+  def shufflePixelsOf(blockCoordinates: List[BlockCoordinates]): List[BlockCoordinates] = ???
 }
 
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
