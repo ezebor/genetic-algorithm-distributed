@@ -136,7 +136,7 @@ object PersistenceManager {
     .toList
 
   // TODO: persistir junto con el bloque, su fitness (calcularla en esta función)
-  def addBlock(imageId: Int, blockId: Int, block: Block): Unit = {
+  def append(imageId: Int, blockId: Int, block: Block): Unit = {
     if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
     val blocksEntry = blocksOf(imageId)
     blocksEntry += (blockId -> block)
@@ -144,7 +144,7 @@ object PersistenceManager {
     mutablePixelsDictionary += (imageId -> blocksEntry)
   }
 
-  def createDataModel(dataModel: DataModel): Unit = {
+  def create(dataModel: DataModel): Unit = {
     mutablePixelsDictionary.clear()
     dataModel.keys.foreach { case imageId =>
       if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
@@ -164,6 +164,20 @@ object PersistenceManager {
         result.updated(blockId, blockCoordinates.block)
       }
       result.updated(imageId, blocksEntries)
+    }
+  }
+
+  def append(images: List[Image]): List[Image] = {
+    println(images.size)
+    images.map { case Image(Success(Frame(_, blocksCoordinates))) =>
+      PersistenceManager.nextId
+      Image(Success(Frame(
+        PersistenceManager.currentId,
+        blocksCoordinates.map { case aBlockCoordinates @ BlockCoordinates(_, blockId) =>
+          PersistenceManager.append(PersistenceManager.currentId, blockId, aBlockCoordinates.block)
+          BlockCoordinates(PersistenceManager.currentId, blockId)
+        }
+      )))
     }
   }
 }
@@ -216,7 +230,7 @@ object ImagesManager {
   }
 
   def createInitialPopulation(populationSize: Int): Population = {
-    PersistenceManager.createDataModel(initialDataModel(populationSize))
+    PersistenceManager.create(initialDataModel(populationSize))
     population()
   }
 
@@ -233,7 +247,7 @@ object ImagesManager {
   }
 
   def save(imagesPopulation: ImagesPopulation): ImagesPopulation = {
-    PersistenceManager.createDataModel(PersistenceManager.toDataModel(imagesPopulation))
+    PersistenceManager.create(PersistenceManager.toDataModel(imagesPopulation))
     population()
   }
 }
@@ -253,11 +267,9 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def selectStrongerPopulation(size: Int): Population = super.selectStrongerPopulation(size) match
     case population: ImagesPopulation => ImagesManager.save(population)
 
-  // TODO: agregar lógica para incorporar todos los genes (que no se pisen bloques con mismo blockId
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
-      // TODO: arreglar llamada
-      case children: ImagesPopulation => copyWith(save(children.images))
+      case children: ImagesPopulation => copyWith(PersistenceManager.append(children.images))
   }
 
   override def mutate(mutationLikelihood: Double): Population = {
@@ -281,7 +293,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       Image(Success(Frame(
         PersistenceManager.currentId,
         fusions.map { case (blockId, block) =>
-          PersistenceManager.addBlock(PersistenceManager.currentId, blockId, block)
+          PersistenceManager.append(PersistenceManager.currentId, blockId, block)
           BlockCoordinates(PersistenceManager.currentId, blockId)
         }.toList
       )))
