@@ -197,7 +197,7 @@ object InitialPopulation {
         )(customRandom))
       )).toList)
     case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME =>
-      PersistenceManager.save(ImagesManager.initialDataModel(populationSize))
+      PersistenceManager.createInitialPopulation(populationSize)
 }
 
 case object EmptyPopulation extends Population(List()) {
