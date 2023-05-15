@@ -97,6 +97,16 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
     val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
     total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blocksCoordinates.size)
   }
+
+  override def mutate: Chromosome = {
+    // TODO: actualizar las coordenadas de cada pixel de cada bloque. Usar el número de bloque y el tamaño de bloque = 11 para calcular las nuevas coordenadas del pixel dentro del bloque reubicado
+    val shuffledBlocks = random
+      .shuffle(blocksCoordinates)
+      .zipWithIndex
+      // TODO: llevar a const el tamaño de bloque
+
+      this
+  }
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
@@ -124,7 +134,8 @@ object PersistenceManager {
   def reset(): Unit = mutablePixelsDictionary.clear()
 
   def imagesIds: List[Int] = mutablePixelsDictionary.keys.toList
-  def coordinatesOf(imageId: Int) = (for {
+
+  def coordinatesOf(imageId: Int): List[BlockCoordinates] = (for {
     (blockId, _) <- blocksOf(imageId)
   } yield BlockCoordinates(imageId, blockId)).toList
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
@@ -168,7 +179,6 @@ object PersistenceManager {
   }
 
   def append(images: List[Image]): List[Image] = {
-    println(images.size)
     images.map { case Image(Success(Frame(_, blocksCoordinates))) =>
       PersistenceManager.nextId
       Image(Success(Frame(
@@ -274,29 +284,6 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
 
   override def mutate(mutationLikelihood: Double): Population = {
     super.mutate(mutationLikelihood) match
-      // TODO: hacer el mutate del bloque acá
-      case mutants: ImagesPopulation => copyWith(save(mutants.images))
-  }
-
-  // TODO: llevar a ImagesManager (parametrizando la función de mutate de la de crossover --> copyWith)
-  // TODO: este save hace un crossover. Separar la parte de crossover (mingle de bloques) de la de mutation (hacerle mutate al block).
-  // TODO: SOLUCION: RESOLVER USANDO MUTACIÓN (SHUFFLE DE LAS COORDENADAS DE LOS PÍXELES)
-  private def save(images: List[Image]): List[Image] = {
-    images.map { case Image(Success(Frame(parentImageId, blocksCoordinates))) =>
-      val parentBlocks = PersistenceManager.blocksOf(parentImageId)
-      PersistenceManager.nextId
-
-      val fusions = blocksCoordinates.foldLeft(parentBlocks) { case (result, aBlockCoordinates)  =>
-          result += aBlockCoordinates.blockId -> aBlockCoordinates.block
-      }
-
-      Image(Success(Frame(
-        PersistenceManager.currentId,
-        fusions.map { case (blockId, block) =>
-          PersistenceManager.append(PersistenceManager.currentId, blockId, block)
-          BlockCoordinates(PersistenceManager.currentId, blockId)
-        }.toList
-      )))
-    }
+      case mutants: ImagesPopulation => copyWith(PersistenceManager.append(mutants.images))
   }
 }
