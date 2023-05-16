@@ -117,7 +117,7 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 type DataModel = Map[Int, Map[Int, Block]]
 
 object PersistenceManager {
-  private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
+  private var mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size, immutableImages, currentId)
   private var currentId: Int = 1
 
@@ -152,20 +152,22 @@ object PersistenceManager {
   }
 
   def create(dataModel: DataModel): Unit = {
-    mutablePixelsDictionary.clear()
+    val newDictionary = collection.mutable.Map[Int, collection.mutable.Map[Int, Block]]()
     currentId = 0
     dataModel.keys.foreach { case imageId =>
-      if (!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
+      if (!newDictionary.contains(imageId)) newDictionary += (imageId -> collection.mutable.Map())
 
       val blocks = dataModel(imageId)
       blocks.foreach { case (blockId, block) =>
         // TODO: usar addBlock
-        if(!mutablePixelsDictionary(imageId).contains(blockId)) mutablePixelsDictionary(imageId) += (blockId -> Block(Vector())())
-        mutablePixelsDictionary(imageId) += (blockId -> block)
+        if(!newDictionary(imageId).contains(blockId)) newDictionary(imageId) += (blockId -> Block(Vector())())
+        newDictionary(imageId) += (blockId -> block)
       }
 
       nextId()
     }
+    
+    mutablePixelsDictionary = newDictionary
   }
 
   def toDataModel(population: ImagesPopulation): DataModel = {
