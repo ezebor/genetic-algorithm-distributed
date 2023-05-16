@@ -119,21 +119,19 @@ type DataModel = Map[Int, Map[Int, Block]]
 object PersistenceManager {
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size, immutableImages, currentId)
-  var currentId: Int = 1
+  private var currentId: Int = 1
 
-  val immutableImages: List[ImmutableImage] = List(
+  private val immutableImages: List[ImmutableImage] = List(
     // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(550, 550),
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
   )
 
-  def nextId(): Unit = currentId += 1
+  private def nextId(): Unit = currentId += 1
 
-  def reset(): Unit = mutablePixelsDictionary.clear()
+  private def imagesIds: List[Int] = mutablePixelsDictionary.keys.toList
 
-  def imagesIds: List[Int] = mutablePixelsDictionary.keys.toList
-
-  def coordinatesOf(imageId: Int): List[BlockCoordinates] = (for {
+  private def coordinatesOf(imageId: Int): List[BlockCoordinates] = (for {
     (blockId, _) <- blocksOf(imageId)
   } yield BlockCoordinates(imageId, blockId)).toList
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
@@ -204,7 +202,7 @@ object PersistenceManager {
     )
   }
 
-  def save(dataModel: DataModel): ImagesPopulation = {
+  private def save(dataModel: DataModel): ImagesPopulation = {
     create(dataModel)
     population()
   }
