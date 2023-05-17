@@ -152,22 +152,15 @@ object PersistenceManager {
   }
 
   def create(dataModel: DataModel): Unit = {
-    val newDictionary = collection.mutable.Map[Int, collection.mutable.Map[Int, Block]]()
+    mutablePixelsDictionary.clear()
     currentId = 0
     dataModel.keys.foreach { case imageId =>
-      if (!newDictionary.contains(imageId)) newDictionary += (imageId -> collection.mutable.Map())
-
       val blocks = dataModel(imageId)
       blocks.foreach { case (blockId, block) =>
-        // TODO: usar addBlock
-        if(!newDictionary(imageId).contains(blockId)) newDictionary(imageId) += (blockId -> Block(Vector())())
-        newDictionary(imageId) += (blockId -> block)
+        append(imageId, blockId, block)
       }
-
       nextId()
     }
-    
-    mutablePixelsDictionary = newDictionary
   }
 
   def toDataModel(population: ImagesPopulation): DataModel = {
