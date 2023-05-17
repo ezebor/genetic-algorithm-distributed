@@ -94,7 +94,7 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
   // TODO: obtener el fitness de la persistencia
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
     // TODO: que sus bloques ya tengan todo calculado
-    val referencesBlocks: List[Block] = PersistenceManager.blocksAt(blockCoordinates.blockId)
+    val referencesBlocks: List[Block] = PersistenceManager.referencesBlocksAt(blockCoordinates.blockId)
     total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blocksCoordinates.size)
   }
 
@@ -137,7 +137,7 @@ object PersistenceManager {
   def blocksOf(imageId: Int): collection.mutable.Map[Int, Block] = mutablePixelsDictionary.getOrElse(imageId, collection.mutable.Map())
   def blockAt(imageId: Int, blockId: Int): Block = blocksOf(imageId).getOrElse(blockId, Block(Vector())())
 
-  def blocksAt(blockId: Int): List[Block] = references
+  def referencesBlocksAt(blockId: Int): List[Block] = references
     .values
     .map(_.getOrElse(blockId, Block(Vector())()))
     .toList
