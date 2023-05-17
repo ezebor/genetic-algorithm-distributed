@@ -22,13 +22,13 @@ object CustomSsim extends App {
 
 
   val population2 = population.crossoverWith(population, 0.5)
-  //.mutate(0.5)
+  .mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
   println(population2.individuals.map(i => i.fitness.get))
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-  population2.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
+  PersistenceManager.population().individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(550, 550)
     blocksCoordinates.foreach { blockCoordinates =>
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))

@@ -8,6 +8,7 @@ import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 
+import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
 
 case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) {
@@ -26,16 +27,6 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
       Pixel(thisPixel.x, thisPixel.y, otherPixel.argb)
     }.toVector
   )
-
-  def mutate: Block = {
-    // TODO: optimizar para no recorrer 2 veces el vector de píxeles (shuffle de random)
-    val newPixels: Vector[Pixel] = pixels
-      .map(pixel => (customRandom.nextDouble(), pixel))
-      .sortWith { case ((randomA, _), (randomB, _)) => randomA <= randomB}
-      .map((_, pixel) => pixel)
-
-    Block(newPixels)
-  }
 
   private def luminance(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(meanA, meanB, _, _, _) => (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
@@ -76,6 +67,19 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
     }
 
+  def mutateWith(otherBlock: Block): (Block, Block) = {
+    val packOfPixels = pixels.zip(otherBlock.pixels)
+
+    val mutatedPixels = packOfPixels.foldLeft((Vector[Pixel](), Vector[Pixel]())) { case ((pixelsLeft, pixelsRight), (nextPixelLeft, nextPixelRight)) =>
+      (
+        Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: pixelsLeft,
+        Pixel(nextPixelRight.x, nextPixelRight.y, nextPixelLeft.argb) +: pixelsRight
+      )
+    }
+
+    (Block(mutatedPixels._1), Block(mutatedPixels._2))
+  }
+
   lazy val size: Int = pixels.size
 }
 
@@ -99,11 +103,23 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
   }
 
   override def mutate: Chromosome = {
-    // TODO: actualizar las coordenadas de cada pixel de cada bloque. Usar el número de bloque y el tamaño de bloque = 11 para calcular las nuevas coordenadas del pixel dentro del bloque reubicado
-    // TODO: llevar a const el tamaño de bloque
-    copyWith(
-      ImagesManager.shufflePixelsOf(blocksCoordinates)
+    @tailrec
+    def recursiveMutate(source1: IndexedSeq[BlockCoordinates], source2: IndexedSeq[BlockCoordinates]): Unit = {
+      if(source1.nonEmpty && source2.nonEmpty) {
+        val newBlocks: (Block, Block) = source1.head.block.mutateWith(source2.head.block)
+        PersistenceManager.append(source1.head.blockId, newBlocks._1)
+        PersistenceManager.append(source2.head.blockId, newBlocks._2)
+
+        recursiveMutate(source1.tail, source2.tail)
+      }
+    }
+
+    recursiveMutate(
+      blocksCoordinates.toIndexedSeq,
+      random.shuffle[BlockCoordinates, IndexedSeq[BlockCoordinates]](blocksCoordinates.toIndexedSeq)
     )
+
+    super.mutate
   }
 }
 
@@ -119,12 +135,15 @@ object PersistenceManager {
   private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size, immutableImages, currentId)
   private var currentId: Int = 1
+  private val quantityOfPixels: Int = 550
 
   private val immutableImages: List[ImmutableImage] = List(
     // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(550, 550),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(quantityOfPixels, quantityOfPixels),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(quantityOfPixels, quantityOfPixels)
   )
+
+  def shuffledPixelsCoordinatesX: IndexedSeq[Int] = random.shuffle[Int, IndexedSeq[Int]](0 until quantityOfPixels)
 
   private def nextId(): Unit = currentId += 1
 
@@ -146,6 +165,11 @@ object PersistenceManager {
     val blocksEntry = blocksOf(imageId)
     blocksEntry += (blockId -> block)
     mutablePixelsDictionary += (imageId -> blocksEntry)
+  }
+
+  def append(blockId: Int, block: Block): Unit = {
+    nextId()
+    append(currentId, blockId, block)
   }
 
   def create(dataModel: DataModel): Unit = {
@@ -254,8 +278,6 @@ object ImagesManager {
       (currentId + 1, partialResult)
     }._2
   }
-
-  def shufflePixelsOf(blockCoordinates: List[BlockCoordinates]): List[BlockCoordinates] = ???
 }
 
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
@@ -276,10 +298,5 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     super.crossoverWith(otherPopulation, crossoverLikelihood) match
       case children: ImagesPopulation => copyWith(PersistenceManager.append(children.images))
-  }
-
-  override def mutate(mutationLikelihood: Double): Population = {
-    super.mutate(mutationLikelihood) match
-      case mutants: ImagesPopulation => copyWith(PersistenceManager.append(mutants.images))
   }
 }
