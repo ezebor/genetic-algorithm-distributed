@@ -69,10 +69,12 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     )
   }
 
-  def ssim: Block => Double = { reference =>
-    val terms = generateStatisticsTerms(reference)
-    luminance(terms) * contrast(terms) * structure(terms)
-  }
+  def ssim(blockId: Int): Double = PersistenceManager
+    .referencesBlocksAt(blockId)
+    .foldLeft(0d) { (totalSsim, referenceBlock) =>
+      val terms = generateStatisticsTerms(referenceBlock)
+      totalSsim + luminance(terms) * contrast(terms) * structure(terms)
+    }
 
   lazy val size: Int = pixels.size
 }
@@ -80,6 +82,8 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
 case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: Random = random) extends Gene {
 
   lazy val block: Block = PersistenceManager.blockAt(imageId, blockId)
+
+  lazy val ssim = block.ssim(blockId)
 
   override def mutate: Gene = BlockCoordinates(imageId, blockId)
 
@@ -90,12 +94,8 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocksCoordinates: List[BlockCoordinates] => Frame(imageId, aBlocksCoordinates)
 
-
-  // TODO: obtener el fitness de la persistencia
   protected override def calculateFitness: Double = blocksCoordinates.foldLeft(0d) { (total, blockCoordinates) =>
-    // TODO: que sus bloques ya tengan todo calculado
-    val referencesBlocks: List[Block] = PersistenceManager.referencesBlocksAt(blockCoordinates.blockId)
-    total + (referencesBlocks.map(referenceBlock => blockCoordinates.block.ssim(referenceBlock)).sum / blocksCoordinates.size)
+    total + (blockCoordinates.ssim / blocksCoordinates.size)
   }
 
   override def mutate: Chromosome = {
@@ -113,7 +113,6 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
       Image(Success(Frame(imageId, blocksCoordinates)))
 }
 
-// TODO: incluir el fitness del block (tupla con mean, sd y covariance respecto a las referencias)
 type DataModel = Map[Int, Map[Int, Block]]
 
 object PersistenceManager {
@@ -142,12 +141,10 @@ object PersistenceManager {
     .map(_.getOrElse(blockId, Block(Vector())()))
     .toList
 
-  // TODO: persistir junto con el bloque, su fitness (calcularla en esta función)
   def append(imageId: Int, blockId: Int, block: Block): Unit = {
     if(!mutablePixelsDictionary.contains(imageId)) mutablePixelsDictionary += (imageId -> collection.mutable.Map())
     val blocksEntry = blocksOf(imageId)
     blocksEntry += (blockId -> block)
-    // TODO: al persistir el bloque, calcular sus valores estadísticos
     mutablePixelsDictionary += (imageId -> blocksEntry)
   }
 
