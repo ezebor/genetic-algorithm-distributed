@@ -117,7 +117,7 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 type DataModel = Map[Int, Map[Int, Block]]
 
 object PersistenceManager {
-  private var mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
+  private val mutablePixelsDictionary: collection.mutable.Map[Int, collection.mutable.Map[Int, Block]] = collection.mutable.Map()
   private lazy val references: DataModel = ImagesManager.initialDataModel(immutableImages.size, immutableImages, currentId)
   private var currentId: Int = 1
 
@@ -163,7 +163,7 @@ object PersistenceManager {
     }
   }
 
-  def toDataModel(population: ImagesPopulation): DataModel = {
+  private def toDataModel(population: ImagesPopulation): DataModel = {
     population.individuals.foldLeft(Map[Int, Map[Int, Block]]()) { case (result, Image(Success(Frame(imageId, blocksCoordinates)))) =>
       val blocksEntries: Map[Int, Block] = blocksCoordinates.foldLeft(result.getOrElse(imageId, Map())) { case (result, blockCoordinates @ BlockCoordinates(_, blockId)) =>
         result.updated(blockId, blockCoordinates.block)
