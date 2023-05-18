@@ -80,7 +80,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   lazy val size: Int = pixels.size
 }
 
-// TODO: que el block coordinates no tenga params --> el imageId se lo pasa el frame, y el blockId lo saca pidiendo todos los bloques al mapa mutable
+// TODO: serializar el imageId una sola vez para el cromosoma en el serializer (hacer un serializeGenes que retorne un jsObject)
 case class BlockCoordinates(imageId: Int, blockId: Int)(implicit customRandom: Random = random) extends Gene {
 
   lazy val block: Block = PersistenceManager.blockAt(imageId, blockId)
