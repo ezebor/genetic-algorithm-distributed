@@ -25,6 +25,7 @@ object CustomSsim extends App {
   .mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
   println(population2.individuals.map(i => i.fitness.get))
+  println(PersistenceManager.population().images.size)
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 

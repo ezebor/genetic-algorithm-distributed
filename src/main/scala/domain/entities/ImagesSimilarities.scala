@@ -67,17 +67,14 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
     }
 
-  def mutateWith(otherBlock: Block): (Block, Block) = {
+  def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
 
-    val mutatedPixels = packOfPixels.foldLeft((Vector[Pixel](), Vector[Pixel]())) { case ((pixelsLeft, pixelsRight), (nextPixelLeft, nextPixelRight)) =>
-      (
-        Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: pixelsLeft,
-        Pixel(nextPixelRight.x, nextPixelRight.y, nextPixelLeft.argb) +: pixelsRight
-      )
+    val mutatedPixels = packOfPixels.foldLeft(Vector[Pixel]()) { case (result, (nextPixelLeft, nextPixelRight)) =>
+      Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
     }
 
-    (Block(mutatedPixels._1), Block(mutatedPixels._2))
+    Block(mutatedPixels)
   }
 
   lazy val size: Int = pixels.size
@@ -104,20 +101,20 @@ case class Frame(imageId: Int, blocksCoordinates: List[BlockCoordinates])(implic
 
   override def mutate: Chromosome = {
     @tailrec
-    def recursiveMutate(source1: IndexedSeq[BlockCoordinates], source2: IndexedSeq[BlockCoordinates]): Unit = {
-      if(source1.nonEmpty && source2.nonEmpty) {
-        val newBlocks: (Block, Block) = source1.head.block.mutateWith(source2.head.block)
-        PersistenceManager.append(source1.head.blockId, newBlocks._1)
-        PersistenceManager.append(source2.head.blockId, newBlocks._2)
+    def recursiveMutate(source1: IndexedSeq[BlockCoordinates], source2: IndexedSeq[BlockCoordinates], sink: Vector[Block]): Vector[Block] = {
+      if(source1.isEmpty || source2.isEmpty) return sink
 
-        recursiveMutate(source1.tail, source2.tail)
-      }
+      val mutatedBlock: Block = source1.head.block.mutateWith(source2.head.block)
+      recursiveMutate(source1.tail, source2.tail, mutatedBlock +: sink)
     }
 
-    recursiveMutate(
+    val mutatedPixels = recursiveMutate(
       blocksCoordinates.toIndexedSeq,
-      random.shuffle[BlockCoordinates, IndexedSeq[BlockCoordinates]](blocksCoordinates.toIndexedSeq)
+      random.shuffle[BlockCoordinates, IndexedSeq[BlockCoordinates]](blocksCoordinates.toIndexedSeq),
+      Vector()
     )
+
+    PersistenceManager.append(mutatedPixels)
 
     super.mutate
   }
@@ -167,9 +164,13 @@ object PersistenceManager {
     mutablePixelsDictionary += (imageId -> blocksEntry)
   }
 
-  def append(blockId: Int, block: Block): Unit = {
+  def append(blocks: Vector[Block]): Unit = {
     nextId()
-    append(currentId, blockId, block)
+    blocks
+      .indices
+      .foreach { index =>
+        append(currentId, index, blocks(index))
+      }
   }
 
   def create(dataModel: DataModel): Unit = {
