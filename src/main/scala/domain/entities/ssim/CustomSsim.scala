@@ -6,7 +6,9 @@ import com.sksamuel.scrimage.filter.BlurFilter
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
+import domain.Execute
 import domain.entities.{BlockCoordinates, Frame, Image, ImagesManager, PersistenceManager}
+import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
 
 import java.awt.Color
 import scala.util.{Random, Success}
@@ -22,14 +24,19 @@ object CustomSsim extends App {
 
 
   val population2 = population.crossoverWith(population, 0.5)
-  .mutate(0.5)
+  //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
-  println(population2.individuals.map(i => i.fitness.get))
-  println(PersistenceManager.population().images.size)
+
+
+
+  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
+  val population3 = serializer.read(serializer.write(Execute("HALAA", population2))).population
+  println(s"Length of a population of 20 individuals: ${serializer.write(Execute("HALAA", population2)).toString.length}")
+  println(population3.individuals.map(i => i.fitness.get))
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-  PersistenceManager.population().individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
+  population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
     val newImage = ImmutableImage.create(550, 550)
     blocksCoordinates.foreach { blockCoordinates =>
       blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))

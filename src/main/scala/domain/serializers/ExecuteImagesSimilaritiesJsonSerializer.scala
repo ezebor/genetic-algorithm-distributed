@@ -14,28 +14,41 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
     case Image(Success(frame)) => frame.getGenes
   }
 
-  override def createPopulation(individuals: List[Individual]): Population = individuals match
-    case images: List[Image] => ImagesPopulation(images)
+  override def createPopulation(genes: Vector[JsValue]): Population = {
+    val images = genes.flatMap { case unSerializedImages: JsObject =>
+      val unSerializedImagesMap = unSerializedImages.fields
+      unSerializedImagesMap.map { case (imageId, JsArray(argbValues)) =>
+        val pixels = argbValues
+          .indices
+          .map { index =>
+            val argb = argbValues(index) match
+              case JsNumber(value) => value.intValue
+            Pixel(index / 550, index % 550, argb)
+          }
 
-  protected override def serializeGene = (gene: Gene) => gene match {
-    case BlockCoordinates(imageId, blockId) => JsObject(
-      "imageId" -> JsNumber(imageId),
-      "blockId" -> JsNumber(blockId)
+        val blocks = pixels
+          .grouped(11)
+          .zipWithIndex
+
+        val blockCoordinates: List[BlockCoordinates] = blocks.map { case (aPixels, blockId) =>
+          BlockCoordinates(imageId.toInt, blockId)
+        }.toList
+
+        Image(Success(Frame(imageId.toInt, blockCoordinates)))
+      }
+    }
+    ImagesPopulation(images.toList)
+  }
+
+  override protected def serializeGenes(genes: Vector[Gene]): JsValue = {
+    val imageId = genes.head match
+      case BlockCoordinates(anImageId, _) => anImageId
+    val serializedArgb = genes.flatMap { case aBlockCoordinates: BlockCoordinates =>
+      aBlockCoordinates.block.pixels.map(pixel => JsNumber(pixel.argb))
+    }
+
+    JsObject(
+      s"$imageId" -> JsArray(serializedArgb)
     )
-  }
-
-  private def buildBlockCoordinates = (blockCoordinates: JsObject) => blockCoordinates.getFields("imageId", "blockId") match {
-    case Seq(JsNumber(imageId), JsNumber(blockId)) => BlockCoordinates(imageId.intValue, blockId.intValue)
-  }
-
-  protected override def deserializeIndividual = (coordinates: List[JsValue]) => {
-    val blocksCoordinates: List[BlockCoordinates] =
-      for case blockCoordinates: JsObject <- coordinates
-      yield buildBlockCoordinates(blockCoordinates)
-
-    Image(Success(Frame(
-      blocksCoordinates.head.imageId,
-      blocksCoordinates
-    )))
   }
 }

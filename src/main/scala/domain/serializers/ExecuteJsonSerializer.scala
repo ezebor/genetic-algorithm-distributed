@@ -3,15 +3,16 @@ package domain.serializers
 import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
-import domain.entities.*
+import domain.entities.{Gene, *}
 import domain.entities.AlgorithmConfig.random
 import spray.json.*
 
+import scala.collection.immutable.Vector
+
 trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with RootJsonFormat[Execute] {
   protected def chromosomeOf: Individual => List[Gene]
-  protected def serializeGene: Gene => JsValue
-  protected def deserializeIndividual: List[JsValue] => Individual
-  protected def createPopulation(individuals: List[Individual]): Population
+  protected def serializeGenes(genes: Vector[Gene]): JsValue
+  protected def createPopulation(genes: Vector[JsValue]): Population
 
   def write(command: Execute) = command match {
     case Execute(operatorName: String, population: Population) =>
@@ -20,12 +21,7 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
           case individual: Individual <- population.individuals.toVector
           chromosome = chromosomeOf(individual).toVector
         } yield {
-          JsObject(
-            "chromosome" -> JsArray(
-              for gene: Gene <- chromosome
-                yield serializeGene(gene)
-            )
-          )
+          serializeGenes(chromosome)
         }
       )
 
@@ -38,13 +34,9 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
   def read(value: JsValue) = {
     value.asJsObject.getFields("operatorName", "population") match {
       case Seq(JsString(operatorName), JsArray(population)) =>
-        Execute(operatorName,
-          createPopulation(
-            for {
-              case chromosome: JsValue <- population.toList
-              case JsArray(genes) <- chromosome.asJsObject.getFields("chromosome")
-            } yield deserializeIndividual(genes.toList)
-          )
+        Execute(
+          operatorName,
+          createPopulation(population)
         )
       case _ => throw new DeserializationException("Execute message expected")
     }
