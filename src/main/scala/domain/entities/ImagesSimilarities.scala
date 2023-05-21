@@ -286,13 +286,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case newImages: List[Image] => ImagesPopulation(newImages)
 
-  private lazy val inMemoryImages: List[Image] = images.map {
-    case Image(Success(Frame(imageId, _))) =>
-      val indexedBlocks: collection.mutable.Map[Int, Block] = PersistenceManager.blocksOf(imageId)
-      Image(Success(Frame(imageId, indexedBlocks.keys.map(blockId => BlockCoordinates(imageId, blockId)).toList)))
-  }
-
-  override def individuals: List[Individual] = inMemoryImages
+  override def individuals: List[Individual] = images
 
   override def selectStrongerPopulation(size: Int): Population = super.selectStrongerPopulation(size) match
     case population: ImagesPopulation => PersistenceManager.save(population)

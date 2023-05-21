@@ -10,6 +10,7 @@ object Operators {
   val MUTATION = "mutation"
   val UPDATE_POPULATION = "update-population"
   val ADD_POPULATION = "add-population"
+  val LAST_INDIVIDUALS = "last-individuals"
   val STOP = "stop"
   val HEALTH = "health"
   val OK = "ok"

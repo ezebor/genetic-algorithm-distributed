@@ -17,7 +17,7 @@ object EvolutionMaster {
   def props(): Props = Props(new EvolutionMaster())
 }
 
-class EvolutionMaster() extends Actor with ActorLogging {
+class EvolutionMaster() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
@@ -27,19 +27,8 @@ class EvolutionMaster() extends Actor with ActorLogging {
         crossoverLikelihood,
         mutationLikelihood
       ))
-      
-      def online: Receive = { message =>
-        def waitingWorkers(nextOperatorName: String)(evolvedPopulation: Population, pendingWorkers: Int): Receive = {
-          case Execute(ADD_POPULATION, newPopulation: Population) =>
-            val finalPopulation = evolvedPopulation.copyWith(evolvedPopulation.individuals ::: newPopulation.individuals)
-            if (pendingWorkers == 1) {
-              context.become(online)
-              self ! Execute(nextOperatorName, finalPopulation)
-            } else {
-              context.become(waitingWorkers(nextOperatorName)(finalPopulation, pendingWorkers - 1))
-            }
-        }
 
+      def online: Receive = { message =>
         message match
           case Execute(EVOLUTION, population: Population) =>
             self ! Execute(NATURAL_SELECTION, population)
@@ -54,7 +43,7 @@ class EvolutionMaster() extends Actor with ActorLogging {
             log.debug(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
 
             val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-            context.become(waitingWorkers(nextOperatorName)(basePopulation, chunks.size))
+            context.become(waitingPopulations(nextOperatorName, online, basePopulation, chunks.size))
             chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
           case HEALTH => sender() ! OK
           case OFFLINE => context.become(offline)
