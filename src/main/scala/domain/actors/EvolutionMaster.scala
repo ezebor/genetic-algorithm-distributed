@@ -41,7 +41,7 @@ class EvolutionMaster() extends BaseActor {
 
             log.debug(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
 
-            val chunks: List[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
+            val chunks: Vector[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
             context.become(waitingPopulations(nextOperatorName, online, basePopulation, chunks.size))
             chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
           case HEALTH => sender() ! OK
