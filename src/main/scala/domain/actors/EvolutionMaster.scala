@@ -8,7 +8,7 @@ import akka.routing.FromConfig
 import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
-import domain.entities.{Individual, Population}
+import domain.entities.{EmptyPopulation, Individual, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
 
 import scala.util.Random
@@ -28,27 +28,41 @@ class EvolutionMaster() extends BaseActor {
         mutationLikelihood
       ))
 
-      def online: Receive = {
-          case Execute(EVOLUTION, population: Population) =>
-            self ! Execute(NATURAL_SELECTION, population)
-          case Execute(STOP, population: Population) =>
-            manager ! GenerationBuilt(population)
-          case Execute(currentOperatorName: String, population: Population) =>
-            val (basePopulation: Population, nextOperatorName: String) = currentOperatorName match
-              case NATURAL_SELECTION => (population.copyWith(List()), CROSSOVER)
-              case CROSSOVER => (population, MUTATION)
-              case MUTATION => (population, STOP)
+      def returnGeneration: Operator = { population =>
+        this.distributeWork(
+          manager,
+          population,
+          1,
+          1
+        )
 
-            log.debug(s"Executing $currentOperatorName for a population with size = ${population.individuals.size}. Next operator: $nextOperatorName")
-
-            val chunks: Vector[Population] = population.intoChunks(population.individuals.size / quantityOfWorkers)
-            context.become(waitingPopulations(nextOperatorName, online, basePopulation, chunks.size))
-            chunks.foreach(chunk => router ! Execute(currentOperatorName, chunk))
-          case HEALTH => sender() ! OK
-          case OFFLINE => context.become(offline)
+        context.become(this.waitingPopulations(
+          startEvolution,
+          EmptyPopulation,
+          1
+        ))
       }
-      
-      context.become(online)
+
+      def startEvolution: Operator = { population =>
+        this.distributeWork(
+          router,
+          population,
+          1,
+          quantityOfWorkers
+        )
+
+        context.become(this.waitingPopulations(
+          returnGeneration,
+          EmptyPopulation,
+          quantityOfWorkers
+        ))
+      }
+
+      context.become(this.waitingPopulations(
+        startEvolution,
+        EmptyPopulation,
+        1
+      ))
     case HEALTH => sender() ! OK
   }
 }

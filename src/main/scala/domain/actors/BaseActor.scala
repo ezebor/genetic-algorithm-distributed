@@ -7,35 +7,34 @@ import akka.actor.*
 
 trait BaseActor extends Actor with ActorLogging {
 
-  def distributeWork(receiver: ActorRef, operatorName: String, population: Population, chunkSize: Int, quantityOfEOFMessages: Int): Unit = {
+  type Operator = Population => Unit
+
+  def distributeWork(receiver: ActorRef, population: Population, chunkSize: Int, quantityOfEOFMessages: Int): Unit = {
     val chunks: Vector[Population] = population.intoChunks(chunkSize)
     val dataIndexes = chunks.indices.take(chunks.size - quantityOfEOFMessages)
     val eofIndexes = chunks.indices.takeRight(quantityOfEOFMessages)
 
-    dataIndexes.foreach(index => receiver ! Execute(operatorName, chunks(index)))
+    dataIndexes.foreach(index => receiver ! Execute(ADD_POPULATION, chunks(index)))
     eofIndexes.foreach(index => receiver ! Execute(LAST_INDIVIDUALS, chunks(index)))
   }
 
-  def waitingPopulations(nextOperatorName: String, online: Receive, accumulatedPopulation: Population, pendingActorsResponses: Int): Receive = {
+  def waitingPopulations(operator: Operator, accumulatedPopulation: Population, pendingActorsResponses: Int): Receive = {
     case Execute(ADD_POPULATION, incomingPopulation) =>
       context.become(
         waitingPopulations(
-          nextOperatorName,
-          online,
-          accumulatedPopulation.fusionWith(incomingPopulation),
+          operator,
+          incomingPopulation.fusionWith(accumulatedPopulation),
           pendingActorsResponses
         )
       )
     case Execute(LAST_INDIVIDUALS, incomingPopulation) =>
       if (pendingActorsResponses == 1) {
-        context.become(online)
-        self ! Execute(nextOperatorName, accumulatedPopulation.fusionWith(incomingPopulation))
+        operator(incomingPopulation.fusionWith(accumulatedPopulation))
       } else {
         context.become(
           waitingPopulations(
-            nextOperatorName,
-            online,
-            accumulatedPopulation.fusionWith(incomingPopulation),
+            operator,
+            incomingPopulation.fusionWith(accumulatedPopulation),
             pendingActorsResponses - 1
           )
         )

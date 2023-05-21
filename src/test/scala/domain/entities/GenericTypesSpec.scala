@@ -137,7 +137,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
     "create a chunk with one population composed by one individual with a failure chromosome when the chunk size is 0" in {
       val population: Population = buildRandomPopulation(POPULATION_SIZE)
 
-      val failurePopulation: List[Population] = population.intoChunks(0)
+      val failurePopulation: Vector[Population] = population.intoChunks(0)
       failurePopulation.size should be(1)
       failurePopulation.head.individuals.size should be(1)
 

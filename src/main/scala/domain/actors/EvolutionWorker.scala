@@ -19,22 +19,25 @@ class EvolutionWorker() extends BaseActor {
 
   private def offline: Receive = {
     case WorkerOnline(survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
-      def online: Receive = {
-        case Execute(NATURAL_SELECTION, population: Population) =>
-          val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-          log.debug(s"Population got through natural selection. The new population has  ${strongerPopulation.individuals.size} members: ${strongerPopulation.individuals}")
-          sender() ! Execute(LAST_INDIVIDUALS, strongerPopulation)
-        case Execute(CROSSOVER, population: Population) =>
-          val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
-          val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
-          log.debug(s"Population got through crossover. The new population has  ${children.individuals.size} children: ${children.individuals}")
-          sender() ! Execute(LAST_INDIVIDUALS, children)
-        case Execute(MUTATION, population: Population) =>
-          val mutatedPopulation = population.mutate(mutationLikelihood)
-          log.debug(s"Population got through mutation. The new population has ${mutatedPopulation.individuals.size} members: ${mutatedPopulation.individuals}")
-          sender() ! Execute(LAST_INDIVIDUALS, mutatedPopulation)
+
+      val startEvolution: Operator = { population =>
+        val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+        val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
+        val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
+        val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
+        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+        this.distributeWork(
+          sender(),
+          finalPopulation,
+          1,
+          1
+        )
       }
 
-      context.become(online)
+      context.become(this.waitingPopulations(
+        startEvolution,
+        EmptyPopulation,
+        1
+      ))
   }
 }
