@@ -80,12 +80,12 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
-  def intoChunks(chunkSize: Int): List[Population] = 
-    if(chunkSize == 0) List(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
+  def intoChunks(chunkSize: Int): Vector[Population] = 
+    if(chunkSize == 0) Vector(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
     else individuals
       .grouped(chunkSize)
       .map(anIndividuals => copyWith(anIndividuals))
-      .toList
+      .toVector
 
   def randomSubPopulation(size: Int): Population = {
     @tailrec

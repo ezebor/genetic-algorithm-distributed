@@ -14,7 +14,7 @@ object EvolutionWorker {
   def props(): Props = Props(new EvolutionWorker())
 }
 
-class EvolutionWorker() extends Actor with ActorLogging {
+class EvolutionWorker() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
@@ -36,10 +36,5 @@ class EvolutionWorker() extends Actor with ActorLogging {
       }
 
       context.become(online)
-  }
-
-  def likelihood: Int = {
-    val random = new Random()
-    random.nextInt(100) + 1
   }
 }
