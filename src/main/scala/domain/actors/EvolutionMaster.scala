@@ -28,8 +28,7 @@ class EvolutionMaster() extends BaseActor {
         mutationLikelihood
       ))
 
-      def online: Receive = { message =>
-        message match
+      def online: Receive = {
           case Execute(EVOLUTION, population: Population) =>
             self ! Execute(NATURAL_SELECTION, population)
           case Execute(STOP, population: Population) =>
