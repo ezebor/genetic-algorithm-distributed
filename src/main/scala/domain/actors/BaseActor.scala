@@ -28,7 +28,7 @@ trait BaseActor extends Actor with ActorLogging {
         )
       )
     case Execute(LAST_INDIVIDUALS, incomingPopulation) =>
-      if (pendingActorsResponses == 1) {
+      if (pendingActorsResponses <= 1) {
         operator(incomingPopulation.fusionWith(accumulatedPopulation))
       } else {
         context.become(

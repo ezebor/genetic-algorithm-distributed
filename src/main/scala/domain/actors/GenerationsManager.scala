@@ -9,35 +9,73 @@ object GenerationsManager {
   def props(): Props = Props(new GenerationsManager())
 }
 
-class GenerationsManager() extends Actor with ActorLogging {
+class GenerationsManager() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
     case ManagerOnline(originalSender: ActorRef, evolutionMaster, solutionsPopulationSize, maxQuantityOfGenerationsWithoutImprovements) =>
-      def online(generationId: Int, quantityOfGenerationsWithoutImprovements: Int, solutions: Population): Receive =
-        case BuildNewGeneration(population: Population) =>
-          log.info(s"Starting generation [$generationId] over a population with ${population.individuals.size} individuals")
-          evolutionMaster ! Execute(EVOLUTION, population)
-        case GenerationBuilt(population: Population) =>
-          if(solutions.individuals.isEmpty)
-            context.become(online(generationId + 1, 0, population.copyWith(List(population.bestIndividual))))
-            self ! BuildNewGeneration(population)
+
+      def buildNewGeneration(generationId: Int, quantityOfGenerationsWithoutImprovements: Int, solutions: Population): Operator = { population =>
+        log.info(s"Starting generation [$generationId] over a population with ${population.individuals.size} individuals")
+        this.distributeWork(
+          evolutionMaster,
+          population,
+          1,
+          1
+        )
+
+        context.become(this.waitingPopulations(
+          manageBuiltGeneration(generationId, quantityOfGenerationsWithoutImprovements, solutions),
+          EmptyPopulation,
+          1
+        ))
+      }
+
+      def manageBuiltGeneration(generationId: Int, quantityOfGenerationsWithoutImprovements: Int, solutions: Population): Operator = { population =>
+          if (solutions.individuals.isEmpty)
+            context.become(this.waitingPopulations(
+              buildNewGeneration(generationId + 1, 0, population.copyWith(List(population.bestIndividual))),
+              EmptyPopulation,
+              1
+            ))
           else if (population.bestIndividual.fitness.getOrElse(0d) > solutions.individuals.head.fitness.getOrElse(0d))
             log.info(s"New better individual was found with fitness = ${population.bestIndividual.fitness}")
             val newSolutions = population.copyWith(population.bestIndividual :: {
               if (solutions.individuals.size == solutionsPopulationSize) solutions.individuals.dropRight(1)
               else solutions.individuals
             })
-            context.become(online(generationId + 1, 0, newSolutions))
-            self ! BuildNewGeneration(population)
+            context.become(this.waitingPopulations(
+              buildNewGeneration(generationId + 1, 0, newSolutions),
+              EmptyPopulation,
+              1
+            ))
           else if (quantityOfGenerationsWithoutImprovements <= maxQuantityOfGenerationsWithoutImprovements)
-            context.become(online(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions))
-            self ! BuildNewGeneration(population)
+            context.become(this.waitingPopulations(
+              buildNewGeneration(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions),
+              EmptyPopulation,
+              1
+            ))
           else
-            originalSender ! solutions
-            evolutionMaster ! OFFLINE
-            context.become(offline)
+            context.become(this.waitingPopulations(
+              printSolutions,
+              solutions,
+              1
+            ))
+      }
 
-      context.become(online(1, 0, EmptyPopulation))
+      def printSolutions: Operator = { solutions =>
+        this.distributeWork(
+          originalSender,
+          solutions,
+          1,
+          1
+        )
+      }
+
+      context.become(this.waitingPopulations(
+        buildNewGeneration(1, 0, EmptyPopulation),
+        EmptyPopulation,
+        1
+      ))
   }
 }
