@@ -43,12 +43,7 @@ class GenerationsManager() extends BaseActor {
             buildNewGeneration(generationId + 1, 0, newSolutions)(population)
           else if (quantityOfGenerationsWithoutImprovements <= maxQuantityOfGenerationsWithoutImprovements)
             buildNewGeneration(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions)(population)
-          else
-            context.become(this.waitingPopulations(
-              printSolutions,
-              solutions,
-              1
-            ))
+          else printSolutions(solutions)
       }
 
       def printSolutions: Operator = { solutions =>
