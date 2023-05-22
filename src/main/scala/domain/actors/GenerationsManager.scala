@@ -13,10 +13,10 @@ class GenerationsManager() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case ManagerOnline(originalSender: ActorRef, evolutionMaster, solutionsPopulationSize, maxQuantityOfGenerationsWithoutImprovements) =>
-
+    case ManagerOnline(originalSender, evolutionMaster, solutionsPopulationSize, maxQuantityOfGenerationsWithoutImprovements) =>
       def buildNewGeneration(generationId: Int, quantityOfGenerationsWithoutImprovements: Int, solutions: Population): Operator = { population =>
         log.info(s"Starting generation [$generationId] over a population with ${population.individuals.size} individuals")
+        
         this.distributeWork(
           evolutionMaster,
           population,

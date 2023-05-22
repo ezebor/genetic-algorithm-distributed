@@ -4,7 +4,7 @@ import akka.actor.*
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import domain.PrinterOnline
-import domain.entities.{BasketsPopulation, BlockCoordinates, Frame, Image, ImagesPopulation, Population}
+import domain.entities.{BasketsPopulation, BlockCoordinates, EmptyPopulation, Frame, Image, ImagesPopulation, Population}
 
 import scala.util.Success
 
@@ -12,13 +12,13 @@ object SolutionsPrinter {
   def props(): Props = Props(new SolutionsPrinter())
 }
 
-class SolutionsPrinter extends Actor with ActorLogging {
+class SolutionsPrinter extends BaseActor {
 
   override def receive: Receive = offline
   
   def offline: Receive = {
     case PrinterOnline => {
-      def online: Receive = {
+      def print: Operator = {
         case ImagesPopulation(images) =>
           images
             .map { image =>
@@ -32,7 +32,11 @@ class SolutionsPrinter extends Actor with ActorLogging {
           log.info(s"Found solutions: $baskets")
       }
 
-      context.become(online)
+      context.become(this.waitingPopulations(
+        print,
+        EmptyPopulation,
+        1
+      ))
     }
   }
 }

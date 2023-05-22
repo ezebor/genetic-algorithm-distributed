@@ -23,7 +23,7 @@ import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
 
-object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
+object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
 
   implicit val timeout: Timeout = Timeout(3 seconds)
 
@@ -50,7 +50,12 @@ object MasterRouteTree extends SprayJsonSupport with EvolutionRequestBodyJsonPro
           solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
           master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, populationSize, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
-          generationsManager ? BuildNewGeneration(InitialPopulation(populationSize, individualTypeName))
+          this.distributeWork(
+            generationsManager,
+            InitialPopulation(populationSize, individualTypeName),
+            1,
+            1
+          )
           complete(StatusCodes.Created, "Evolution has started")
         }
       }

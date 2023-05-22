@@ -5,10 +5,7 @@ import domain.Operators.*
 import domain.entities.Population
 import akka.actor.*
 
-trait BaseActor extends Actor with ActorLogging {
-
-  type Operator = Population => Unit
-
+trait Parallel {
   def distributeWork(receiver: ActorRef, population: Population, chunkSize: Int, quantityOfEOFMessages: Int): Unit = {
     val chunks: Vector[Population] = population.intoChunks(chunkSize)
     val dataIndexes = chunks.indices.take(chunks.size - quantityOfEOFMessages)
@@ -17,6 +14,11 @@ trait BaseActor extends Actor with ActorLogging {
     dataIndexes.foreach(index => receiver ! Execute(ADD_POPULATION, chunks(index)))
     eofIndexes.foreach(index => receiver ! Execute(LAST_INDIVIDUALS, chunks(index)))
   }
+}
+
+trait BaseActor extends Parallel with Actor with ActorLogging {
+
+  type Operator = Population => Unit
 
   def waitingPopulations(operator: Operator, accumulatedPopulation: Population, pendingActorsResponses: Int): Receive = {
     case Execute(ADD_POPULATION, incomingPopulation) =>
