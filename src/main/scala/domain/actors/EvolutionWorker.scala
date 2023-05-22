@@ -20,22 +20,22 @@ class EvolutionWorker() extends BaseActor {
   private def offline: Receive = {
     case WorkerOnline(survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
 
-      val startEvolution: Operator = { population =>
-        val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
-        val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
-        val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
-        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
-        this.distributeWork(
-          sender(),
-          finalPopulation,
-          1,
-          1
-        )
+      val startEvolution: ActorRef => Operator = { evolutionMaster => population =>
+          val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+          val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
+          val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
+          val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
+          val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+          this.distributeWork(
+            evolutionMaster,
+            finalPopulation,
+            1,
+            1
+          )
       }
 
       context.become(this.waitingPopulations(
-        startEvolution,
+        startEvolution(sender()),
         EmptyPopulation,
         1
       ))
