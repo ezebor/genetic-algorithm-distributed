@@ -4,7 +4,7 @@ import akka.actor.*
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import domain.PrinterOnline
-import domain.entities.{BasketsPopulation, BlockCoordinates, EmptyPopulation, Frame, Image, ImagesPopulation, Population}
+import domain.entities.*
 
 import scala.util.Success
 
@@ -21,12 +21,13 @@ class SolutionsPrinter extends BaseActor {
       def print: Operator = {
         case ImagesPopulation(images) =>
           images
-            .map { image =>
-              val newImage = ImmutableImage.create(500, 500)
+            .zipWithIndex
+            .map { (image, index) =>
+              val newImage = ImmutableImage.create(550, 550)
               image.frame match
-                case Success(Frame(imageId, blockCoordinates)) =>
-                  blockCoordinates.flatMap(coordinates => coordinates.block.pixels).foreach(pixel => newImage.setPixel(pixel))
-                  newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
+                case Success(Frame(blocks)) =>
+                  blocks.flatMap(aBlock => aBlock.pixels).foreach(pixel => newImage.setPixel(pixel))
+                  newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
             }
         case BasketsPopulation(baskets) =>
           log.info(s"Found solutions: $baskets")

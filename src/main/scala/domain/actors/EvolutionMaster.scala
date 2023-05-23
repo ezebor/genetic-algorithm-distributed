@@ -23,6 +23,7 @@ class EvolutionMaster() extends BaseActor {
   private def offline: Receive = {
     case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       (1 to quantityOfWorkers).foreach(_ => router ! WorkerOnline(
+        self,
         ((populationSize / quantityOfWorkers) *  survivalLikelihood).toInt,
         crossoverLikelihood,
         mutationLikelihood

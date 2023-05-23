@@ -3,8 +3,8 @@ package domain.serializers
 import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
-import domain.entities.{Gene, *}
 import domain.entities.AlgorithmConfig.random
+import domain.entities.*
 import spray.json.*
 
 import scala.collection.immutable.Vector

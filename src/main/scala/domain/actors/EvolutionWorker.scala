@@ -18,24 +18,30 @@ class EvolutionWorker() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case WorkerOnline(survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+    case WorkerOnline(evolutionMaster, survivalPopulationSize, crossoverLikelihood, mutationLikelihood) =>
 
-      val startEvolution: ActorRef => Operator = { evolutionMaster => population =>
-          val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-          val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
-          val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
-          val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
-          val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
-          this.distributeWork(
-            evolutionMaster,
-            finalPopulation,
-            1,
-            1
-          )
+      def startEvolution: Operator = { population =>
+        val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+        val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
+        val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
+        val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
+        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+        this.distributeWork(
+          evolutionMaster,
+          finalPopulation,
+          1,
+          1
+        )
+
+        context.become(this.waitingPopulations(
+          startEvolution,
+          EmptyPopulation,
+          1
+        ))
       }
 
       context.become(this.waitingPopulations(
-        startEvolution(sender()),
+        startEvolution,
         EmptyPopulation,
         1
       ))

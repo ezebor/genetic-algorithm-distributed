@@ -16,7 +16,7 @@ import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.{BuildNewGeneration, Execute, ManagerOnline, MasterOnline, PrinterOnline}
+import domain.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*

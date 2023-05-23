@@ -10,10 +10,10 @@ import akka.routing.{FromConfig, RoundRobinGroup, RoundRobinPool}
 import akka.testkit.{EventFilter, ImplicitSender, TestActorRef, TestKit, TestProbe}
 import app.{ExecutionScript, MasterRouteTree}
 import com.typesafe.config.ConfigFactory
-import domain.{Execute, PrinterOnline}
 import domain.Operators.*
 import domain.actors.{EvolutionMaster, EvolutionWorker, GenerationsManager, SolutionsPrinter}
 import domain.entities.*
+import domain.{Execute, PrinterOnline}
 import org.scalatest.matchers.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

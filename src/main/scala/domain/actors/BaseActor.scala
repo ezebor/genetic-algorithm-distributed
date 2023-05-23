@@ -1,9 +1,9 @@
 package domain.actors
 
+import akka.actor.*
 import domain.Execute
 import domain.Operators.*
 import domain.entities.Population
-import akka.actor.*
 
 trait Parallel {
   def distributeWork(receiver: ActorRef, population: Population, chunkSize: Int, quantityOfEOFMessages: Int): Unit = {

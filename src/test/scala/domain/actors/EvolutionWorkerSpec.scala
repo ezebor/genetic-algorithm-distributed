@@ -38,7 +38,7 @@ class EvolutionWorkerSpec
   implicit val timeout: Timeout = Timeout(3 seconds)
 
   val worker: ActorRef = system.actorOf(EvolutionWorker.props(), "evolutionWorker")
-  worker ? WorkerOnline(SURVIVAL_POPULATION_SIZE, CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD)
+  worker ? WorkerOnline(self, SURVIVAL_POPULATION_SIZE, CROSSOVER_LIKELIHOOD, MUTATION_LIKELIHOOD)
 
   val population: Population = InitialPopulation(POPULATION_SIZE, "Basket")
 

@@ -7,7 +7,7 @@ import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
 import domain.Execute
-import domain.entities.{BlockCoordinates, Frame, Image, ImagesManager, PersistenceManager}
+import domain.entities.{Frame, Image, ImagesManager}
 import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
 
 import java.awt.Color
@@ -17,7 +17,7 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = PersistenceManager.createInitialPopulation(10)
+  val population = ImagesManager.initialPopulation(20)
 
 // 232.85881033242242
 // 230.63930009040476
@@ -36,12 +36,14 @@ object CustomSsim extends App {
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-  population3.individuals.foreach { case Image(Success(Frame(imageId, blocksCoordinates))) =>
+  population3.individuals
+    .zipWithIndex
+    .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(550, 550)
-    blocksCoordinates.foreach { blockCoordinates =>
-      blockCoordinates.block.pixels.foreach(pixel => newImage.setPixel(pixel))
+    blocks.foreach { aBlock =>
+      aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
-    newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$imageId.png")
+    newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
   }
 
   /*
