@@ -120,9 +120,8 @@ object ImagesManager {
     ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
   )
 
-  lazy val referencesBlocks: Map[(Int, Int), List[Block]] = ImagesManager
-    .immutableImages
-    .flatMap(immutableImage => ImagesManager.blocksOf(immutableImage).values)
+  lazy val referencesBlocks: Map[(Int, Int), List[Block]] = references
+    .flatten
     .groupBy(_.id)
 
   lazy val references: List[List[Block]] = immutableImages

@@ -39,7 +39,8 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
 
   override protected def serializeGenes(genes: Vector[Gene]): JsValue = {
     JsArray(
-      genes.flatMap { case aBlock: Block =>
+      genes
+        .flatMap { case aBlock: Block =>
         aBlock.pixels.map(pixel => JsNumber(pixel.argb))
       }
     )
