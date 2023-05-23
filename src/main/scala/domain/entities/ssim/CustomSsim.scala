@@ -19,10 +19,12 @@ object CustomSsim extends App {
 
   val population = ImagesManager.initialPopulation(20)
 
-// 232.85881033242242
-// 230.63930009040476
+
+  println(s"Tamaño: ${reference.subimage(0, 0, 11, 11).pixels().length}")
 
 
+
+/*
   val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
@@ -44,7 +46,7 @@ object CustomSsim extends App {
       aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }
+  }*/
 
   /*
   // TODO: crear nueva imagen a partir de píxeles

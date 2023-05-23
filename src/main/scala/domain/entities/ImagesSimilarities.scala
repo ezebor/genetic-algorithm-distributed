@@ -11,7 +11,7 @@ import domain.entities.AlgorithmConfig.*
 import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
 
-case class Block(pixels: Vector[Pixel], references: Map[(Int, Int), List[Block]] = Map())(implicit customRandom: Random = random) extends Gene {
+case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
 
   private val K1: Double = 0.01
   private val K2: Double = 0.03f
@@ -55,7 +55,7 @@ case class Block(pixels: Vector[Pixel], references: Map[(Int, Int), List[Block]]
     )
   }
 
-  lazy val ssim: Double = references(id)
+  lazy val ssim: Double = ImagesManager.referencesBlocks(id)
     .foldLeft(0d) { (totalSsim, referenceBlock) =>
       val terms = generateStatisticsTerms(referenceBlock)
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
@@ -68,7 +68,7 @@ case class Block(pixels: Vector[Pixel], references: Map[(Int, Int), List[Block]]
       Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
     }
 
-    Block(mutatedPixels, references)
+    Block(mutatedPixels)
   }
 
   lazy val size: Int = pixels.size
@@ -167,9 +167,7 @@ object ImagesManager {
         Image(
           Success(
             Frame(
-              blocks
-                .toList
-                .map(aBlock => Block(aBlock.pixels, referencesBlocks))
+              blocks.map(aBlock => Block(aBlock.pixels))
             )
           )
         )

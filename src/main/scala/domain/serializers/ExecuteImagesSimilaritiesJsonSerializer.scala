@@ -13,9 +13,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   protected override def chromosomeOf = {
     case Image(Success(frame)) => frame.getGenes
   }
-
-  private lazy val references: Map[(Int, Int), List[Block]] = ImagesManager.referencesBlocks
-
+  
   override def createPopulation(genes: Vector[JsValue]): Population = {
     val images = genes.map { case JsArray(argbValues) =>
       val pixels = argbValues
@@ -29,7 +27,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
       val blocks: List[Block] = pixels
         .grouped(11)
         .map { aPixels =>
-          Block(aPixels.toVector, references)
+          Block(aPixels.toVector)
         }.toList
 
       Image(Success(Frame(blocks)))
