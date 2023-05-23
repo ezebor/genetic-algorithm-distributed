@@ -23,7 +23,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
         .map { index =>
           val argb = argbValues(index) match
             case JsNumber(value) => value.intValue
-          Pixel(index / 550, index % 550, argb)
+          Pixel(index / 110, index % 110, argb)
         }
 
       val blocks: List[Block] = pixels

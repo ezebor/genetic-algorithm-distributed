@@ -39,7 +39,7 @@ object CustomSsim extends App {
   population3.individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
-    val newImage = ImmutableImage.create(550, 550)
+    val newImage = ImmutableImage.create(110, 110)
     blocks.foreach { aBlock =>
       aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }

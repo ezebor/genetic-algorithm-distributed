@@ -116,8 +116,8 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 object ImagesManager {
   val immutableImages: List[ImmutableImage] = List(
     // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(550, 550),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(550, 550)
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(110, 110),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(110, 110)
   )
 
   lazy val referencesBlocks: Map[(Int, Int), List[Block]] = references
