@@ -7,8 +7,9 @@ import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
 import domain.Execute
-import domain.entities.{Frame, Image, ImagesManager}
+import domain.entities.{Frame, Image, Block, ImagesManager}
 import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
+import app.ExecutionScript.*
 
 import java.awt.Color
 import scala.util.{Random, Success}
@@ -17,26 +18,16 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png")
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ImagesManager.initialPopulation(20)
-  
+  val population = ImagesManager.initialPopulation(10)
 
-
-
-/*
-  val population2 = population.crossoverWith(population, 0.5)
+  //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
-  println(population.individuals.map(i => i.fitness.get))
-
-
-
-  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
-  val population3 = serializer.read(serializer.write(Execute("HALAA", population2))).population
-  println(s"Length of a population of 20 individuals: ${serializer.write(Execute("HALAA", population2)).toString.length}")
-  println(population3.individuals.map(i => i.fitness.get))
+  //println(population.individuals.map(i => i.fitness.get))
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-  population3.individuals
+  println(population.images.head.getTryGenes.get.map {case b: Block => b.id})
+  population.individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -44,7 +35,7 @@ object CustomSsim extends App {
       aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }*/
+  }
 
   /*
   // TODO: crear nueva imagen a partir de píxeles

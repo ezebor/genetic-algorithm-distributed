@@ -56,11 +56,11 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     )
   }
 
-  lazy val ssim: Double = ImagesManager.referencesBlocks(id)
+  lazy val ssim: Double = 0/*ImagesManager.referencesBlocks(id)
     .foldLeft(0d) { (totalSsim, referenceBlock) =>
       val terms = generateStatisticsTerms(referenceBlock)
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
-    }
+    }*/
 
   def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
@@ -115,28 +115,16 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 }
 
 object ImagesManager {
-  val immutableImages: List[ImmutableImage] = List(
-    // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-  )
-
-  lazy val referencesBlocks: Map[(Int, Int), List[Block]] = references
-    .flatten
-    .groupBy(_.id)
-
-  lazy val references: List[List[Block]] = immutableImages
-    .map(immutableImage => ImagesManager.blocksOf(immutableImage).values.toList)
-
   lazy val referencesImages: List[Image] = {
     def toBlocks(immutableImage: ImmutableImage): List[Block] = {
       (for {
-        x <- 0 until DIMENSION_BLOCK_SIZE
-        y <- 0 until DIMENSION_BLOCK_SIZE
+        x <- Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
+        y <- Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
       } yield {
         Block(immutableImage
           .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
           .pixels()
+          .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
           .toVector)
       }).toList
     }
@@ -158,52 +146,9 @@ object ImagesManager {
     )
   }
 
-
-  def blocksOf(immutableImage: ImmutableImage, blockDimensionSize: Int = 11): Map[(Int, Int), Block] = {
-    def sortAndGroupDimension(dimension: Vector[Int]): Vector[Vector[Int]] =
-      Set
-        .from(dimension)
-        .toVector
-        .sortWith((a, b) => a <= b)
-        .grouped(blockDimensionSize)
-        .toVector
-
-    lazy val orderedPixelsTable: (Vector[Vector[Int]], Vector[Vector[Int]]) = {
-      val table: (Vector[Int], Vector[Int]) = immutableImage.pixels().foldLeft((Vector[Int](), Vector[Int]())) { (table, pixel) =>
-        (pixel.x +: table._1, pixel.y +: table._2)
-      }
-
-      (sortAndGroupDimension(table._1), sortAndGroupDimension(table._2))
-    }
-
-    val blocks = for {
-      blockX <- orderedPixelsTable._1
-      blockY <- orderedPixelsTable._2
-      positionsBlock = blockX.flatMap(index => (1 to blockDimensionSize).map(_ => index)).zip(blockY.flatMap(_ => blockY))
-    } yield {
-      Block(positionsBlock.map((x, y) => immutableImage.pixel(x, y)))
-    }
-
-    blocks.map(block => (block.id, block)).toMap
-  }
-
   def initialPopulation(populationSize: Int): ImagesPopulation = {
-    val imagesPixels = references
-      .zip((1 to populationSize).grouped(populationSize / references.size))
-      .flatMap { case (blocks, timesToRepeat) =>
-        timesToRepeat.map(_ => blocks)
-      }
-
     ImagesPopulation(
-      imagesPixels.map(blocks =>
-        Image(
-          Success(
-            Frame(
-              blocks.map(aBlock => Block(aBlock.pixels))
-            )
-          )
-        )
-      )
+      referencesImages.flatMap(image => (1 to populationSize / referencesImages.size).map(_ => image.copy(image.frame)))
     )
   }
 }
