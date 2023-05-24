@@ -22,9 +22,6 @@ class EvolutionWorker() extends BaseActor {
 
       def startEvolution: Operator = { population =>
         val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        log.info(s"Tamaño population: ${population.individuals.size}")
-        log.info(s"fitness: ${population.individuals.map(_.fitness.get)}")
-        log.info(s"Tamaño stronger: ${strongerPopulation.individuals.size}")
         val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
         val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
