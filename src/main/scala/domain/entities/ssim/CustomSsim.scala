@@ -22,16 +22,10 @@ object CustomSsim extends App {
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
-  //println(population.individuals.map(i => i.fitness.get))
+  println(population.individuals.map(i => i.fitness.get))
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-
-  println(ImagesManager.blockIds)
-
-  println(population.images.map { case Image(Success(Frame(blocks))) =>
-    blocks.map(_.id)
-  })
 
   /*val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   ImagesManager.toBlocks(ImagesManager.toImmutableImage(ImagesManager.toBlocks(reference))).foreach { aBlock =>
