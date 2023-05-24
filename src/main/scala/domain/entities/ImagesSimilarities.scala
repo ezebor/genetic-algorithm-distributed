@@ -36,6 +36,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     val pixelsA = pixels
     val pixelsB = blockB.pixels
 
+    // TODO: hacer 2 loops: uno para calcular las medias y otro para calcular sigma y covarianza
     val terms = pixels.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumPixelsB, sumSquarePixelsA, sumSquarePixelsB, covarianceNumerator), index) =>
       (
         sumPixelsA + pixelsA(index).argb,
