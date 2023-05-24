@@ -95,7 +95,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
         val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
 
         recRandomSubPopulation(
-          copyWith(sourcePopulation.individuals.filter(_ != foundIndividual)),
+          copyWith((sourcePopulation.individuals.toVector diff Vector(foundIndividual)).toList),
           copyWith(sinkPopulation.individuals ::: List(foundIndividual)),
           aSize - 1
         )
