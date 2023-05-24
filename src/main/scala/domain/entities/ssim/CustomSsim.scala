@@ -28,8 +28,7 @@ object CustomSsim extends App {
 
 
 
-  println(population.individuals.map(_.fitness.get))
-  println(population.selectStrongerPopulation(8).individuals.map(_.fitness.get))
+  println(ImagesManager.blockIds)
 
   /*population.selectStrongerPopulation(8).individuals
     .zipWithIndex

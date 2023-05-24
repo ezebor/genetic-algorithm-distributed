@@ -64,11 +64,19 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     )
   }
 
-  lazy val ssim: Double = ImagesManager.referencesBlocks(id)
-    .foldLeft(0d) { (totalSsim, referenceBlock) =>
-      val terms = generateStatisticsTerms(referenceBlock)
-      totalSsim + luminance(terms) * contrast(terms) * structure(terms)
+  lazy val ssim: Double = {
+
+    if(!ImagesManager.referencesBlocks.contains(id)) {
+      println(s"NO EXISTE LA KEY. referencias: ${ImagesManager.referencesBlocks.keys}")
+      println(s"COORDENADAS DE LOS PIXELES (size = ${pixels.size}): ${pixels.map(p => (p.x, p.y))}")
     }
+
+    ImagesManager.referencesBlocks(id)
+      .foldLeft(0d) { (totalSsim, referenceBlock) =>
+        val terms = generateStatisticsTerms(referenceBlock)
+        totalSsim + luminance(terms) * contrast(terms) * structure(terms)
+      }
+  }
 
   def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
@@ -123,20 +131,23 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 }
 
 object ImagesManager {
-  lazy val referencesImages: List[Image] = {
-    def toBlocks(immutableImage: ImmutableImage): List[Block] = {
-      (for {
-        x <- Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
-        y <- Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
-      } yield {
-        Block(immutableImage
-          .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
-          .pixels()
-          .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
-          .toVector)
-      }).toList
-    }
+  lazy val blockIds: IndexedSeq[(Int, Int)] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
+    .flatMap(x => (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE).map(_ => x))
+    .zip(
+      (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE)
+        .flatMap(_ => Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE))
+    )
 
+  def toBlocks(immutableImage: ImmutableImage): List[Block] = blockIds
+    .map { case (x, y) =>
+      Block(immutableImage
+        .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
+        .pixels()
+        .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
+        .toVector)
+    }.toList
+
+  lazy val referencesImages: List[Image] = {
     val immutableImages = List(
       ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
       ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
