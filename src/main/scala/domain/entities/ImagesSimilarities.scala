@@ -146,6 +146,12 @@ object ImagesManager {
     )
   }
 
+  lazy val referencesBlocks: Map[(Int, Int), List[Block]] = referencesImages
+    .flatMap { case Image(Success(Frame(blocks))) =>
+      blocks
+    }
+    .groupBy(_.id)
+
   def initialPopulation(populationSize: Int): ImagesPopulation = {
     ImagesPopulation(
       referencesImages.flatMap(image => (1 to populationSize / referencesImages.size).map(_ => image.copy(image.frame)))

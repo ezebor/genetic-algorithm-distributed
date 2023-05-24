@@ -26,8 +26,11 @@ object CustomSsim extends App {
 
   //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
 
-  println(population.images.head.getTryGenes.get.map {case b: Block => b.id})
-  population.individuals
+
+
+  println(ImagesManager.referencesBlocks.values.map(_.size).sum)
+
+  /*population.individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -35,7 +38,7 @@ object CustomSsim extends App {
       aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }
+  }*/
 
   /*
   // TODO: crear nueva imagen a partir de píxeles
