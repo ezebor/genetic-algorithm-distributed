@@ -56,11 +56,11 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     )
   }
 
-  lazy val ssim: Double = 0/*ImagesManager.referencesBlocks(id)
+  lazy val ssim: Double = ImagesManager.referencesBlocks(id)
     .foldLeft(0d) { (totalSsim, referenceBlock) =>
       val terms = generateStatisticsTerms(referenceBlock)
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
-    }*/
+    }
 
   def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
