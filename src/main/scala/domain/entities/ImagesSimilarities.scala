@@ -28,7 +28,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private def contrast(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, _) => (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
   private def structure(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => Math.max((covariance + C3) / (standardDeviationA * standardDeviationB + C3), 0.01)
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => (covariance + C3) / (standardDeviationA * standardDeviationB + C3)
 
   private case class StatisticsTerms(meanA: Double, meanB: Double, standardDeviationA: Double, standardDeviationB: Double, covariance: Double)
 
@@ -36,23 +36,23 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     val pixelsA = pixels
     val pixelsB = blockB.pixels
 
-    val terms = pixels.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB), index) =>
+    val terms = pixels.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumPixelsB, sumSquarePixelsA, sumSquarePixelsB, covarianceNumerator), index) =>
       (
         sumPixelsA + pixelsA(index).argb,
-        sumSquarePixelsA + Math.pow(pixelsA(index).argb, 2),
         sumPixelsB + pixelsB(index).argb,
+        sumSquarePixelsA + Math.pow(pixelsA(index).argb, 2),
         sumSquarePixelsB + Math.pow(pixelsB(index).argb, 2),
-        sumPixelAByPixelB + pixelsA(index).argb * pixelsB(index).argb
+        covarianceNumerator + (pixelsA(index).argb - sumPixelsA / size) * (pixelsB(index).argb - sumPixelsB / size)
       )
     }
 
     terms match
-      case (sumPixelsA, sumSquarePixelsA, sumPixelsB, sumSquarePixelsB, sumPixelAByPixelB) => StatisticsTerms(
+      case (sumPixelsA, sumPixelsB, sumSquarePixelsA, sumSquarePixelsB, covarianceNumerator) => StatisticsTerms(
         sumPixelsA / size,
         sumPixelsB / size,
         Math.sqrt((sumSquarePixelsA / (size - 1)) - (Math.pow(sumPixelsA, 2) / (Math.pow(size, 2) - size))),
         Math.sqrt((sumSquarePixelsB / (size - 1)) - (Math.pow(sumPixelsB, 2) / (Math.pow(size, 2) - size))),
-        (sumPixelAByPixelB / (size - 1)) - (sumPixelsA * sumPixelsB / (Math.pow(size, 2) - size))
+        covarianceNumerator / (size - 1)
     )
   }
 
