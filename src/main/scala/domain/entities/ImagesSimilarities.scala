@@ -37,23 +37,30 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     val pixelsB = blockB.pixels
 
     // TODO: hacer 2 loops: uno para calcular las medias y otro para calcular sigma y covarianza
-    val terms = pixels.indices.foldLeft((0d, 0d, 0d, 0d, 0d)) { case ((sumPixelsA, sumPixelsB, sumSquarePixelsA, sumSquarePixelsB, covarianceNumerator), index) =>
+    val (sumPixelsA, sumPixelsB) = pixels.indices.foldLeft((0d, 0d)) { case ((sumPixelsA, sumPixelsB), index) =>
       (
         sumPixelsA + pixelsA(index).argb,
-        sumPixelsB + pixelsB(index).argb,
-        sumSquarePixelsA + Math.pow(pixelsA(index).argb, 2),
-        sumSquarePixelsB + Math.pow(pixelsB(index).argb, 2),
-        covarianceNumerator + (pixelsA(index).argb - sumPixelsA / size) * (pixelsB(index).argb - sumPixelsB / size)
+        sumPixelsB + pixelsB(index).argb
       )
     }
 
-    terms match
-      case (sumPixelsA, sumPixelsB, sumSquarePixelsA, sumSquarePixelsB, covarianceNumerator) => StatisticsTerms(
-        sumPixelsA / size,
-        sumPixelsB / size,
-        Math.sqrt((sumSquarePixelsA / (size - 1)) - (Math.pow(sumPixelsA, 2) / (Math.pow(size, 2) - size))),
-        Math.sqrt((sumSquarePixelsB / (size - 1)) - (Math.pow(sumPixelsB, 2) / (Math.pow(size, 2) - size))),
-        covarianceNumerator / (size - 1)
+    val meanA = sumPixelsA / size
+    val meanB = sumPixelsB / size
+
+    val (varianceA, varianceB, covariance) = pixels.indices.foldLeft((0d, 0d, 0d)) { case ((totalVarianceA, totalVarianceB, totalCovariance), index) =>
+      (
+        totalVarianceA + Math.pow(pixelsA(index).argb - meanA, 2) / (size - 1),
+        totalVarianceB + Math.pow(pixelsB(index).argb - meanB, 2) / (size - 1),
+        totalCovariance + (pixelsA(index).argb - meanA) * (pixelsB(index).argb - meanB) / (size - 1)
+      )
+    }
+
+    StatisticsTerms(
+      meanA,
+      meanB,
+      Math.sqrt(varianceA),
+      Math.sqrt(varianceB),
+      covariance
     )
   }
 
