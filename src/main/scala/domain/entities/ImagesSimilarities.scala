@@ -26,9 +26,9 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private def luminance(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(meanA, meanB, _, _, _) => (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
   private def contrast(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, _) => (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, _) => Math.max((2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2), 0)
   private def structure(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => (covariance + C3) / (standardDeviationA * standardDeviationB + C3)
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => Math.max((covariance + C3) / (standardDeviationA * standardDeviationB + C3), 0)
 
   private case class StatisticsTerms(meanA: Double, meanB: Double, standardDeviationA: Double, standardDeviationB: Double, covariance: Double)
 
@@ -92,7 +92,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
     case aBlocks: List[Block] => Frame(aBlocks)
 
   lazy val ssim: Double = blocks
-    .map(aBlock => aBlock.ssim / blocks.size)
+    .map(_.ssim)
     .sum
 
   protected override def calculateFitness: Double = ssim / blocks.size
