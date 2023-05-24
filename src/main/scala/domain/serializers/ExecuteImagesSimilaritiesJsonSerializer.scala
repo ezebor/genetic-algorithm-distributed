@@ -6,14 +6,14 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import spray.json.*
-
+import app.ExecutionScript.DIMENSION_IMAGE_SIZE
 import scala.util.Success
 
 class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   protected override def chromosomeOf = {
     case Image(Success(frame)) => frame.getGenes
   }
-  
+
   override def createPopulation(genes: Vector[JsValue]): Population = {
     val images = genes.map { case JsArray(argbValues) =>
       val pixels = argbValues
@@ -21,7 +21,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
         .map { index =>
           val argb = argbValues(index) match
             case JsNumber(value) => value.intValue
-          Pixel(index / 110, index % 110, argb)
+          Pixel(index / DIMENSION_IMAGE_SIZE, index % DIMENSION_IMAGE_SIZE, argb)
         }
 
       val blocks: List[Block] = pixels

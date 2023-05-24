@@ -5,6 +5,7 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import domain.PrinterOnline
 import domain.entities.*
+import app.ExecutionScript.DIMENSION_IMAGE_SIZE
 
 import scala.util.Success
 
@@ -23,7 +24,7 @@ class SolutionsPrinter extends BaseActor {
           images
             .zipWithIndex
             .map { (image, index) =>
-              val newImage = ImmutableImage.create(110, 110)
+              val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
               image.frame match
                 case Success(Frame(blocks)) =>
                   blocks.flatMap(aBlock => aBlock.pixels).foreach(pixel => newImage.setPixel(pixel))

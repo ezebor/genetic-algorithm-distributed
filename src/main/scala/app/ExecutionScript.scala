@@ -9,6 +9,8 @@ object ExecutionScript {
   
   val INDIVIDUAL_TYPE_NAME: String = IMAGES_SIMILARITIES_TYPE_NAME
   val SERIALIZATION_CONFIG: String = IMAGES_SIMILARITIES_SERIALIZATION_CONFIG
+  val DIMENSION_IMAGE_SIZE: Int = 110
+  val DIMENSION_BLOCK_SIZE: Int = 11
 }
 
 object MasterNode extends EvolutionMasterNode(2, ExecutionScript.INDIVIDUAL_TYPE_NAME)

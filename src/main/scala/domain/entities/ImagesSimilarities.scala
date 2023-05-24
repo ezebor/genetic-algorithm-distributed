@@ -7,6 +7,7 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
+import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE}
 
 import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
@@ -116,8 +117,8 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 object ImagesManager {
   val immutableImages: List[ImmutableImage] = List(
     // TODO: pasar a constantes el tamaño de imagen (proporcional al tamaño de bloque de 11x11)
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(110, 110),
-    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(110, 110)
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
+    ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   )
 
   lazy val referencesBlocks: Map[(Int, Int), List[Block]] = references
@@ -126,6 +127,37 @@ object ImagesManager {
 
   lazy val references: List[List[Block]] = immutableImages
     .map(immutableImage => ImagesManager.blocksOf(immutableImage).values.toList)
+
+  lazy val referencesImages: List[Image] = {
+    def toBlocks(immutableImage: ImmutableImage): List[Block] = {
+      (for {
+        x <- 0 until DIMENSION_BLOCK_SIZE
+        y <- 0 until DIMENSION_BLOCK_SIZE
+      } yield {
+        Block(immutableImage
+          .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
+          .pixels()
+          .toVector)
+      }).toList
+    }
+
+    val immutableImages = List(
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+    )
+
+    immutableImages.map(
+      immutableImage =>
+        Image(
+          Success(
+            Frame(
+              toBlocks(immutableImage)
+            )
+          )
+        )
+    )
+  }
+
 
   def blocksOf(immutableImage: ImmutableImage, blockDimensionSize: Int = 11): Map[(Int, Int), Block] = {
     def sortAndGroupDimension(dimension: Vector[Int]): Vector[Vector[Int]] =

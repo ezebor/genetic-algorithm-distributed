@@ -18,9 +18,7 @@ object CustomSsim extends App {
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
   val population = ImagesManager.initialPopulation(20)
-
-
-  println(s"Tamaño: ${reference.subimage(0, 0, 11, 11).pixels().length}")
+  
 
 
 
@@ -41,7 +39,7 @@ object CustomSsim extends App {
   population3.individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
-    val newImage = ImmutableImage.create(110, 110)
+    val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     blocks.foreach { aBlock =>
       aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
     }
