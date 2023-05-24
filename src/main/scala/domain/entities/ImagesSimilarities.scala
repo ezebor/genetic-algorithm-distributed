@@ -28,7 +28,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private def contrast(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, _) => (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
   private def structure(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => Math.max((covariance + C3) / (standardDeviationA * standardDeviationB + C3), 0)
+    case StatisticsTerms(_, _, standardDeviationA, standardDeviationB, covariance) => (covariance + C3) / (standardDeviationA * standardDeviationB + C3)
 
   private case class StatisticsTerms(meanA: Double, meanB: Double, standardDeviationA: Double, standardDeviationB: Double, covariance: Double)
 
@@ -59,6 +59,8 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   lazy val ssim: Double = ImagesManager.referencesBlocks(id)
     .foldLeft(0d) { (totalSsim, referenceBlock) =>
       val terms = generateStatisticsTerms(referenceBlock)
+      println(totalSsim)
+      println(structure(terms))
       totalSsim + luminance(terms) * contrast(terms) * structure(terms)
     }
 
