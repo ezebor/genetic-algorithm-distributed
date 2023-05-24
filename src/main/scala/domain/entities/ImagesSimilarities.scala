@@ -21,7 +21,10 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private val C2: Double = Math.pow(K2 * L, 2)
   private val C3: Double = C2 / 2
 
-  def id: (Int, Int) = (pixels.head.x, pixels.head.y)
+  def id: (Int, Int) = {
+    val firstPixel = pixels.sortWith((p1, p2) => p1.x <= p2.x && p1.y <= p2.y).head
+    (firstPixel.x, firstPixel.y)
+  }
 
   private def luminance(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(meanA, meanB, _, _, _) => (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
@@ -64,19 +67,11 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
     )
   }
 
-  lazy val ssim: Double = {
-
-    if(!ImagesManager.referencesBlocks.contains(id)) {
-      println(s"NO EXISTE LA KEY. referencias: ${ImagesManager.referencesBlocks.keys}")
-      println(s"COORDENADAS DE LOS PIXELES (size = ${pixels.size}): ${pixels.map(p => (p.x, p.y))}")
+  lazy val ssim: Double = ImagesManager.referencesBlocks(id)
+    .foldLeft(0d) { (totalSsim, referenceBlock) =>
+      val terms = generateStatisticsTerms(referenceBlock)
+      totalSsim + luminance(terms) * contrast(terms) * structure(terms)
     }
-
-    ImagesManager.referencesBlocks(id)
-      .foldLeft(0d) { (totalSsim, referenceBlock) =>
-        val terms = generateStatisticsTerms(referenceBlock)
-        totalSsim + luminance(terms) * contrast(terms) * structure(terms)
-      }
-  }
 
   def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
@@ -137,6 +132,17 @@ object ImagesManager {
       (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE)
         .flatMap(_ => Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE))
     )
+
+  def toImmutableImage(blocks: List[Block]): ImmutableImage = {
+    val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+    for {
+      aBlock <- blocks
+      aPixel <- aBlock.pixels
+    } yield {
+      immutableImage.setPixel(aPixel)
+    }
+    immutableImage
+  }
 
   def toBlocks(immutableImage: ImmutableImage): List[Block] = blockIds
     .map { case (x, y) =>

@@ -22,7 +22,6 @@ trait BaseActor extends Parallel with Actor with ActorLogging {
 
   def waitingPopulations(operator: Operator, accumulatedPopulation: Population, pendingActorsResponses: Int): Receive = {
     case Execute(ADD_POPULATION, incomingPopulation) =>
-      log.info(ADD_POPULATION)
       context.become(
         waitingPopulations(
           operator,
@@ -31,7 +30,6 @@ trait BaseActor extends Parallel with Actor with ActorLogging {
         )
       )
     case Execute(LAST_INDIVIDUALS, incomingPopulation) =>
-      log.info(LAST_INDIVIDUALS)
       if (pendingActorsResponses <= 1) {
         operator(incomingPopulation.fusionWith(accumulatedPopulation))
       } else {
