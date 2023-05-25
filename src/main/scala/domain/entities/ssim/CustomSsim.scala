@@ -18,20 +18,33 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
-  val population = ImagesManager.initialPopulation(2)
+  val population = ImagesManager.initialPopulation(10)
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
+  //println(population.selectStrongerPopulation(8).accumulatedFitness.map(_._2))
 
-  //println(population.selectStrongerPopulation(8).crossoverWith(population, 0.5).accumulatedFitness.map(_._2))
+  /*val images = List(
+    reference,
+    reference.rotateLeft(),
+    reference.rotateLeft().rotateLeft(),
+    reference.rotateLeft().rotateLeft().rotateLeft(),
+    reference.flipX(),
+    reference.flipX().rotateLeft(),
+    reference.flipX().rotateLeft().rotateLeft(),
+    reference.flipX().rotateLeft().rotateLeft().rotateLeft()
+  )
 
-
-  /*val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-  ImagesManager.toBlocks(ImagesManager.toImmutableImage(ImagesManager.toBlocks(reference))).foreach { aBlock =>
-    aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
-  }
-  newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_1.png")*/
+  images
+    .zipWithIndex
+    .foreach { case (image, index) =>
+      val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+      ImagesManager.toBlocks(image).foreach { aBlock =>
+        aBlock.pixels.foreach(pixel => newImage.setPixel(pixel))
+      }
+      newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${index}.png")
+  }*/
 
   /*println(population.images.flatMap{ case Image(Success(Frame(blocks))) =>
     blocks.map(_.pixels.map(p => (p.x, p.y)))
