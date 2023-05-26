@@ -11,6 +11,8 @@ trait Parallel {
     val dataIndexes = chunks.indices.take(chunks.size - quantityOfEOFMessages)
     val eofIndexes = chunks.indices.takeRight(quantityOfEOFMessages)
 
+    // TODO optimización: mandar a cada receiver todo de una (hacer deep dive en vez de round robin, para que los workers ya vayan trabajando)
+    // TODO: el quantityOfEOFMessages indica la cantidad de cortes que hay que hacer para decirle a cada worker que empiece a trabajar
     dataIndexes.foreach(index => receiver ! Execute(ADD_POPULATION, chunks(index)))
     eofIndexes.foreach(index => receiver ! Execute(LAST_INDIVIDUALS, chunks(index)))
   }
