@@ -115,6 +115,9 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
 
   protected override def calculateFitness: Double = ssim / blocks.size
 
+  override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
+    case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
+
   override def mutate: Chromosome = {
     @tailrec
     def recursiveMutate(source1: IndexedSeq[Block], source2: IndexedSeq[Block], sink: List[Block]): List[Block] = {
