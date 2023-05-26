@@ -169,10 +169,26 @@ object ImagesManager {
     }.toList
 
   lazy val referencesImages: List[Image] = {
-    val immutableImages = List(
-      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
-      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-    )
+    val immutableImages = {
+      val initialImmutableImages = List(
+        ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
+        ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+      )
+
+      val immutableImagesVariants = initialImmutableImages.flatMap { reference =>
+        List(
+          reference.rotateLeft(),
+          reference.rotateLeft().rotateLeft(),
+          reference.rotateLeft().rotateLeft().rotateLeft(),
+          reference.flipX(),
+          reference.flipX().rotateLeft(),
+          reference.flipX().rotateLeft().rotateLeft(),
+          reference.flipX().rotateLeft().rotateLeft().rotateLeft()
+        )
+      }
+
+      initialImmutableImages ::: immutableImagesVariants
+    }
 
     immutableImages.map(
       immutableImage =>
