@@ -5,6 +5,9 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.Population
 
+val MASTER_ROLE = "master"
+val WORKER_ROLE = "worker"
+
 trait Parallel {
   def distributeWork(receiver: ActorRef, population: Population, chunkSize: Int, quantityOfEOFMessages: Int): Unit = {
     val chunks: Vector[Population] = population.intoChunks(chunkSize)

@@ -1,7 +1,9 @@
 package app
 
 import akka.actor.*
+import akka.cluster.ClusterEvent.MemberEvent
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.headers.RawHeader
@@ -11,7 +13,7 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.routing.FromConfig
 import akka.util.Timeout
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
@@ -32,6 +34,7 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int, individualTypeName: Str
   val config = ConfigFactory.parseString(
     s"""
       |akka.remote.artery.canonical.port = 2551
+      |akka.cluster.roles = ["$MASTER_ROLE"]
       |akka.actor.deployment./evolutionRouter.cluster.max-nr-of-instances-per-node = $quantityOfWorkersPerNode
       |""".stripMargin)
     .withFallback(serializationConfig)

@@ -21,11 +21,13 @@ class EvolutionWorker() extends BaseActor {
     case WorkerOnline(evolutionMaster, survivalPopulationSize, crossoverLikelihood, mutationLikelihood) =>
 
       def startEvolution: Operator = { population =>
+        log.info(s"Starting evolution over a population with size = ${population.individuals.size}")
         val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
         val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
         val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
         val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+        log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
         this.distributeWork(
           evolutionMaster,
           finalPopulation,
