@@ -34,6 +34,8 @@ case class Basket(itemsList: Try[ItemsList])(implicit customRandom: Random = ran
 case class BasketsPopulation(baskets: List[Basket]) extends Population(baskets) {
   override def copyWith(newIndividuals: List[Individual]): Population = newIndividuals match
     case baskets: List[Basket] => BasketsPopulation(baskets)
+
+  override def empty(): Population = BasketsPopulation(List[Basket]())
 }
 
 

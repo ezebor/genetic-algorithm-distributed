@@ -222,4 +222,6 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def copyWith(newIndividuals: List[Individual]): Population = ImagesPopulation(newIndividuals.map { case image: Image =>
     image
   })
+
+  override def empty(): Population = ImagesPopulation(List[Image]())
 }

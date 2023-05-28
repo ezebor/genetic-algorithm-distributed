@@ -121,7 +121,7 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
     "split up individuals list into chunks of populations whose individuals re-grouped are the original population" in {
       val population = buildRandomPopulation(POPULATION_SIZE)
-      val chunks = population.intoChunks(CHUNKS_SIZE)
+      val chunks = population.intoChunksOfChunks(CHUNKS_SIZE)
       chunks.size should be(POPULATION_SIZE / CHUNKS_SIZE + 1)
 
       val actualIndividuals = chunks.flatMap(aPopulation => aPopulation.individuals)
@@ -130,14 +130,14 @@ class GenericTypesSpec extends AnyWordSpecLike with should.Matchers {
 
     "create an empty chunk when the populatioon is empty" in {
       val population = buildRandomPopulation(0)
-      val chunks = population.intoChunks(CHUNKS_SIZE)
+      val chunks = population.intoChunksOfChunks(CHUNKS_SIZE)
       chunks.size should be(0)
     }
 
     "create a chunk with one population composed by one individual with a failure chromosome when the chunk size is 0" in {
       val population: Population = buildRandomPopulation(POPULATION_SIZE)
 
-      val failurePopulation: Vector[Population] = population.intoChunks(0)
+      val failurePopulation: Vector[Population] = population.intoChunksOfChunks(0)
       failurePopulation.size should be(1)
       failurePopulation.head.individuals.size should be(1)
 

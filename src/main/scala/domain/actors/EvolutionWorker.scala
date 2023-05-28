@@ -30,9 +30,7 @@ class EvolutionWorker() extends BaseActor {
         log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
         this.distributeWork(
           evolutionMaster,
-          finalPopulation,
-          1,
-          1
+          finalPopulation
         )
 
         context.become(this.waitingPopulations(

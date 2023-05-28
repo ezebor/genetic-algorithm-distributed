@@ -43,6 +43,7 @@ object AlgorithmConfig {
 
 trait Population(internalIndividuals: List[Individual])(implicit random: Random) {
   def copyWith(newIndividuals: List[Individual]): Population
+  def empty(): Population
   def individuals: List[Individual] = internalIndividuals
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
@@ -81,19 +82,22 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
-  def intoChunks(chunkSize: Int): Vector[Population] = 
+  def intoChunksOfChunks(chunkSize: Int): Vector[Population] =
     if(chunkSize == 0) Vector(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
-    else {
-      individuals
-        .zipWithIndex
-        .foldLeft(Map[Int, List[Individual]]()) { case (result, (nextIndividual, index)) =>
-          val groupIndex = index % (QUANTITY_OF_WORKER_NODES * QUANTITY_OF_WORKERS_PER_NODE)
-          result.updated(groupIndex, nextIndividual :: result.getOrElse(groupIndex, List()))
-        }
-        .values
-        .map(anIndividuals => copyWith(anIndividuals))
-        .toVector
+    else individuals
+      .grouped(chunkSize)
+      .map(anIndividuals => copyWith(anIndividuals))
+      .toVector
+
+  def intoNChunks(quantityOfChunks: Int): Vector[Population] = individuals
+    .zipWithIndex
+    .foldLeft(Map[Int, List[Individual]]()) { case (result, (nextIndividual, index)) =>
+      val groupIndex = index % quantityOfChunks
+      result.updated(groupIndex, nextIndividual :: result.getOrElse(groupIndex, List()))
     }
+    .values
+    .map(anIndividuals => copyWith(anIndividuals))
+    .toVector
 
   def randomSubPopulation(size: Int): Population = {
     @tailrec
@@ -212,4 +216,5 @@ object InitialPopulation {
 
 case object EmptyPopulation extends Population(List()) {
   override def copyWith(newIndividuals: List[Individual]): Population = this
+  override def empty(): Population = this
 }
