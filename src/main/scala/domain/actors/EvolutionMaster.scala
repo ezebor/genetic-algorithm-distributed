@@ -12,8 +12,8 @@ import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
-import app.ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
-import app.ExecutionScript.QUANTITY_OF_WORKER_NODES
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
+
 import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
@@ -45,10 +45,10 @@ class EvolutionMaster() extends BaseActor {
   override def receive: Receive = offline(Map())
 
   private def offline(workers: Map[Address, Vector[ActorRef]]): Receive = {
-    case MasterOnline(manager: ActorRef, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+    case MasterOnline(manager: ActorRef, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       workers.values.flatten.foreach(worker => worker ! WorkerOnline(
         self,
-        ((populationSize / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)) *  survivalLikelihood).toInt,
+        ((POPULATION_SIZE / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)) *  survivalLikelihood).toInt,
         crossoverLikelihood,
         mutationLikelihood
       ))

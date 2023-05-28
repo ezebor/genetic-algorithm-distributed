@@ -6,8 +6,8 @@ import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import spray.json.*
-import ExecutionScript.QUANTITY_OF_WORKER_NODES
-import ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
+import ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Random, Success, Try}
@@ -190,7 +190,6 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 }
 
 case class EvolutionRequestBody(
-                                 populationSize: Int = 500,
                                  survivalLikelihood: Double = 0.8,
                                  crossoverLikelihood: Double = 0.5,
                                  mutationLikelihood: Double = 0.03,
@@ -199,19 +198,19 @@ case class EvolutionRequestBody(
                                )
 
 trait EvolutionRequestBodyJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat6(EvolutionRequestBody.apply)
+  implicit val evolutionRequestJsonProtocol: RootJsonFormat[EvolutionRequestBody] = jsonFormat5(EvolutionRequestBody.apply)
 }
 
 object InitialPopulation {
-  def apply(populationSize: Int, individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
+  def apply(individualTypeName: String)(implicit customRandom: Random = random): Population = individualTypeName match
     case ExecutionScript.BASKET_INDIVIDUAL_TYPE_NAME => BasketsPopulation(
-      (1 to populationSize).map(i => Basket(
+      (1 to POPULATION_SIZE).map(i => Basket(
         Success(ItemsList(
           (1 to (customRandom.nextInt(5) + 1)).map(_ => Item(s"Item $i", customRandom.nextInt(10), customRandom.nextInt(10))).toList
         )(customRandom))
       )).toList)
     case ExecutionScript.IMAGES_SIMILARITIES_TYPE_NAME =>
-      ImagesManager.initialPopulation(populationSize)
+      ImagesManager.initialPopulation()
 }
 
 case object EmptyPopulation extends Population(List()) {

@@ -7,7 +7,7 @@ import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE}
+import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE, POPULATION_SIZE}
 
 import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
@@ -211,9 +211,9 @@ object ImagesManager {
     }
     .groupBy(_.id)
 
-  def initialPopulation(populationSize: Int): ImagesPopulation = {
+  def initialPopulation(): ImagesPopulation = {
     ImagesPopulation(
-      referencesImages.flatMap(image => (1 to populationSize / referencesImages.size).map(_ => image.copy(image.frame)))
+      referencesImages.flatMap(image => (1 to POPULATION_SIZE / referencesImages.size).map(_ => image.copy(image.frame)))
     )
   }
 }

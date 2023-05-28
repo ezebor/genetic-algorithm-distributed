@@ -14,6 +14,7 @@ object ExecutionScript {
   
   val QUANTITY_OF_WORKERS_PER_NODE: Int = 8
   val QUANTITY_OF_WORKER_NODES: Int = 1
+  val POPULATION_SIZE: Int = 200
 }
 
 object MasterNode extends EvolutionMasterNode(ExecutionScript.INDIVIDUAL_TYPE_NAME)

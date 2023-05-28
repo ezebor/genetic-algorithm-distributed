@@ -36,7 +36,6 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
     pathPrefix("api" / "evolution") {
       (post & pathEndOrSingleSlash) {
         entity(as[EvolutionRequestBody]) { case EvolutionRequestBody(
-        populationSize,
         survivalLikelihood,
         crossoverLikelihood,
         mutationLikelihood,
@@ -45,10 +44,10 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
         ) =>
           solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-          master ? MasterOnline(generationsManager, populationSize, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
+          master ? MasterOnline(generationsManager, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
           this.distributeWork(
             generationsManager,
-            InitialPopulation(populationSize, individualTypeName),
+            InitialPopulation(individualTypeName),
             1,
             1
           )
