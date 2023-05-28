@@ -12,7 +12,7 @@ import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
-
+import app.MasterRouteTree.QUANTITY_OF_WORKERS
 import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
@@ -45,6 +45,7 @@ class EvolutionMaster() extends BaseActor {
 
   private def offline(workers: Map[Address, ActorRef]): Receive = {
     case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+      log.info(s"Workers size: ${workers.size}")
       (1 to quantityOfWorkers).foreach(_ => router ! WorkerOnline(
         self,
         ((populationSize / quantityOfWorkers) *  survivalLikelihood).toInt,
@@ -80,8 +81,13 @@ class EvolutionMaster() extends BaseActor {
 
     case MemberUp(member) if member.hasRole(WORKER_ROLE) =>
       log.info(s"Member is up: ${member.address}")
-      val workerSelection = context.actorSelection(s"${member.address}/user/evolutionWorker")
-      workerSelection.resolveOne().map(ref => (member.address, ref)).pipeTo(self)
+      (1 to QUANTITY_OF_WORKERS).foreach { index =>
+        val workerSelection = context.actorSelection(s"${member.address}/user/evolutionWorker_$index")
+        workerSelection
+          .resolveOne()
+          .map(ref => (member.address, ref))
+          .pipeTo(self)
+      }
 
     case UnreachableMember(member) if member.hasRole(WORKER_ROLE) =>
       log.info(s"Member detected as unreachable: ${member.address}")

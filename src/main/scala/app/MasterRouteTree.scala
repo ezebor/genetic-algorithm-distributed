@@ -28,6 +28,7 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
   implicit val timeout: Timeout = Timeout(3 seconds)
 
   private val QUANTITY_OF_NODES: Int = 2
+  val QUANTITY_OF_WORKERS: Int = 8
 
   def apply(
              generationsManager: ActorRef,
