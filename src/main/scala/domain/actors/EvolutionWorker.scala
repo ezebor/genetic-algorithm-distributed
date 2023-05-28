@@ -7,6 +7,7 @@ import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 import domain.{Execute, WorkerOnline}
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 
 import scala.util.Random
 
@@ -26,7 +27,9 @@ class EvolutionWorker() extends BaseActor {
         val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
         val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
-        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+        val finalPopulation = strongerPopulation
+          .fusionWith(children.fusionWith(mutatedPopulation))
+          .selectStrongerPopulation(POPULATION_SIZE / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES))
         log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
         this.distributeWork(
           evolutionMaster,
