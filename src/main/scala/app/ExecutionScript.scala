@@ -11,8 +11,11 @@ object ExecutionScript {
   val SERIALIZATION_CONFIG: String = IMAGES_SIMILARITIES_SERIALIZATION_CONFIG
   val DIMENSION_IMAGE_SIZE: Int = 110
   val DIMENSION_BLOCK_SIZE: Int = 11
+  
+  val QUANTITY_OF_WORKERS_PER_NODE: Int = 8
+  val QUANTITY_OF_WORKER_NODES: Int = 1
 }
 
-object MasterNode extends EvolutionMasterNode(4, ExecutionScript.INDIVIDUAL_TYPE_NAME)
+object MasterNode extends EvolutionMasterNode(ExecutionScript.INDIVIDUAL_TYPE_NAME)
 object WorkersNode1 extends EvolutionWorkersNode(2561)
 object WorkersNode2 extends EvolutionWorkersNode(2562)

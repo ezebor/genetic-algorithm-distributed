@@ -27,15 +27,10 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
 
   implicit val timeout: Timeout = Timeout(3 seconds)
 
-  private val QUANTITY_OF_NODES: Int = 2
-  val QUANTITY_OF_WORKERS: Int = 8
-
   def apply(
              generationsManager: ActorRef,
              master: ActorRef,
-             router: ActorRef,
              solutionsPrinter: ActorRef,
-             quantityOfWorkersPerNode: Int,
              individualTypeName: String
            ): Route = {
     pathPrefix("api" / "evolution") {
@@ -50,7 +45,7 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
         ) =>
           solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-          master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, populationSize, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
+          master ? MasterOnline(generationsManager, populationSize, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
           this.distributeWork(
             generationsManager,
             InitialPopulation(populationSize, individualTypeName),

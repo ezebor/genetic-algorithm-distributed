@@ -12,7 +12,8 @@ import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
-import app.MasterRouteTree.QUANTITY_OF_WORKERS
+import app.ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
+import app.ExecutionScript.QUANTITY_OF_WORKER_NODES
 import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
@@ -26,7 +27,7 @@ class EvolutionMaster() extends BaseActor {
   implicit val timeout: Timeout = Timeout(3 seconds)
 
   val cluster: Cluster = Cluster(context.system)
-  val workers: Map[Address, ActorRef] = Map()
+  val workers: Map[ActorRef, Vector[ActorRef]] = Map()
 
   override def preStart(): Unit = {
     cluster.subscribe(
@@ -43,18 +44,17 @@ class EvolutionMaster() extends BaseActor {
 
   override def receive: Receive = offline(Map())
 
-  private def offline(workers: Map[Address, ActorRef]): Receive = {
-    case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
-      log.info(s"Workers size: ${workers.size}")
-      (1 to quantityOfWorkers).foreach(_ => router ! WorkerOnline(
+  private def offline(workers: Map[Address, Vector[ActorRef]]): Receive = {
+    case MasterOnline(manager: ActorRef, populationSize: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+      workers.values.flatten.foreach(worker => worker ! WorkerOnline(
         self,
-        ((populationSize / quantityOfWorkers) *  survivalLikelihood).toInt,
+        ((populationSize / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)) *  survivalLikelihood).toInt,
         crossoverLikelihood,
         mutationLikelihood
       ))
 
       def returnGeneration: Operator = { population =>
-        this.distributeWork(manager, population, 1, 1)
+        this.distributeWork(manager, population)
 
         context.become(this.waitingPopulations(
           startEvolution,
@@ -64,12 +64,20 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def startEvolution: Operator = { population =>
-        this.distributeWork(router, population, 1, quantityOfWorkers)
+        val workerChunks = population.intoChunks(population.individuals.size / QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)
+        val workersActorRefs = workers.values.flatten.toVector
+
+        log.info(s"size of worker chunks: ${workerChunks.size}")
+        log.info(s"size of workersActorRefs: ${workersActorRefs.size}")
+
+        workersActorRefs.indices.foreach { index =>
+          this.distributeWork(workersActorRefs(index), workerChunks(index))
+        }
 
         context.become(this.waitingPopulations(
           returnGeneration,
           EmptyPopulation,
-          quantityOfWorkers
+          QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES
         ))
       }
 
@@ -81,7 +89,7 @@ class EvolutionMaster() extends BaseActor {
 
     case MemberUp(member) if member.hasRole(WORKER_ROLE) =>
       log.info(s"Member is up: ${member.address}")
-      (1 to QUANTITY_OF_WORKERS).foreach { index =>
+      (0 until QUANTITY_OF_WORKERS_PER_NODE).foreach { index =>
         val workerSelection = context.actorSelection(s"${member.address}/user/evolutionWorker_$index")
         workerSelection
           .resolveOne()
@@ -102,6 +110,7 @@ class EvolutionMaster() extends BaseActor {
 
     case pair: (Address, ActorRef) =>
       log.info(s"Registering worker: $pair")
-      context.become(offline(workers.updated(pair._1, pair._2)))
+      val workersActorRefs = workers.getOrElse(pair._1, Vector())
+      context.become(offline(workers.updated(pair._1, pair._2 +: workersActorRefs)))
   }
 }

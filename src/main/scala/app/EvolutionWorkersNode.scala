@@ -24,5 +24,5 @@ class EvolutionWorkersNode(port: Int) extends App {
     .withFallback(mainConfig)
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
-  (1 to 8).foreach(index => system.actorOf(EvolutionWorker.props(), s"evolutionWorker_$index"))
+  (0 to 7).foreach(index => system.actorOf(EvolutionWorker.props(), s"evolutionWorker_$index"))
 }

@@ -6,7 +6,8 @@ import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import spray.json.*
-
+import ExecutionScript.QUANTITY_OF_WORKER_NODES
+import ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Random, Success, Try}
@@ -82,10 +83,17 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
 
   def intoChunks(chunkSize: Int): Vector[Population] = 
     if(chunkSize == 0) Vector(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
-    else individuals
-      .grouped(chunkSize)
-      .map(anIndividuals => copyWith(anIndividuals))
-      .toVector
+    else {
+      individuals
+        .zipWithIndex
+        .foldLeft(Map[Int, List[Individual]]()) { case (result, (nextIndividual, index)) =>
+          val groupIndex = index % (QUANTITY_OF_WORKER_NODES * QUANTITY_OF_WORKERS_PER_NODE)
+          result.updated(groupIndex, nextIndividual :: result.getOrElse(groupIndex, List()))
+        }
+        .values
+        .map(anIndividuals => copyWith(anIndividuals))
+        .toVector
+    }
 
   def randomSubPopulation(size: Int): Population = {
     @tailrec
