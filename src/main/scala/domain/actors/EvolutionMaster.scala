@@ -66,10 +66,7 @@ class EvolutionMaster() extends BaseActor {
       def startEvolution: Operator = { population =>
         val workerChunks = population.intoChunks(population.individuals.size / QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)
         val workersActorRefs = workers.values.flatten.toVector
-
-        log.info(s"size of worker chunks: ${workerChunks.size}")
-        log.info(s"size of workersActorRefs: ${workersActorRefs.size}")
-
+        
         workersActorRefs.indices.foreach { index =>
           this.distributeWork(workersActorRefs(index), workerChunks(index))
         }
