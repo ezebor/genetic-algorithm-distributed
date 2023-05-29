@@ -6,6 +6,7 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.cluster.{Cluster, Member}
+import app.ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
 import com.typesafe.config.ConfigFactory
 import domain.actors.{EvolutionWorker, WORKER_ROLE}
 
@@ -24,5 +25,5 @@ class EvolutionWorkersNode(port: Int) extends App {
     .withFallback(mainConfig)
 
   val system = ActorSystem("GeneticAlgorithmSystem", config)
-  (0 to 7).foreach(index => system.actorOf(EvolutionWorker.props(), s"evolutionWorker_$index"))
+  (0 until QUANTITY_OF_WORKERS_PER_NODE).foreach(index => system.actorOf(EvolutionWorker.props(), s"evolutionWorker_$index"))
 }
