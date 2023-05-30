@@ -29,10 +29,11 @@ class GenerationsManager() extends BaseActor {
           }
           else if (quantityOfGenerationsWithoutImprovements <= maxQuantityOfGenerationsWithoutImprovements)
             manageBuiltGeneration(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions)
-          else {
-            // TODO: mandarle mensaje a master para frenar
-            printSolutions
+          else if (quantityOfGenerationsWithoutImprovements == maxQuantityOfGenerationsWithoutImprovements) {
+            printSolutions(solutions)
+            doNothing
           }
+          else doNothing
         }
         
         context.become(this.waitingPopulations(
@@ -45,11 +46,11 @@ class GenerationsManager() extends BaseActor {
       def printSolutions: Operator = { solutions =>
         this.distributeWork(
           solutionsPrinter,
-          solutions,
-          1,
-          1
+          solutions
         )
       }
+
+      def doNothing: Operator = { _ => }
 
       context.become(this.waitingPopulations(
         manageBuiltGeneration(1, 0, EmptyPopulation),
