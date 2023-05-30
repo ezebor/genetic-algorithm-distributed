@@ -7,7 +7,7 @@ import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import akka.pattern.pipe
 import akka.routing.FromConfig
 import akka.util.Timeout
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
+import app.ExecutionScript.*
 import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
@@ -27,7 +27,6 @@ class EvolutionMaster() extends BaseActor {
   implicit val timeout: Timeout = Timeout(3 seconds)
 
   val cluster: Cluster = Cluster(context.system)
-  val workers: Map[ActorRef, Vector[ActorRef]] = Map()
 
   override def preStart(): Unit = {
     cluster.subscribe(
@@ -48,34 +47,36 @@ class EvolutionMaster() extends BaseActor {
     case MasterOnline(manager: ActorRef, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       workers.values.flatten.foreach(worker => worker ! WorkerOnline(
         self,
-        ((POPULATION_SIZE / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES)) *  survivalLikelihood).toInt,
+        (survivalLikelihood * POPULATION_SIZE / QUANTITY_OF_WORKERS).toInt,
         crossoverLikelihood,
         mutationLikelihood
       ))
 
-      def returnGeneration: Operator = { population =>
+      def returnGeneration(startWorkerIndex: Int): Operator = { population =>
         this.distributeWork(manager, population)
-        startEvolution(population)
+        startEvolution(startWorkerIndex, QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION)(population)
       }
 
-      def startEvolution: Operator = { population =>
-        log.info(s"Starting evolution over a population of size = ${population.individuals.size}")
-        val quantityOfWorkers = QUANTITY_OF_WORKER_NODES * QUANTITY_OF_WORKERS_PER_NODE
-        val chunks = population.intoNChunks(quantityOfWorkers)
+      def startEvolution(startWorkerIndex: Int, quantityOfTargetWorkers: Int): Operator = { population =>
+        val chunks = population.intoNChunks(quantityOfTargetWorkers)
         val workersActorRefs = workers.values.flatten.toVector
-        chunks.indices.foreach { index =>
-          this.distributeWork(workersActorRefs(index), chunks(index))
-        }
+
+        (1 to quantityOfTargetWorkers)
+          .map(index => (startWorkerIndex + index) % QUANTITY_OF_WORKERS)
+          .zip(chunks)
+          .foreach { (workerIndex, populationChunk) =>
+            this.distributeWork(workersActorRefs(workerIndex), populationChunk)
+          }
 
         context.become(this.waitingPopulations(
-          returnGeneration,
+          returnGeneration(startWorkerIndex + QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION),
           EmptyPopulation,
-          quantityOfWorkers
+          QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION
         ))
       }
 
       context.become(this.waitingPopulations(
-        startEvolution,
+        startEvolution(0, QUANTITY_OF_WORKERS),
         EmptyPopulation,
         1
       ))

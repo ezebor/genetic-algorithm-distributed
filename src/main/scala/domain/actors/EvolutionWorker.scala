@@ -3,11 +3,11 @@ package domain.actors
 import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 import domain.{Execute, WorkerOnline}
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 
 import scala.util.Random
 
@@ -38,7 +38,7 @@ class EvolutionWorker() extends BaseActor {
 
         context.become(this.waitingPopulations(
           startEvolution,
-          EmptyPopulation,
+          finalPopulation,
           1
         ))
       }
