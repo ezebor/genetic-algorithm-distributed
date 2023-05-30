@@ -25,7 +25,7 @@ import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
 
-class EvolutionMasterNode(individualTypeName: String) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
+class EvolutionMasterNode() extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
   val configSource = ConfigFactory.load("resources/application.conf")
   val serializationConfig = configSource.getConfig(ExecutionScript.SERIALIZATION_CONFIG)
   val mainConfig = configSource.getConfig("mainConfig")
@@ -48,9 +48,7 @@ class EvolutionMasterNode(individualTypeName: String) extends App with SprayJson
   val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
   val solutionsPrinter = system.actorOf(SolutionsPrinter.props(), "solutionsPrinter")
 
-  val routesTree: Route = MasterRouteTree(
-    generationsManager, master, solutionsPrinter, individualTypeName
-  )
+  val routesTree: Route = MasterRouteTree(generationsManager, master, solutionsPrinter)
 
   Http().newServerAt("localhost", 8080).bind(routesTree)
 }

@@ -7,11 +7,12 @@ import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import akka.pattern.pipe
 import akka.routing.FromConfig
 import akka.util.Timeout
+import app.ExecutionScript
 import app.ExecutionScript.*
 import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
-import domain.entities.{EmptyPopulation, Individual, Population}
+import domain.entities.{EmptyPopulation, Individual, InitialPopulation, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
 
 import scala.concurrent.duration.*
@@ -43,14 +44,20 @@ class EvolutionMaster() extends BaseActor {
 
   override def receive: Receive = offline(Map())
 
-  private def offline(workers: Map[Address, Vector[ActorRef]]): Receive = {
+  private def offline(indexedWorkers: Map[Address, Vector[ActorRef]]): Receive = {
     case MasterOnline(manager: ActorRef, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
-      workers.values.flatten.foreach(worker => worker ! WorkerOnline(
-        self,
-        (survivalLikelihood * POPULATION_SIZE / QUANTITY_OF_WORKERS).toInt,
-        crossoverLikelihood,
-        mutationLikelihood
-      ))
+      val workers: Vector[ActorRef] = indexedWorkers.values.flatten.toVector
+
+      def initializeWorkers(): Unit = {
+        workers.foreach { worker =>
+          worker ! WorkerOnline(
+            self,
+            (survivalLikelihood * POPULATION_SIZE).toInt,
+            crossoverLikelihood,
+            mutationLikelihood
+          )
+        }
+      }
 
       def returnGeneration(startWorkerIndex: Int): Operator = { population =>
         this.distributeWork(manager, population)
@@ -59,13 +66,11 @@ class EvolutionMaster() extends BaseActor {
 
       def startEvolution(startWorkerIndex: Int, quantityOfTargetWorkers: Int): Operator = { population =>
         val chunks = population.intoNChunks(quantityOfTargetWorkers)
-        val workersActorRefs = workers.values.flatten.toVector
-
         (1 to quantityOfTargetWorkers)
           .map(index => (startWorkerIndex + index) % QUANTITY_OF_WORKERS)
           .zip(chunks)
           .foreach { (workerIndex, populationChunk) =>
-            this.distributeWork(workersActorRefs(workerIndex), populationChunk)
+            this.distributeWork(workers(workerIndex), populationChunk)
           }
 
         context.become(this.waitingPopulations(
@@ -75,6 +80,7 @@ class EvolutionMaster() extends BaseActor {
         ))
       }
 
+      initializeWorkers()
       context.become(this.waitingPopulations(
         startEvolution(0, QUANTITY_OF_WORKERS),
         EmptyPopulation,
@@ -93,18 +99,18 @@ class EvolutionMaster() extends BaseActor {
 
     case UnreachableMember(member) if member.hasRole(WORKER_ROLE) =>
       log.info(s"Member detected as unreachable: ${member.address}")
-      context.become(offline(workers.removed(member.address)))
+      context.become(offline(indexedWorkers.removed(member.address)))
 
     case MemberRemoved(member, previousStatus) =>
       log.info(s"Member ${member.address} removed after $previousStatus")
-      context.become(offline(workers.removed(member.address)))
+      context.become(offline(indexedWorkers.removed(member.address)))
 
     case m: MemberEvent =>
       log.info(s"Unrecognized member Event: $m")
 
     case pair: (Address, ActorRef) =>
       log.info(s"Registering worker: $pair")
-      val workersActorRefs = workers.getOrElse(pair._1, Vector())
-      context.become(offline(workers.updated(pair._1, pair._2 +: workersActorRefs)))
+      val workersActorRefs = indexedWorkers.getOrElse(pair._1, Vector())
+      context.become(offline(indexedWorkers.updated(pair._1, pair._2 +: workersActorRefs)))
   }
 }

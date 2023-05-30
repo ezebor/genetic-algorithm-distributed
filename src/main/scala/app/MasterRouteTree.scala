@@ -30,8 +30,7 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
   def apply(
              generationsManager: ActorRef,
              master: ActorRef,
-             solutionsPrinter: ActorRef,
-             individualTypeName: String
+             solutionsPrinter: ActorRef
            ): Route = {
     pathPrefix("api" / "evolution") {
       (post & pathEndOrSingleSlash) {
@@ -47,7 +46,7 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
           master ? MasterOnline(generationsManager, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
           this.distributeWork(
             master,
-            InitialPopulation(individualTypeName)
+            InitialPopulation(ExecutionScript.INDIVIDUAL_TYPE_NAME)
           )
           complete(StatusCodes.Created, "Evolution has started")
         }

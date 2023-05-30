@@ -3,7 +3,8 @@ package domain.actors
 import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
+import app.ExecutionScript
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
@@ -18,6 +19,8 @@ object EvolutionWorker {
 class EvolutionWorker() extends BaseActor {
   override def receive: Receive = offline
 
+  private val initialPopulation: Population = InitialPopulation(ExecutionScript.INDIVIDUAL_TYPE_NAME)
+
   private def offline: Receive = {
     case WorkerOnline(evolutionMaster, survivalPopulationSize, crossoverLikelihood, mutationLikelihood) =>
 
@@ -27,13 +30,12 @@ class EvolutionWorker() extends BaseActor {
         val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
         val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
-        val finalPopulation = strongerPopulation
-          .fusionWith(children.fusionWith(mutatedPopulation))
-          .selectStrongerPopulation(POPULATION_SIZE / (QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_WORKER_NODES))
+        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
         log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
+
         this.distributeWork(
           evolutionMaster,
-          finalPopulation
+          finalPopulation.selectStrongerPopulation(POPULATION_SIZE / QUANTITY_OF_WORKERS)
         )
 
         context.become(this.waitingPopulations(
@@ -45,7 +47,7 @@ class EvolutionWorker() extends BaseActor {
 
       context.become(this.waitingPopulations(
         startEvolution,
-        EmptyPopulation,
+        initialPopulation,
         1
       ))
   }

@@ -19,6 +19,6 @@ object ExecutionScript {
   val QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION = 4
 }
 
-object MasterNode extends EvolutionMasterNode(ExecutionScript.INDIVIDUAL_TYPE_NAME)
+object MasterNode extends EvolutionMasterNode()
 object WorkersNode1 extends EvolutionWorkersNode(2561)
 object WorkersNode2 extends EvolutionWorkersNode(2562)
