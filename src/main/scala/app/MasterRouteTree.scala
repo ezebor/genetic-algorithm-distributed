@@ -12,11 +12,11 @@ import akka.pattern.ask
 import akka.routing.FromConfig
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import domain.*
 import domain.Operators.*
 import domain.actors.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
@@ -46,10 +46,8 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
           master ? MasterOnline(generationsManager, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
           this.distributeWork(
-            generationsManager,
-            InitialPopulation(individualTypeName),
-            1,
-            1
+            master,
+            InitialPopulation(individualTypeName)
           )
           complete(StatusCodes.Created, "Evolution has started")
         }

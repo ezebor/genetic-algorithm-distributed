@@ -17,7 +17,7 @@ object Operators {
   val OFFLINE = "offline"
 }
 
-case class ManagerOnline(originalSender: ActorRef, evolutionMaster: ActorRef, solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int)
+case class ManagerOnline(solutionsPrinter: ActorRef, evolutionMaster: ActorRef, solutionsPopulationSize: Int, maxQuantityOfGenerationsWithoutImprovements: Int)
 case class MasterOnline(manager: ActorRef, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double)
 case class WorkerOnline(evolutionMaster: ActorRef, survivalPopulationSize: Int, crossoverLikelihood: Double, mutationLikelihood: Double)
 case object PrinterOnline

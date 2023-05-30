@@ -12,9 +12,9 @@ object ExecutionScript {
   val DIMENSION_IMAGE_SIZE: Int = 110
   val DIMENSION_BLOCK_SIZE: Int = 11
   
-  val QUANTITY_OF_WORKERS_PER_NODE: Int = 50
+  val QUANTITY_OF_WORKERS_PER_NODE: Int = 10
   val QUANTITY_OF_WORKER_NODES: Int = 1
-  val POPULATION_SIZE: Int = 200
+  val POPULATION_SIZE: Int = 40
 }
 
 object MasterNode extends EvolutionMasterNode(ExecutionScript.INDIVIDUAL_TYPE_NAME)

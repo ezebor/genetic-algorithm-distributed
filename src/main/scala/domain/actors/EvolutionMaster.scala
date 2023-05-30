@@ -7,12 +7,12 @@ import akka.dispatch.{PriorityGenerator, UnboundedPriorityMailbox}
 import akka.pattern.pipe
 import akka.routing.FromConfig
 import akka.util.Timeout
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 
 import scala.concurrent.duration.*
 import scala.language.postfixOps
@@ -55,16 +55,10 @@ class EvolutionMaster() extends BaseActor {
 
       def returnGeneration: Operator = { population =>
         this.distributeWork(manager, population)
-
-        context.become(this.waitingPopulations(
-          startEvolution,
-          population,
-          1
-        ))
+        startEvolution(population)
       }
 
       def startEvolution: Operator = { population =>
-
         log.info(s"Starting evolution over a population of size = ${population.individuals.size}")
         val quantityOfWorkers = QUANTITY_OF_WORKER_NODES * QUANTITY_OF_WORKERS_PER_NODE
         val chunks = population.intoNChunks(quantityOfWorkers)
