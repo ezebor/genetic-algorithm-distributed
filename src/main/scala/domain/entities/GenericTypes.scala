@@ -82,7 +82,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
-  def intoChunksOfChunks(chunkSize: Int): Vector[Population] =
+  def intoChunksOfSize(chunkSize: Int): Vector[Population] =
     if(chunkSize == 0) Vector(copyWith(List(Individual.emptyIndividual(IllegalChunkSizeException(this)))))
     else individuals
       .grouped(chunkSize)

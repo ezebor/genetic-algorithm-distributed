@@ -59,22 +59,18 @@ class EvolutionMaster() extends BaseActor {
         }
       }
 
-      def returnGeneration(startWorkerIndex: Int): Operator = { population =>
+      def returnGeneration: Operator = { population =>
         this.distributeWork(manager, population)
-        startEvolution(startWorkerIndex, QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION)(population)
+        startEvolution(population)
       }
 
-      def startEvolution(startWorkerIndex: Int, quantityOfTargetWorkers: Int): Operator = { population =>
-        val chunks = population.intoNChunks(quantityOfTargetWorkers)
-        (1 to quantityOfTargetWorkers)
-          .map(index => (startWorkerIndex + index) % QUANTITY_OF_WORKERS)
-          .zip(chunks)
-          .foreach { (workerIndex, populationChunk) =>
-            this.distributeWork(workers(workerIndex), populationChunk)
-          }
+      def startEvolution: Operator = { population =>
+        workers.foreach { worker =>
+          this.distributeWork(worker, population)
+        }
 
         context.become(this.waitingPopulations(
-          returnGeneration(startWorkerIndex + QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION),
+          returnGeneration,
           EmptyPopulation,
           QUANTITY_OF_WORKERS_TO_START_NEW_GENERATION
         ))
@@ -82,7 +78,7 @@ class EvolutionMaster() extends BaseActor {
 
       initializeWorkers()
       context.become(this.waitingPopulations(
-        startEvolution(0, QUANTITY_OF_WORKERS),
+        startEvolution,
         EmptyPopulation,
         1
       ))

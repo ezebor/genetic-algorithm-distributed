@@ -184,9 +184,6 @@ object ImagesManager {
           reference.rotateLeft().rotateLeft(),
           reference.rotateLeft().rotateLeft().rotateLeft(),
           reference.flipX(),
-          reference.flipX().rotateLeft(),
-          reference.flipX().rotateLeft().rotateLeft(),
-          reference.flipX().rotateLeft().rotateLeft().rotateLeft()
         )
       }
 

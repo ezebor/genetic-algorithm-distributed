@@ -26,17 +26,19 @@ class EvolutionWorker() extends BaseActor {
 
       def startEvolution: Operator = { population =>
         log.info(s"Starting evolution over a population with size = ${population.individuals.size}")
-        val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
-        val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
-        val parentsAndChildren = children.fusionWith(strongerPopulation)
+        val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
+        val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
+        val parentsAndChildren = children.fusionWith(population)
         val mutatedPopulation = parentsAndChildren.mutate(mutationLikelihood)
-        val finalPopulation = mutatedPopulation.fusionWith(parentsAndChildren)
+        val finalPopulation = mutatedPopulation
+          .fusionWith(parentsAndChildren)
+          .selectStrongerPopulation(survivalPopulationSize)
+
         log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
 
         this.distributeWork(
           evolutionMaster,
-          finalPopulation.selectStrongerPopulation(POPULATION_SIZE / QUANTITY_OF_WORKERS)
+          finalPopulation
         )
 
         context.become(this.waitingPopulations(

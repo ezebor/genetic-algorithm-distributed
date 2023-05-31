@@ -16,7 +16,7 @@ trait Parallel {
       }
     }
 
-    val chunks: Vector[Population] = population.intoChunksOfChunks(chunkSize)
+    val chunks: Vector[Population] = population.intoChunksOfSize(chunkSize)
     val dataIndexes = chunks.indices.take(chunks.size - quantityOfEOFMessages)
     val eofIndexes = chunks.indices.takeRight(quantityOfEOFMessages)
 
