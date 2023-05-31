@@ -29,8 +29,9 @@ class EvolutionWorker() extends BaseActor {
         val strongerPopulation = population.selectStrongerPopulation(survivalPopulationSize)
         val populationLookingForReproduction = strongerPopulation.randomSubPopulation(strongerPopulation.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(strongerPopulation, crossoverLikelihood)
-        val mutatedPopulation = strongerPopulation.fusionWith(children).mutate(mutationLikelihood)
-        val finalPopulation = strongerPopulation.fusionWith(children.fusionWith(mutatedPopulation))
+        val parentsAndChildren = children.fusionWith(strongerPopulation)
+        val mutatedPopulation = parentsAndChildren.mutate(mutationLikelihood)
+        val finalPopulation = mutatedPopulation.fusionWith(parentsAndChildren)
         log.info(s"A new population was created with size = ${finalPopulation.individuals.size}")
 
         this.distributeWork(
