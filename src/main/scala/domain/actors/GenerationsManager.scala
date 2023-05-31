@@ -27,7 +27,7 @@ class GenerationsManager() extends BaseActor {
             })
             manageBuiltGeneration(generationId + 1, 0, newSolutions)
           }
-          else if (quantityOfGenerationsWithoutImprovements <= maxQuantityOfGenerationsWithoutImprovements)
+          else if (quantityOfGenerationsWithoutImprovements < maxQuantityOfGenerationsWithoutImprovements)
             manageBuiltGeneration(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions)
           else if (quantityOfGenerationsWithoutImprovements == maxQuantityOfGenerationsWithoutImprovements) {
             printSolutions(solutions)
