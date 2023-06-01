@@ -28,15 +28,15 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
 
   private def luminance(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(meanA, meansB, _, _, _) => meansB.map { meanB =>
-      (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1) / meansB.size
+      (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
     }.sum
   private def contrast(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(_, _, standardDeviationA, standardDeviationsB, _) => standardDeviationsB.map { standardDeviationB =>
-      (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2) / standardDeviationsB.size
+      (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
     }.sum
   private def structure(terms: StatisticsTerms): Double = terms match
     case StatisticsTerms(_, _, standardDeviationA, standardDeviationsB, covariances) => standardDeviationsB.indices.map { referenceIndex =>
-      (covariances(referenceIndex) + C3) / (standardDeviationA * standardDeviationsB(referenceIndex) + C3) / standardDeviationsB.size
+      (covariances(referenceIndex) + C3) / (standardDeviationA * standardDeviationsB(referenceIndex) + C3)
     }.sum
 
   private case class StatisticsTerms(meanA: Double, meansB: Vector[Double], standardDeviationA: Double, standardDeviationsB: Vector[Double], covariances: Vector[Double])
