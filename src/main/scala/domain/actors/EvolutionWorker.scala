@@ -38,7 +38,7 @@ class EvolutionWorker() extends BaseActor {
 
         this.distributeWork(
           evolutionMaster,
-          finalPopulation
+          finalPopulation.copyWith(List(finalPopulation.bestIndividual))
         )
 
         context.become(this.waitingPopulations(
