@@ -65,7 +65,9 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def startEvolution: Operator = { population =>
-        this.distributeWork(workers(random.nextInt(workers.size)), population)
+        workers.foreach { worker =>
+          this.distributeWork(worker, population)
+        }
 
         context.become(this.waitingPopulations(
           returnGeneration,
