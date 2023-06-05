@@ -12,7 +12,20 @@ import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE, POPULATI
 import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
 
-case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
+type Id = (Int, Int)
+
+object BlocksFactory {
+  def apply(pixels: Vector[Pixel]): Block = {
+    val block = Block((0, 0), pixels)
+    BlocksFactory(block.id, pixels)
+  }
+
+  def apply(frameLocationId: Id, pixels: Vector[Pixel]): Block = {
+    Block(frameLocationId, pixels)
+  }
+}
+
+case class Block(frameLocationId: Id, pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
 
   private val K1: Double = 0.01
   private val K2: Double = 0.03f
@@ -21,7 +34,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
   private val C2: Double = Math.pow(K2 * L, 2)
   private val C3: Double = C2 / 2
 
-  def id: (Int, Int) = {
+  def id: Id = {
     val firstPixel = pixels.sortWith((p1, p2) => p1.x <= p2.x && p1.y <= p2.y).head
     (firstPixel.x, firstPixel.y)
   }
@@ -95,7 +108,7 @@ case class Block(pixels: Vector[Pixel])(implicit customRandom: Random = random) 
       Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
     }
 
-    Block(mutatedPixels)
+    BlocksFactory(mutatedPixels)
   }
 
   lazy val size: Int = pixels.size
@@ -144,7 +157,7 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
 }
 
 object ImagesManager {
-  lazy val blockIds: IndexedSeq[(Int, Int)] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
+  lazy val blockIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
     .flatMap(x => (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE).map(_ => x))
     .zip(
       (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE)
@@ -164,7 +177,7 @@ object ImagesManager {
 
   def toBlocks(immutableImage: ImmutableImage): List[Block] = blockIds
     .map { case (x, y) =>
-      Block(immutableImage
+      BlocksFactory(immutableImage
         .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
         .pixels()
         .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
@@ -205,7 +218,7 @@ object ImagesManager {
     )
   }
 
-  lazy val referencesBlocks: Map[(Int, Int), List[Block]] = referencesImages
+  lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
     .flatMap { case Image(Success(Frame(blocks))) =>
       blocks
     }
