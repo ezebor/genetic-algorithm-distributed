@@ -15,17 +15,17 @@ import scala.util.{Random, Success, Try}
 type Id = (Int, Int)
 
 object BlocksFactory {
-  def apply(pixels: Vector[Pixel]): Block = {
-    val block = Block((0, 0), pixels)
-    BlocksFactory(block.id, pixels)
+  def apply(imageId: Int, pixels: Vector[Pixel]): Block = {
+    val block = Block(imageId, (0, 0), pixels)
+    BlocksFactory(imageId, block.id, pixels)
   }
 
-  def apply(frameLocationId: Id, pixels: Vector[Pixel]): Block = {
-    Block(frameLocationId, pixels)
+  def apply(imageId: Int, frameLocationId: Id, pixels: Vector[Pixel]): Block = {
+    Block(imageId, frameLocationId, pixels)
   }
 }
 
-case class Block(frameLocationId: Id, pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
+case class Block(imageId: Int, frameLocationId: Id, pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
   def id: Id = {
     val firstPixel = pixels.sortWith((p1, p2) => p1.x <= p2.x && p1.y <= p2.y).head
     (firstPixel.x, firstPixel.y)
@@ -38,7 +38,7 @@ case class Block(frameLocationId: Id, pixels: Vector[Pixel])(implicit customRand
       Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
     }
 
-    BlocksFactory(mutatedPixels)
+    BlocksFactory(imageId, mutatedPixels)
   }
 
   override def mutate: Gene = this
@@ -173,13 +173,15 @@ object ImagesManager {
     immutableImage
   }
 
-  def toBlocks(immutableImage: ImmutableImage): List[Block] = blockIds
+  def toBlocks(imageId: Int, immutableImage: ImmutableImage): List[Block] = blockIds
     .map { case (x, y) =>
-      BlocksFactory(immutableImage
-        .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
-        .pixels()
-        .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
-        .toVector)
+      BlocksFactory(
+        imageId,
+        immutableImage
+          .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
+          .pixels()
+          .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
+          .toVector)
     }.toList
 
   lazy val referencesImages: List[Image] = {
@@ -204,16 +206,17 @@ object ImagesManager {
       initialImmutableImages ::: immutableImagesVariants
     }
 
-    immutableImages.map(
-      immutableImage =>
-        Image(
-          Success(
-            Frame(
-              toBlocks(immutableImage)
+    immutableImages
+      .zipWithIndex
+      .map { case (immutableImage, imageId) =>
+          Image(
+            Success(
+              Frame(
+                toBlocks(imageId, immutableImage)
+              )
             )
           )
-        )
-    )
+      }
   }
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages

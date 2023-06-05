@@ -27,8 +27,9 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
           immutableImage.setPixel(Pixel(index / DIMENSION_IMAGE_SIZE, index % DIMENSION_IMAGE_SIZE, argb))
         }
 
+      // TODO: fix image id
       Image(Success(Frame(
-        ImagesManager.toBlocks(immutableImage)
+        ImagesManager.toBlocks(0, immutableImage)
       )))
     }
     ImagesPopulation(images.toList)
