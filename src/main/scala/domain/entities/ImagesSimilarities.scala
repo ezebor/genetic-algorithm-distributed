@@ -97,7 +97,7 @@ case class Block(frameLocationId: Id, pixels: Vector[Pixel])(implicit customRand
   }
 
   lazy val ssim: Double = {
-    val terms = generateStatisticsTerms(ImagesManager.referencesBlocks(id).toVector)
+    val terms = generateStatisticsTerms(ImagesManager.referencesBlocks(frameLocationId).toVector)
     luminance(terms) * contrast(terms) * structure(terms)
   }
 
