@@ -29,7 +29,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
 
       // TODO: fix image id
       Image(Success(Frame(
-        ImagesManager.toBlocks(0, immutableImage)
+        ImagesManager.toBlocks(0)
       )))
     }
     ImagesPopulation(images.toList)

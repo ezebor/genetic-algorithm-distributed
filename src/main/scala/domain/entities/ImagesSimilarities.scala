@@ -1,6 +1,7 @@
 package domain.entities
 
 import akka.remote.DaemonMsgCreate
+import app.ExecutionScript
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.pixels.Pixel
 import domain.Execute
@@ -14,19 +15,10 @@ import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
 
-object BlocksFactory {
-  def apply(imageId: Int, pixels: Vector[Pixel]): Block = {
-    val block = Block(imageId, (0, 0), pixels)
-    BlocksFactory(imageId, block.id, pixels)
-  }
+case class Block(imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
+  lazy val pixels: Vector[Pixel] = ImagesManager.pixelsAt(imageId, pixelsSourceId)
 
-  def apply(imageId: Int, frameLocationId: Id, pixels: Vector[Pixel]): Block = {
-    Block(imageId, frameLocationId, pixels)
-  }
-}
-
-case class Block(imageId: Int, frameLocationId: Id, pixels: Vector[Pixel])(implicit customRandom: Random = random) extends Gene {
-  def id: Id = {
+  lazy val frameLocationId: Id = {
     val firstPixel = pixels.sortWith((p1, p2) => p1.x <= p2.x && p1.y <= p2.y).head
     (firstPixel.x, firstPixel.y)
   }
@@ -38,12 +30,13 @@ case class Block(imageId: Int, frameLocationId: Id, pixels: Vector[Pixel])(impli
       Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
     }
 
-    BlocksFactory(imageId, mutatedPixels)
+    // TODO: fix
+    Block(1, (1,2))
   }
 
   override def mutate: Gene = this
 
-  override def toString: String = s"Block id: ($id)"
+  override def toString: String = s"Block id: ($frameLocationId)"
 }
 
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
@@ -151,7 +144,7 @@ object ImagesManager {
   }
 
   def ssim(block: Block): Double = {
-    val terms = generateStatisticsTerms(block, ImagesManager.referencesBlocks(block.frameLocationId).toVector)
+    val terms = generateStatisticsTerms(block, ImagesManager.referencesBlocks(block.pixelsSourceId).toVector)
     luminance(terms) * contrast(terms) * structure(terms)
   }
 
@@ -173,63 +166,74 @@ object ImagesManager {
     immutableImage
   }
 
-  def toBlocks(imageId: Int, immutableImage: ImmutableImage): List[Block] = blockIds
-    .map { case (x, y) =>
-      BlocksFactory(
+  def toBlocks(imageId: Int): List[Block] = blockIds
+    .map { case pixelsSourceId: Id =>
+      Block(
         imageId,
-        immutableImage
-          .subimage(x, y, DIMENSION_BLOCK_SIZE, DIMENSION_BLOCK_SIZE)
-          .pixels()
-          .map(aPixel => Pixel(aPixel.x + x, aPixel.y + y, aPixel.argb))
-          .toVector)
+        pixelsSourceId
+      )
     }.toList
 
-  lazy val referencesImages: List[Image] = {
-    val immutableImages = {
-      val initialImmutableImages = List(
-        ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
-        ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+  lazy val referencesImmutableImages: Map[Int, ImmutableImage] = {
+    val initialImmutableImages = List(
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+    )
+
+    val immutableImagesVariants = initialImmutableImages.flatMap { reference =>
+      List(
+        reference.rotateLeft(),
+        reference.rotateLeft().rotateLeft(),
+        reference.rotateLeft().rotateLeft().rotateLeft(),
+        reference.flipX(),
+        reference.flipX().rotateLeft(),
+        reference.flipX().rotateLeft().rotateLeft(),
+        reference.flipX().rotateLeft().rotateLeft().rotateLeft(),
       )
-
-      val immutableImagesVariants = initialImmutableImages.flatMap { reference =>
-        List(
-          reference.rotateLeft(),
-          reference.rotateLeft().rotateLeft(),
-          reference.rotateLeft().rotateLeft().rotateLeft(),
-          reference.flipX(),
-          reference.flipX().rotateLeft(),
-          reference.flipX().rotateLeft().rotateLeft(),
-          reference.flipX().rotateLeft().rotateLeft().rotateLeft(),
-        )
-      }
-
-      initialImmutableImages ::: immutableImagesVariants
     }
 
-    immutableImages
+    val images: List[ImmutableImage] = initialImmutableImages ::: immutableImagesVariants
+
+    images
       .zipWithIndex
-      .map { case (immutableImage, imageId) =>
-          Image(
-            Success(
-              Frame(
-                toBlocks(imageId, immutableImage)
-              )
-            )
-          )
+      .map { case (immutableImage, index) =>
+        (index, immutableImage)
       }
+      .toMap
   }
+
+  lazy val referencesImages: List[Image] = referencesImmutableImages
+    .toList
+    .map { case (imageId, _) =>
+      Image(
+        Success(
+          Frame(
+            toBlocks(imageId)
+          )
+        )
+      )
+    }
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
     .flatMap { case Image(Success(Frame(blocks))) =>
       blocks
     }
-    .groupBy(_.id)
+    .groupBy(_.frameLocationId)
 
   def initialPopulation(): ImagesPopulation = {
     ImagesPopulation(
       referencesImages.flatMap(image => (1 to POPULATION_SIZE / referencesImages.size).map(_ => image.copy(image.frame)))
     )
   }
+
+  def pixelsAt(imageId: Int, pixelsSourceId: Id): Vector[Pixel] = referencesImmutableImages(imageId)
+    .pixels(
+      pixelsSourceId._1,
+      pixelsSourceId._2,
+      ExecutionScript.DIMENSION_BLOCK_SIZE,
+      ExecutionScript.DIMENSION_BLOCK_SIZE
+    )
+    .toVector
 }
 
 case class ImagesPopulation(images: List[Image]) extends Population(images) {
