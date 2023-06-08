@@ -100,24 +100,10 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     .toVector
 
   def randomSubPopulation(size: Int): Population = {
-    @tailrec
-    def recRandomSubPopulation(sourcePopulation: Population, sinkPopulation: Population, aSize: Int): Population = {
-      if(aSize == 0 || sourcePopulation.accumulatedFitness.isEmpty) sinkPopulation
-      else {
-        val foundIndividual = sourcePopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-
-        recRandomSubPopulation(
-          copyWith((sourcePopulation.individuals.toVector diff Vector(foundIndividual)).toList),
-          copyWith(sinkPopulation.individuals ::: List(foundIndividual)),
-          aSize - 1
-        )
-      }
-    }
-
-    recRandomSubPopulation(
-      this,
-      copyWith(List()),
-      size
+    copyWith(
+      (1 to size).map { _ =>
+        findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
+      }.toList
     )
   }
   
