@@ -3,8 +3,8 @@ package domain.serializers
 import akka.serialization.Serializer
 import domain.Execute
 import domain.Operators.*
-import domain.entities.AlgorithmConfig.random
 import domain.entities.*
+import domain.entities.AlgorithmConfig.random
 import spray.json.*
 
 import scala.collection.immutable.Vector
@@ -33,10 +33,10 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
 
   def read(value: JsValue) = {
     value.asJsObject.getFields("operatorName", "population") match {
-      case Seq(JsString(operatorName), JsArray(population)) =>
+      case Seq(JsString(operatorName), JsArray(individuals)) =>
         Execute(
           operatorName,
-          createPopulation(population)
+          createPopulation(individuals)
         )
       case _ => throw new DeserializationException("Execute message expected")
     }

@@ -1,13 +1,13 @@
 package domain.serializers
 
 import akka.serialization.Serializer
+import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE}
+import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.pixels.Pixel
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import spray.json.*
-import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE}
-import com.sksamuel.scrimage.ImmutableImage
 
 import scala.util.Success
 
@@ -16,36 +16,35 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
     case Image(Success(frame)) => frame.getGenes
   }
 
-  override def createPopulation(genes: Vector[JsValue]): Population = {
-    val images = genes.map { case JsArray(argbValues) =>
-      val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-      argbValues
-        .indices
-        .foreach { index =>
-          val argb = argbValues(index) match
-            case JsNumber(value) => value.intValue
-          immutableImage.setPixel(Pixel(index / DIMENSION_IMAGE_SIZE, index % DIMENSION_IMAGE_SIZE, argb))
-        }
+  override def createPopulation(individuals: Vector[JsValue]): Population = {
+    val images = individuals.map { case JsArray(serializedBlocks) =>
+      val blocks = serializedBlocks.map { case serializedBlock: JsArray =>
+        serializedBlock.elements match
+          case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY)) =>
+            Block(
+              (frameLocationIdX.intValue, frameLocationIdY.intValue),
+              imageId.intValue,
+              (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
+            )
+      }.toList
 
-      // TODO: fix image id
       Image(Success(Frame(
-        ImagesManager.toBlocks(0)
+        blocks
       )))
     }
+
     ImagesPopulation(images.toList)
   }
 
-  override protected def serializeGenes(genes: Vector[Gene]): JsValue = {
-    val immutableImage = ImagesManager.toImmutableImage {
-      genes match
-        case blocks: Vector[Block] => blocks.toList
+  override protected def serializeGenes(genes: Vector[Gene]): JsValue = JsArray(
+    genes.map { case aBlock: Block =>
+      JsArray(
+        JsNumber(aBlock.frameLocationId._1),
+        JsNumber(aBlock.frameLocationId._2),
+        JsNumber(aBlock.imageId),
+        JsNumber(aBlock.pixelsSourceId._1),
+        JsNumber(aBlock.pixelsSourceId._2),
+      )
     }
-
-    JsArray(
-      immutableImage
-        .pixels()
-        .toVector
-        .map(aPixel => JsNumber(aPixel.argb))
-    )
-  }
+  )
 }

@@ -1,5 +1,6 @@
 package domain.entities.ssim
 
+import app.ExecutionScript.*
 import com.sksamuel.scrimage.*
 import com.sksamuel.scrimage.color.RGBColor
 import com.sksamuel.scrimage.filter.BlurFilter
@@ -7,9 +8,8 @@ import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
 import domain.Execute
-import domain.entities.{Frame, Image, Block, ImagesManager}
+import domain.entities.{Block, Frame, Image, ImagesManager}
 import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
-import app.ExecutionScript.*
 
 import java.awt.Color
 import scala.util.{Random, Success}
@@ -23,6 +23,11 @@ object CustomSsim extends App {
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
   println(population.individuals.map(i => i.fitness.get))
+
+
+  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
+  println(serializer.read(serializer.write(Execute("example", population))).population.individuals.map(_.fitness.get))
+
   //println(population.selectStrongerPopulation(8).accumulatedFitness.map(_._2))
 
   /*println(population.images.flatMap{ case Image(Success(Frame(blocks))) =>

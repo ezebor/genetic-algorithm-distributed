@@ -2,26 +2,21 @@ package domain.entities
 
 import akka.remote.DaemonMsgCreate
 import app.ExecutionScript
+import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE, POPULATION_SIZE}
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.pixels.Pixel
 import domain.Execute
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import app.ExecutionScript.{DIMENSION_BLOCK_SIZE, DIMENSION_IMAGE_SIZE, POPULATION_SIZE}
 
 import scala.annotation.tailrec
 import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
 
-case class Block(imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
+case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
   lazy val pixels: Vector[Pixel] = ImagesManager.pixelsAt(imageId, pixelsSourceId)
-
-  lazy val frameLocationId: Id = {
-    val firstPixel = pixels.sortWith((p1, p2) => p1.x <= p2.x && p1.y <= p2.y).head
-    (firstPixel.x, firstPixel.y)
-  }
 
   def mutateWith(otherBlock: Block): Block = {
     val packOfPixels = pixels.zip(otherBlock.pixels)
@@ -31,12 +26,12 @@ case class Block(imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random
     }
 
     // TODO: fix
-    Block(1, (1,2))
+    Block((1,2), 1, (1,2))
   }
 
   override def mutate: Gene = this
 
-  override def toString: String = s"Block id: ($frameLocationId)"
+  override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
 }
 
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
@@ -167,10 +162,11 @@ object ImagesManager {
   }
 
   def toBlocks(imageId: Int): List[Block] = blockIds
-    .map { case pixelsSourceId: Id =>
+    .map { case id: Id =>
       Block(
+        id,
         imageId,
-        pixelsSourceId
+        id
       )
     }.toList
 
