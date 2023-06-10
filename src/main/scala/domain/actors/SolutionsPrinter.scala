@@ -1,11 +1,11 @@
 package domain.actors
 
 import akka.actor.*
+import app.ExecutionScript.DIMENSION_IMAGE_SIZE
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import domain.PrinterOnline
 import domain.entities.*
-import app.ExecutionScript.DIMENSION_IMAGE_SIZE
 
 import scala.util.Success
 
@@ -27,7 +27,12 @@ class SolutionsPrinter extends BaseActor {
               val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
               image.frame match
                 case Success(Frame(blocks)) =>
-                  blocks.flatMap(aBlock => aBlock.pixels).foreach(pixel => newImage.setPixel(pixel))
+                  for {
+                    aBlock <- blocks
+                    aPixel <- aBlock.pixels
+                  } yield {
+                    newImage.setPixel(aBlock.pixelWithFixedLocation(aPixel))
+                  }
                   newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
             }
         case BasketsPopulation(baskets) =>

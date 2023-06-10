@@ -18,20 +18,15 @@ type Id = (Int, Int)
 case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
   lazy val pixels: Vector[Pixel] = ImagesManager.pixelsAt(imageId, pixelsSourceId)
 
-  def mutateWith(otherBlock: Block): Block = {
-    val packOfPixels = pixels.zip(otherBlock.pixels)
-
-    val mutatedPixels = packOfPixels.foldLeft(Vector[Pixel]()) { case (result, (nextPixelLeft, nextPixelRight)) =>
-      Pixel(nextPixelLeft.x, nextPixelLeft.y, nextPixelRight.argb) +: result
-    }
-
-    // TODO: fix
-    Block((1,2), 1, (1,2))
-  }
-
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
+  
+  def pixelWithFixedLocation(pixel: Pixel): Pixel = Pixel(
+    pixel.x % DIMENSION_BLOCK_SIZE + frameLocationId._1,
+    pixel.y % DIMENSION_BLOCK_SIZE + frameLocationId._2,
+    pixel.argb
+  )
 }
 
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
@@ -47,23 +42,13 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
 
-  override def mutate: Chromosome = {
-    @tailrec
-    def recursiveMutate(source1: IndexedSeq[Block], source2: IndexedSeq[Block], sink: List[Block]): List[Block] = {
-      if(source1.isEmpty || source2.isEmpty) return sink
-
-      val mutatedBlock: Block = source1.head.mutateWith(source2.head)
-      recursiveMutate(source1.tail, source2.tail, mutatedBlock :: sink)
-    }
-
-    val mutatedPixels = recursiveMutate(
-      blocks.toIndexedSeq,
-      random.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq),
-      List()
-    )
-
-    copyWith(mutatedPixels)
-  }
+  override def mutate: Chromosome = copyWith(
+    blocks
+      .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
+      .map { case (Block(frameLocationId, imageId, _), Block(a, _, pixelsSourceId)) =>
+        Block(frameLocationId, imageId, pixelsSourceId)
+      }
+  )
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
