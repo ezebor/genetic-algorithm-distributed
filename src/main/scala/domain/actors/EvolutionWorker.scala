@@ -19,8 +19,6 @@ object EvolutionWorker {
 class EvolutionWorker() extends BaseActor {
   override def receive: Receive = offline
 
-  private val initialPopulation: Population = InitialPopulation(ExecutionScript.INDIVIDUAL_TYPE_NAME)
-
   private def offline: Receive = {
     case WorkerOnline(evolutionMaster, survivalPopulationSize, crossoverLikelihood, mutationLikelihood) =>
 
@@ -38,7 +36,7 @@ class EvolutionWorker() extends BaseActor {
 
         this.distributeWork(
           evolutionMaster,
-          finalPopulation
+          finalPopulation.copyWith(List(finalPopulation.bestIndividual))
         )
 
         context.become(this.waitingPopulations(
@@ -50,7 +48,7 @@ class EvolutionWorker() extends BaseActor {
 
       context.become(this.waitingPopulations(
         startEvolution,
-        initialPopulation,
+        ImagesManager.initialPopulation(),
         1
       ))
   }
