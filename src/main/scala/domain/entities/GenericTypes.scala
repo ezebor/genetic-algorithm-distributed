@@ -51,18 +51,44 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
 
-  // TODO: convertirlo en future + usar el fitness del chromosome, porque el del individual hace await
-  lazy val accumulatedFitness: List[(Individual, Double)] = {
-    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
-    val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
+  lazy val accumulatedFitness: List[(Individual, Future[Double])] = {
+    val futureTotalFitness = individuals.foldLeft(Future[Double](0d)) { case (futureTotal, individual) =>
+      val futureFitness = individual.getTryChromosome.get.fitness
+      for {
+        totalFitness <- futureTotal
+        aFitness <- futureFitness
+      } yield aFitness + totalFitness
+    }
+
+    val fitIndividuals = individuals
+      .map(anIndividual => (
+        anIndividual,
+        anIndividual
+          .getTryChromosome
+          .map(_.fitness)
+          .getOrElse(Future(0d))
+      )
+      )
+
     fitIndividuals
       .zipWithIndex
-      .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
+      .foldLeft(List[(Individual, Future[Double])]()) { case (result, ((individual, futureFitness), index)) =>
         result :+ (
           individual,
-          if(index == 0) individual.fitness.getOrElse(0d) / totalFitness
-          else if (index == fitIndividuals.size - 1) 1.0
-          else individual.fitness.getOrElse(0d) / totalFitness + result(index - 1)._2
+          if(index == 0) {
+            for {
+              aFitness <- futureFitness
+              aTotalFitness <- futureTotalFitness
+            } yield aFitness / aTotalFitness
+          }
+          else if (index == fitIndividuals.size - 1) Future(1.0)
+          else {
+            for {
+              aFitness <- futureFitness
+              previousFitness <- result(index - 1)._2
+              aTotalFitness <- futureTotalFitness
+            } yield aFitness / aTotalFitness + previousFitness
+          }
         )
       }
   }
