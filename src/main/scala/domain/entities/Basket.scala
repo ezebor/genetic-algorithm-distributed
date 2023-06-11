@@ -6,6 +6,8 @@ import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Random, Success, Try}
 
 case class Item(name: String, price: Double, satisfaction: Double)(implicit customRandom: Random = random) extends Gene {
@@ -17,7 +19,7 @@ case class ItemsList(items: List[Item])(implicit customRandom: Random = random) 
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case items: List[Item] => ItemsList(items)
 
-  protected override def calculateFitness: Double = {
+  protected override def calculateFitness: Future[Double] = Future{
     if(items.size >= 5 || items.size <= 2) 0.1
     else items.map{ case Item(_, price, satisfaction) =>
       if(price > satisfaction) 0

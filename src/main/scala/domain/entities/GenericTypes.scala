@@ -2,14 +2,17 @@ package domain.entities
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import app.ExecutionScript
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
 import spray.json.*
-import ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Random, Success, Try}
 
 trait Chromosome(genes: List[Gene])(implicit random: Random) {
@@ -17,8 +20,8 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def copyWith(genes: List[Gene]): Chromosome
   def getGenes: List[Gene] = genes
 
-  protected def calculateFitness: Double
-  lazy val fitness: Double = calculateFitness
+  protected def calculateFitness: Future[Double]
+  val fitness: Future[Double] = calculateFitness
 
   def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
@@ -152,7 +155,7 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 
   def getTryGenes: Try[List[Gene]] = tryChromosome.map(_.getGenes)
 
-  def fitness: Try[Double] = tryChromosome.map(_.fitness)
+  def fitness: Try[Double] = tryChromosome.map(chromosome => Await.result(chromosome.fitness, Duration.Inf))
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     val tryChildrenChromosomes: Try[(Chromosome, Chromosome)] = for {

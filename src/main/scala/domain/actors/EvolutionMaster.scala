@@ -15,6 +15,7 @@ import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, InitialPopulation, Population}
 import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
@@ -24,7 +25,6 @@ object EvolutionMaster {
 }
 
 class EvolutionMaster() extends BaseActor {
-  import context.dispatcher
   implicit val timeout: Timeout = Timeout(3 seconds)
 
   val cluster: Cluster = Cluster(context.system)
@@ -52,7 +52,7 @@ class EvolutionMaster() extends BaseActor {
         workers.foreach { worker =>
           worker ! WorkerOnline(
             self,
-            (survivalLikelihood * POPULATION_SIZE).toInt,
+            (survivalLikelihood * POPULATION_SIZE / workers.size).toInt,
             crossoverLikelihood,
             mutationLikelihood
           )
@@ -65,14 +65,17 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def startEvolution: Operator = { population =>
-        workers.foreach { worker =>
-          this.distributeWork(worker, population)
-        }
+        population
+          .intoNChunks(workers.size)
+          .zip(workers)
+          .foreach { (aPopulation, aWorker) =>
+            this.distributeWork(aWorker, aPopulation)
+          }
 
         context.become(this.waitingPopulations(
           returnGeneration,
           population.empty(),
-          QUANTITY_OF_PENDING_WORKERS
+          workers.size
         ))
       }
 

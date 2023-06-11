@@ -8,10 +8,12 @@ import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import com.sksamuel.scrimage.transform.BackgroundGradient
 import domain.Execute
-import domain.entities.{Block, Frame, Image, ImagesManager}
+import domain.entities.*
 import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
 
 import java.awt.Color
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.util.{Random, Success}
 
 object CustomSsim extends App {
@@ -22,7 +24,13 @@ object CustomSsim extends App {
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
-  println(population.individuals.map(i => i.fitness.get))
+
+  /*import scala.concurrent.ExecutionContext.Implicits.global
+  val a: Population = Await.result(Future {
+    population.selectStrongerPopulation(75)
+  }, Duration.Inf)*/
+
+  println(population.selectStrongerPopulation(150).individuals.map(i => i.fitness.get))
 
 
   val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
@@ -34,7 +42,7 @@ object CustomSsim extends App {
     blocks.map(_.pixels.map(p => (p.x, p.y)))
   })*/
 
-  population.mutate(0.5).individuals
+  /*population.mutate(0.5).individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -44,7 +52,7 @@ object CustomSsim extends App {
       }
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }
+  }*/
 
   /*
   // TODO: crear nueva imagen a partir de píxeles

@@ -11,6 +11,8 @@ import domain.entities.*
 import domain.entities.AlgorithmConfig.*
 
 import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
@@ -33,11 +35,12 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] => Frame(aBlocks)
 
-  lazy val ssim: Double = blocks
-    .map(aBlock => ImagesManager.ssim(aBlock))
-    .sum
-
-  protected override def calculateFitness: Double = ssim / blocks.size
+  protected override def calculateFitness: Future[Double] = Future {
+    val sum = blocks
+      .map(aBlock => ImagesManager.ssim(aBlock))
+      .sum
+    sum / blocks.size
+  }
 
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
