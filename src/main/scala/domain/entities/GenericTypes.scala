@@ -51,6 +51,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
 
+  // TODO: convertirlo en future + usar el fitness del chromosome, porque el del individual hace await
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
