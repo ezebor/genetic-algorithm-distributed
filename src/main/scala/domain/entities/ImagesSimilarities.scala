@@ -35,6 +35,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] => Frame(aBlocks)
 
+  // TODO: llevar fitness del bloque a la firma del bloque
   protected override def calculateFitness: Future[Double] = Future {
     val sum = blocks
       .map(aBlock => ImagesManager.ssim(aBlock))
@@ -49,7 +50,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def mutate: Chromosome = copyWith(
     blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _), Block(a, _, pixelsSourceId)) =>
+      .map { case (Block(frameLocationId, imageId, _), Block(_, _, pixelsSourceId)) =>
         Block(frameLocationId, imageId, pixelsSourceId)
       }
   )

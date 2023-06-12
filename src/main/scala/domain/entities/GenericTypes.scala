@@ -50,67 +50,20 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def individuals: List[Individual] = internalIndividuals
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
-
-  // TODO: armar esta lista en base a fitness / population size --> poner tantas copias como ese cociente
+  
   // TODO: guardar el fitness en el bloque, de manera que si copio la población, esta lista sea solamente pedir clones del bloque
-  lazy val accumulatedFitness: List[(Individual, Future[Double])] = {
-    val futureTotalFitness = individuals.foldLeft(Future[Double](0d)) { case (futureTotal, individual) =>
-      val futureFitness = individual.getTryChromosome.get.fitness
-      for {
-        totalFitness <- futureTotal
-        aFitness <- futureFitness
-      } yield aFitness + totalFitness
+  lazy val accumulatedFitness: Vector[Individual] = individuals
+    .toVector
+    .flatMap { anIndividual =>
+      val fitness = anIndividual.fitness.getOrElse(0d)
+      (1 to (fitness / POPULATION_SIZE).toInt)
+        .map(_ => anIndividual)
+        .toVector
     }
 
-    val fitIndividuals = individuals
-      .map(anIndividual => (
-        anIndividual,
-        anIndividual
-          .getTryChromosome
-          .map(_.fitness)
-          .getOrElse(Future(0d))
-      ))
-
-    fitIndividuals
-      .zipWithIndex
-      .foldLeft(List[(Individual, Future[Double])]()) { case (result, ((individual, futureFitness), index)) =>
-        result :+ (
-          individual,
-          if(index == 0) {
-            for {
-              aFitness <- futureFitness
-              aTotalFitness <- futureTotalFitness
-            } yield aFitness / aTotalFitness
-          }
-          else if (index == fitIndividuals.size - 1) Future(1.0)
-          else {
-            for {
-              aFitness <- futureFitness
-              previousFitness <- result(index - 1)._2
-              aTotalFitness <- futureTotalFitness
-            } yield aFitness / aTotalFitness + previousFitness
-          }
-        )
-      }
-  }
-
-  def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Double): Individual = {
-    @tailrec
-    def recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness: List[(Individual, Future[Double])]): Individual = {
-      if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
-      else {
-        val middleIndex = anAccumulatedFitness.size / 2
-        val middleFitness = Await.result(anAccumulatedFitness(middleIndex)._2, Duration.Inf)
-        aFitness match
-          case _ if aFitness == middleFitness => anAccumulatedFitness(middleIndex)._1
-          case _ if aFitness > middleFitness => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(middleIndex + 1, anAccumulatedFitness.size))
-          case _ if aFitness > Await.result(anAccumulatedFitness(middleIndex - 1)._2, Duration.Inf) => anAccumulatedFitness(middleIndex)._1
-          case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(0, middleIndex))
-      }
-    }
-
+  def findIndividualWhoseAccumulatedFitnessWindowIncludes(index: Int): Individual = {
     if(accumulatedFitness.isEmpty) Individual.emptyIndividual(EmptyAccumulatedFitnessListException(this))
-    else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
+    else accumulatedFitness(index)
   }
 
   def intoChunksOfSize(chunkSize: Int): Vector[Population] =
@@ -133,7 +86,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def randomSubPopulation(size: Int): Population = {
     copyWith(
       (1 to size).map { _ =>
-        findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
+        findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextInt(accumulatedFitness.size))
       }.toList
     )
   }
@@ -142,7 +95,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     copyWith(individuals.flatMap { individual =>
-      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
+      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness.size)
       individual.crossoverWith(couple, crossoverLikelihood)
     })
   }
