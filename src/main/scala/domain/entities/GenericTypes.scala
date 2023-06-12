@@ -50,20 +50,38 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def individuals: List[Individual] = internalIndividuals
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
-  
-  // TODO: construir con un sample de imagenes (usar un fitness sobre imágenes más chicas)
-  lazy val accumulatedFitness: Vector[Individual] = individuals
-    .toVector
-    .flatMap { anIndividual =>
-      val fitness = anIndividual.fitness.getOrElse(0d)
-      (1 to fitness.toInt)
-        .map(_ => anIndividual)
-        .toVector
-    }
 
-  def findIndividualWhoseAccumulatedFitnessWindowIncludes(index: Int): Individual = {
+  lazy val accumulatedFitness: List[(Individual, Double)] = {
+    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
+    val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
+    fitIndividuals
+      .zipWithIndex
+      .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
+        result :+ (
+          individual,
+          if(index == 0) individual.fitness.getOrElse(0d) / totalFitness
+          else if (index == fitIndividuals.size - 1) 1.0
+          else individual.fitness.getOrElse(0d) / totalFitness + result(index - 1)._2
+        )
+      }
+  }
+
+  def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Double): Individual = {
+    @tailrec
+    def recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
+      if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
+      else {
+        val middleIndex = anAccumulatedFitness.size / 2
+        val middleFitness = anAccumulatedFitness(middleIndex)._2
+        aFitness match
+          case _ if aFitness == middleFitness => anAccumulatedFitness(middleIndex)._1
+          case _ if aFitness > middleFitness => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(middleIndex + 1, anAccumulatedFitness.size))
+          case _ if aFitness > anAccumulatedFitness(middleIndex - 1)._2 => anAccumulatedFitness(middleIndex)._1
+          case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(0, middleIndex))
+      }
+    }
     if(accumulatedFitness.isEmpty) Individual.emptyIndividual(EmptyAccumulatedFitnessListException(this))
-    else accumulatedFitness(index)
+    else recFindIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness)
   }
 
   def intoChunksOfSize(chunkSize: Int): Vector[Population] =
@@ -86,7 +104,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def randomSubPopulation(size: Int): Population = {
     copyWith(
       (1 to size).map { _ =>
-        findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextInt(accumulatedFitness.size))
+        findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
       }.toList
     )
   }
@@ -95,7 +113,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     copyWith(individuals.flatMap { individual =>
-      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(accumulatedFitness.size)
+      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
       individual.crossoverWith(couple, crossoverLikelihood)
     })
   }
