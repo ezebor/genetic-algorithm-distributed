@@ -58,7 +58,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
       .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
         // TODO: fixear tantas llamadas al ImagesManager
-        Block(frameLocationId, imageId, pixelsSourceId, ImagesManager.ssim(ImagesManager.pixelsAt(imageId, pixelsSourceId), pixelsSourceId))
+        Block(frameLocationId, imageId, pixelsSourceId, ImagesManager.ssim(imageId, pixelsSourceId))
       }
   )
 }
@@ -132,8 +132,11 @@ object ImagesManager {
     )
   }
 
-  def ssim(pixels: Vector[Pixel], referencesPixelsSourceId: Id): Future[Double] = Future {
-    val terms = generateStatisticsTerms(pixels, ImagesManager.referencesBlocks(referencesPixelsSourceId).toVector.map(_.pixels))
+  def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
+    val terms = generateStatisticsTerms(
+      ImagesManager.pixelsAt(imageId, pixelsSourceId),
+      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map(_.pixels)
+    )
     luminance(terms) * contrast(terms) * structure(terms)
   }
 
@@ -161,7 +164,7 @@ object ImagesManager {
         id,
         imageId,
         id,
-        ImagesManager.ssim(ImagesManager.pixelsAt(imageId, id), id)
+        ImagesManager.ssim(imageId, id)
       )
     }.toList
 

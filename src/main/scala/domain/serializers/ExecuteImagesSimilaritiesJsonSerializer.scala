@@ -26,7 +26,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
               (frameLocationIdX.intValue, frameLocationIdY.intValue),
               imageId.intValue,
               pixelsSourceId,
-              ImagesManager.ssim(ImagesManager.pixelsAt(imageId.intValue, pixelsSourceId), pixelsSourceId)
+              ImagesManager.ssim(imageId.intValue, pixelsSourceId)
             )
       }.toList
 
