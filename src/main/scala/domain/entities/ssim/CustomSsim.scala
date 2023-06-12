@@ -19,19 +19,18 @@ import scala.util.{Random, Success}
 object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
-
+  val population = ImagesManager.initialPopulation()
+/*
   val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
-  val survivalPopulationSize = 180
-  val population = ImagesManager.initialPopulation()
+  val survivalPopulationSize = 30
   val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
   val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
   val parentsAndChildren = children.fusionWith(population)
   val mutatedPopulation = parentsAndChildren.mutate(mutationLikelihood)
   val finalPopulation = mutatedPopulation
     .fusionWith(parentsAndChildren)
-    .selectStrongerPopulation(survivalPopulationSize)
-  println(finalPopulation.individuals.map(i => i.fitness.get))
+    .selectStrongerPopulation(survivalPopulationSize)*/
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
@@ -52,17 +51,17 @@ object CustomSsim extends App {
     blocks.map(_.pixels.map(p => (p.x, p.y)))
   })*/
 
-  /*population.mutate(0.5).individuals
+  population.mutate(0.3).individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-    blocks.foreach { aBlock =>
-      aBlock.pixels.foreach { pixel =>
+    blocks.foreach { case aBlock @ Block(_, imageId, pixelsSourceId) =>
+      ImagesManager.pixelsAt(imageId, pixelsSourceId).foreach { pixel =>
         newImage.setPixel(aBlock.pixelWithFixedLocation(pixel))
       }
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }*/
+  }
 
   /*
   // TODO: crear nueva imagen a partir de píxeles

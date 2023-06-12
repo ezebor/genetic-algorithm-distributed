@@ -18,7 +18,7 @@ import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
 
-case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, futureFitness: Future[Double])(implicit customRandom: Random = random) extends Gene {
+case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
@@ -36,10 +36,10 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
 
   protected override def calculateFitness: Future[Double] = {
     val sum = blocks
-      .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, _, _, nextFutureFitness)) =>
+      .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, imageId, pixelsSourceId)) =>
         for {
           totalFitness <- totalFutureFitness
-          nextFitness <- nextFutureFitness
+          nextFitness <- ImagesManager.ssim(imageId, pixelsSourceId)
         } yield totalFitness + nextFitness
       }
 
@@ -53,9 +53,9 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def mutate: Chromosome = copyWith(
     blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
+      .map { case (Block(frameLocationId, imageId, _), Block(_, _, pixelsSourceId)) =>
         // TODO: fixear tantas llamadas al ImagesManager
-        Block(frameLocationId, imageId, pixelsSourceId, ImagesManager.ssim(imageId, pixelsSourceId))
+        Block(frameLocationId, imageId, pixelsSourceId)
       }
   )
 }
@@ -132,7 +132,7 @@ object ImagesManager {
   def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
     val terms = generateStatisticsTerms(
       ImagesManager.pixelsAt(imageId, pixelsSourceId),
-      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId, _) =>
+      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId) =>
         ImagesManager.pixelsAt(anImageId, aPixelsSourceId)
       }
     )
@@ -149,7 +149,7 @@ object ImagesManager {
   def toImmutableImage(blocks: List[Block]): ImmutableImage = {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
-      case Block(_, imageId, pixelsSourceId, _) <- blocks
+      case Block(_, imageId, pixelsSourceId) <- blocks
       aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
     } yield {
       immutableImage.setPixel(aPixel)
@@ -162,8 +162,7 @@ object ImagesManager {
       Block(
         id,
         imageId,
-        id,
-        ImagesManager.ssim(imageId, id)
+        id
       )
     }.toList
 
