@@ -51,6 +51,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
   
+  // TODO: construir con un sample de imagenes (usar un fitness sobre imágenes más chicas)
   lazy val accumulatedFitness: Vector[Individual] = individuals
     .toVector
     .flatMap { anIndividual =>
