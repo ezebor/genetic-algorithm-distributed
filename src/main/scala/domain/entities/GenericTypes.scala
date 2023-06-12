@@ -67,8 +67,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
           .getTryChromosome
           .map(_.fitness)
           .getOrElse(Future(0d))
-      )
-      )
+      ))
 
     fitIndividuals
       .zipWithIndex
