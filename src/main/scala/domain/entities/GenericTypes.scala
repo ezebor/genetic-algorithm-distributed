@@ -95,15 +95,15 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
 
   def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Double): Individual = {
     @tailrec
-    def recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness: List[(Individual, Double)]): Individual = {
+    def recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness: List[(Individual, Future[Double])]): Individual = {
       if(anAccumulatedFitness.size == 1) anAccumulatedFitness.head._1
       else {
         val middleIndex = anAccumulatedFitness.size / 2
-        val middleFitness = anAccumulatedFitness(middleIndex)._2
+        val middleFitness = Await.result(anAccumulatedFitness(middleIndex)._2, Duration.Inf)
         aFitness match
           case _ if aFitness == middleFitness => anAccumulatedFitness(middleIndex)._1
           case _ if aFitness > middleFitness => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(middleIndex + 1, anAccumulatedFitness.size))
-          case _ if aFitness > anAccumulatedFitness(middleIndex - 1)._2 => anAccumulatedFitness(middleIndex)._1
+          case _ if aFitness > Await.result(anAccumulatedFitness(middleIndex - 1)._2, Duration.Inf) => anAccumulatedFitness(middleIndex)._1
           case _ => recFindIndividualWhoseAccumulatedFitnessWindowIncludes(anAccumulatedFitness.slice(0, middleIndex))
       }
     }
