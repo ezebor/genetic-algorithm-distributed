@@ -51,6 +51,8 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
 
+  // TODO: armar esta lista en base a fitness / population size --> poner tantas copias como ese cociente
+  // TODO: guardar el fitness en el bloque, de manera que si copio la población, esta lista sea solamente pedir clones del bloque
   lazy val accumulatedFitness: List[(Individual, Future[Double])] = {
     val futureTotalFitness = individuals.foldLeft(Future[Double](0d)) { case (futureTotal, individual) =>
       val futureFitness = individual.getTryChromosome.get.fitness

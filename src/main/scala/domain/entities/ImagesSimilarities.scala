@@ -45,6 +45,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
 
+  // TODO: mejorar, hacer un random y agarrar ese frame
   override def mutate: Chromosome = copyWith(
     blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
