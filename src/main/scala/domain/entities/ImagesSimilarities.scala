@@ -35,8 +35,7 @@ case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, futureFi
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] => Frame(aBlocks)
-
-  // TODO: llevar fitness del bloque a la firma del bloque
+  
   protected override def calculateFitness: Future[Double] = {
     val sum = blocks
       .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, _, _, nextFutureFitness)) =>

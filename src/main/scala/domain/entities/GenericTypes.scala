@@ -51,7 +51,6 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
   
-  // TODO: guardar el fitness en el bloque, de manera que si copio la población, esta lista sea solamente pedir clones del bloque
   lazy val accumulatedFitness: Vector[Individual] = individuals
     .toVector
     .flatMap { anIndividual =>
