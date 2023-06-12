@@ -56,7 +56,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     .toVector
     .flatMap { anIndividual =>
       val fitness = anIndividual.fitness.getOrElse(0d)
-      (1 to (fitness / POPULATION_SIZE).toInt)
+      (1 to fitness.toInt)
         .map(_ => anIndividual)
         .toVector
     }
