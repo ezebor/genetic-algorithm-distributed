@@ -28,8 +28,8 @@ class SolutionsPrinter extends BaseActor {
               image.frame match
                 case Success(Frame(blocks)) =>
                   for {
-                    aBlock <- blocks
-                    aPixel <- aBlock.pixels
+                    case aBlock @ Block(_, imageId, pixelsSourceId, _) <- blocks
+                    aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
                   } yield {
                     newImage.setPixel(aBlock.pixelWithFixedLocation(aPixel))
                   }

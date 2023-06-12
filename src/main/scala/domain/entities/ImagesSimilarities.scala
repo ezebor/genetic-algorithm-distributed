@@ -19,8 +19,6 @@ import scala.util.{Random, Success, Try}
 type Id = (Int, Int)
 
 case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, futureFitness: Future[Double])(implicit customRandom: Random = random) extends Gene {
-  lazy val pixels: Vector[Pixel] = ImagesManager.pixelsAt(imageId, pixelsSourceId)
-
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
@@ -35,7 +33,7 @@ case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, futureFi
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] => Frame(aBlocks)
-  
+
   protected override def calculateFitness: Future[Double] = {
     val sum = blocks
       .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, _, _, nextFutureFitness)) =>
@@ -134,7 +132,9 @@ object ImagesManager {
   def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
     val terms = generateStatisticsTerms(
       ImagesManager.pixelsAt(imageId, pixelsSourceId),
-      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map(_.pixels)
+      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId, _) =>
+        ImagesManager.pixelsAt(anImageId, aPixelsSourceId)
+      }
     )
     luminance(terms) * contrast(terms) * structure(terms)
   }
@@ -149,8 +149,8 @@ object ImagesManager {
   def toImmutableImage(blocks: List[Block]): ImmutableImage = {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
-      aBlock <- blocks
-      aPixel <- aBlock.pixels
+      case Block(_, imageId, pixelsSourceId, _) <- blocks
+      aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
     } yield {
       immutableImage.setPixel(aPixel)
     }

@@ -20,7 +20,18 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
+  val crossoverLikelihood = 0.5
+  val mutationLikelihood = 0.1
+  val survivalPopulationSize = 180
   val population = ImagesManager.initialPopulation()
+  val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
+  val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
+  val parentsAndChildren = children.fusionWith(population)
+  val mutatedPopulation = parentsAndChildren.mutate(mutationLikelihood)
+  val finalPopulation = mutatedPopulation
+    .fusionWith(parentsAndChildren)
+    .selectStrongerPopulation(survivalPopulationSize)
+  println(finalPopulation.individuals.map(i => i.fitness.get))
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
@@ -30,7 +41,6 @@ object CustomSsim extends App {
     population.selectStrongerPopulation(75)
   }, Duration.Inf)*/
 
-  println(population.selectStrongerPopulation(150).individuals.map(i => i.fitness.get))
 
 
 //  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
