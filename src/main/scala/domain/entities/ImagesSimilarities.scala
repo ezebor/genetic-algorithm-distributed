@@ -12,12 +12,13 @@ import domain.entities.AlgorithmConfig.*
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
 
-case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
+case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, futureFitness: Future[Double])(implicit customRandom: Random = random) extends Gene {
   lazy val pixels: Vector[Pixel] = ImagesManager.pixelsAt(imageId, pixelsSourceId)
 
   override def mutate: Gene = this
@@ -36,11 +37,16 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
     case aBlocks: List[Block] => Frame(aBlocks)
 
   // TODO: llevar fitness del bloque a la firma del bloque
-  protected override def calculateFitness: Future[Double] = Future {
+  protected override def calculateFitness: Future[Double] = {
     val sum = blocks
-      .map(aBlock => ImagesManager.ssim(aBlock))
-      .sum
-    sum / blocks.size
+      .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, _, _, nextFutureFitness)) =>
+        for {
+          totalFitness <- totalFutureFitness
+          nextFitness <- nextFutureFitness
+        } yield totalFitness + nextFitness
+      }
+
+    sum.map(futureSum => futureSum / blocks.size)
   }
 
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
@@ -50,8 +56,9 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def mutate: Chromosome = copyWith(
     blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _), Block(_, _, pixelsSourceId)) =>
-        Block(frameLocationId, imageId, pixelsSourceId)
+      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
+        // TODO: fixear tantas llamadas al ImagesManager
+        Block(frameLocationId, imageId, pixelsSourceId, ImagesManager.ssim(ImagesManager.pixelsAt(imageId, pixelsSourceId), pixelsSourceId))
       }
   )
 }
@@ -85,11 +92,8 @@ object ImagesManager {
 
   private case class StatisticsTerms(meanA: Double, meansB: Vector[Double], standardDeviationA: Double, standardDeviationsB: Vector[Double], covariances: Vector[Double])
 
-  private def generateStatisticsTerms(blockA: Block, blocksB: Vector[Block]): StatisticsTerms = {
-    val pixelsA = blockA.pixels
-    val pixelsB = blocksB.map(_.pixels)
+  private def generateStatisticsTerms(pixelsA: Vector[Pixel], pixelsB: Vector[Vector[Pixel]]): StatisticsTerms = {
     val size = pixelsA.size
-
     val initialValues = pixelsB.map(_ => 0d)
 
     val (sumPixelsA, sumPixelsB) = pixelsA.indices.foldLeft((0d, initialValues)) { case ((totalSumPixelsA, totalSumPixelsB), index) =>
@@ -128,8 +132,8 @@ object ImagesManager {
     )
   }
 
-  def ssim(block: Block): Double = {
-    val terms = generateStatisticsTerms(block, ImagesManager.referencesBlocks(block.pixelsSourceId).toVector)
+  def ssim(pixels: Vector[Pixel], referencesPixelsSourceId: Id): Future[Double] = Future {
+    val terms = generateStatisticsTerms(pixels, ImagesManager.referencesBlocks(referencesPixelsSourceId).toVector.map(_.pixels))
     luminance(terms) * contrast(terms) * structure(terms)
   }
 
@@ -156,7 +160,8 @@ object ImagesManager {
       Block(
         id,
         imageId,
-        id
+        id,
+        ImagesManager.ssim(ImagesManager.pixelsAt(imageId, id), id)
       )
     }.toList
 

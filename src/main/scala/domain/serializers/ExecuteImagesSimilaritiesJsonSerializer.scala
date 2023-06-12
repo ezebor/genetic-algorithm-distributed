@@ -21,10 +21,12 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
       val blocks = serializedBlocks.map { case serializedBlock: JsArray =>
         serializedBlock.elements match
           case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY)) =>
+            val pixelsSourceId = (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
             Block(
               (frameLocationIdX.intValue, frameLocationIdY.intValue),
               imageId.intValue,
-              (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
+              pixelsSourceId,
+              ImagesManager.ssim(ImagesManager.pixelsAt(imageId.intValue, pixelsSourceId), pixelsSourceId)
             )
       }.toList
 

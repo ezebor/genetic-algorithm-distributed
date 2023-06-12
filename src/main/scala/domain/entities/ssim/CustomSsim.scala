@@ -21,6 +21,7 @@ object CustomSsim extends App {
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
 
   val population = ImagesManager.initialPopulation()
+  println(population.accumulatedFitness.size)
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)
@@ -33,8 +34,8 @@ object CustomSsim extends App {
   println(population.selectStrongerPopulation(150).individuals.map(i => i.fitness.get))
 
 
-  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
-  println(serializer.read(serializer.write(Execute("example", population))).population.individuals.map(_.fitness.get))
+//  val serializer = new ExecuteImagesSimilaritiesJsonSerializer()
+//  println(serializer.read(serializer.write(Execute("example", population))).population.individuals.map(_.fitness.get))
 
   //println(population.selectStrongerPopulation(8).accumulatedFitness.map(_._2))
 
