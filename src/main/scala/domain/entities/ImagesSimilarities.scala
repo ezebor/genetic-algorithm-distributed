@@ -19,6 +19,7 @@ import scala.util.{Random, Success, Try}
 type Id = (Int, Int)
 
 case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
+  // TODO: mutar acá, eligiendo por random la nueva pixel source
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
@@ -130,6 +131,7 @@ object ImagesManager {
   }
 
   def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
+    // TODO: calcular distancia al centro de la imagen --> comparar distancia contra random (favorecer a los más cerca)
     val terms = generateStatisticsTerms(
       ImagesManager.pixelsAt(imageId, pixelsSourceId),
       ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId) =>

@@ -20,6 +20,7 @@ object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
   val population = ImagesManager.initialPopulation()
+  println(population.individuals.map(_.fitness))
 /*
   val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
@@ -51,7 +52,7 @@ object CustomSsim extends App {
     blocks.map(_.pixels.map(p => (p.x, p.y)))
   })*/
 
-  population.mutate(0.3).individuals
+  /*population.mutate(0.3).individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
     val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -61,7 +62,7 @@ object CustomSsim extends App {
       }
     }
     newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-  }
+  }*/
 
   /*
   // TODO: crear nueva imagen a partir de píxeles
