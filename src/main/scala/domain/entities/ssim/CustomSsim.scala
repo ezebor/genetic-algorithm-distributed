@@ -21,20 +21,24 @@ object CustomSsim extends App {
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
   val population = ImagesManager.initialPopulation()
   //println(population.individuals.map(_.fitness))
-/*
+
   val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
   val survivalPopulationSize = 30
   val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
+  println("terminó populationLookingForReproduction")
   val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
+  println("terminó children")
   val parentsAndChildren = children.fusionWith(population)
+  println("terminó parentsAndChildren")
   val mutatedPopulation = parentsAndChildren.mutate(mutationLikelihood)
+  println("terminó mutatedPopulation")
   val finalPopulation = mutatedPopulation
     .fusionWith(parentsAndChildren)
-    .selectStrongerPopulation(survivalPopulationSize)*/
-
+    .selectStrongerPopulation(survivalPopulationSize)
+  println(finalPopulation.individuals.map(_.fitness))
   //val population2 = population.crossoverWith(population, 0.5)
-  //.mutate(0.5)
+  //.mutate(0.5)*/
 
   /*import scala.concurrent.ExecutionContext.Implicits.global
   val a: Population = Await.result(Future {
@@ -52,12 +56,12 @@ object CustomSsim extends App {
     blocks.map(_.pixels.map(p => (p.x, p.y)))
   })*/
 
-  population.individuals
+  /*population.individuals
     .zipWithIndex
     .foreach { case (Image(Success(Frame(blocks))), index) =>
       val newImage = ImagesManager.toImmutableImage(blocks)
       newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_$index.png")
-    }
+    }*/
 
   /*
   // TODO: crear nueva imagen a partir de píxeles

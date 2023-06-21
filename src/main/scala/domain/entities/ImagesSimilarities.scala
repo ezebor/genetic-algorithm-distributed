@@ -19,7 +19,6 @@ import scala.util.{Random, Success, Try}
 type Id = (Int, Int)
 
 case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
-  // TODO: mutar acá, eligiendo por random la nueva pixel source
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
@@ -49,13 +48,11 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
 
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
-
-  // TODO: mejorar, hacer un random y agarrar ese frame
+  
   override def mutate: Chromosome = copyWith(
     blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
       .map { case (Block(frameLocationId, imageId, _), Block(_, _, pixelsSourceId)) =>
-        // TODO: fixear tantas llamadas al ImagesManager
         Block(frameLocationId, imageId, pixelsSourceId)
       }
   )
@@ -131,7 +128,6 @@ object ImagesManager {
   }
 
   def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
-    // TODO: calcular distancia al centro de la imagen --> comparar distancia contra random (favorecer a los más cerca)
     val terms = generateStatisticsTerms(
       ImagesManager.pixelsAt(imageId, pixelsSourceId),
       ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId) =>

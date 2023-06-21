@@ -50,7 +50,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def individuals: List[Individual] = internalIndividuals
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
-
+  
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
