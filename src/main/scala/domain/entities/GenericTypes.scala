@@ -21,7 +21,7 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def getGenes: List[Gene] = genes
 
   protected def calculateFitness: Future[Double]
-  val fitness: Future[Double] = calculateFitness
+  lazy val fitness: Future[Double] = calculateFitness
 
   def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
