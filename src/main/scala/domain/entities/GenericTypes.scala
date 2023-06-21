@@ -55,6 +55,8 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
 
   // TODO: parametrizar el accumulatedFitness, teniendo en cuenta que los fitness vienen de los workers
+  // TODO: lograr que no se necesiten todos los valores para construir la lista (el total), como hacer un nextDouble * 10. Al hacer el find individual, si ya lo tengo lo devuelvo, sino espero
+  // TODO: no esperar a terminar de construir el accumulatedFitness si ya tengo el individuo que quiero (si ya me llegó del worker)
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
