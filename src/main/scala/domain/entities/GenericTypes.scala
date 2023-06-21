@@ -20,6 +20,9 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def copyWith(genes: List[Gene]): Chromosome
   def getGenes: List[Gene] = genes
 
+  // TODO: pedir el firness a los wokers: en el master ejecutar el algoritmo, y los workers calculan fitness
+  // TODO: de master a workers: le mando un individual (con coordenadas como ahora). El master recibe un double del fitness
+  // TODO: probar con muchos workers, para paralelizar el cálculo del fitness
   protected def calculateFitness: Future[Double]
   lazy val fitness: Future[Double] = calculateFitness
 
@@ -50,7 +53,8 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   def individuals: List[Individual] = internalIndividuals
   
   def fusionWith(otherPopulation: Population): Population = this.copyWith(individuals ::: otherPopulation.individuals)
-  
+
+  // TODO: parametrizar el accumulatedFitness, teniendo en cuenta que los fitness vienen de los workers
   lazy val accumulatedFitness: List[(Individual, Double)] = {
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
