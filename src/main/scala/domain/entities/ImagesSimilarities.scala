@@ -151,10 +151,14 @@ object ImagesManager {
   def toImmutableImage(blocks: List[Block]): ImmutableImage = {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
-      case Block(_, imageId, pixelsSourceId) <- blocks
+      case Block((locationX, locationY), imageId, pixelsSourceId @ (sourceX, sourceY)) <- blocks
       aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
     } yield {
-      immutableImage.setPixel(aPixel)
+      immutableImage.setPixel(Pixel(
+        locationX + aPixel.x - sourceX,
+        locationY + aPixel.y - sourceY,
+        aPixel.argb
+      ))
     }
     immutableImage
   }
