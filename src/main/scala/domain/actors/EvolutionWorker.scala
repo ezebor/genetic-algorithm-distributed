@@ -8,7 +8,7 @@ import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS, QUANTITY_OF_WO
 import domain.Operators.*
 import domain.entities.*
 import domain.entities.AlgorithmConfig.*
-import domain.{Execute, WorkerOnline}
+import domain.*
 
 import scala.util.Random
 
@@ -20,7 +20,12 @@ class EvolutionWorker() extends BaseActor {
   override def receive: Receive = offline
 
   private def offline: Receive = {
-    case WorkerOnline(evolutionMaster, survivalPopulationSize, crossoverLikelihood, mutationLikelihood) =>
+    case WorkerOnline(
+    evolutionMaster,
+    SurvivalPopulationSize(survivalPopulationSize),
+    CrossoverLikelihood(crossoverLikelihood),
+    MutationLikelihood(mutationLikelihood)
+    ) =>
 
       def startEvolution: Operator = { population =>
         log.info(s"Starting evolution over a population with size = ${population.individuals.size}")

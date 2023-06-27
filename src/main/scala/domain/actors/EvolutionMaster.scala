@@ -13,7 +13,7 @@ import com.typesafe.config.Config
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, InitialPopulation, Population}
-import domain.{Execute, GenerationBuilt, MasterOnline, WorkerOnline}
+import domain.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
@@ -52,9 +52,9 @@ class EvolutionMaster() extends BaseActor {
         workers.foreach { worker =>
           worker ! WorkerOnline(
             self,
-            (survivalLikelihood * POPULATION_SIZE / workers.size).toInt,
-            crossoverLikelihood,
-            mutationLikelihood
+            SurvivalPopulationSize((survivalLikelihood * POPULATION_SIZE / workers.size).toInt),
+            CrossoverLikelihood(crossoverLikelihood),
+            MutationLikelihood(mutationLikelihood)
           )
         }
       }
