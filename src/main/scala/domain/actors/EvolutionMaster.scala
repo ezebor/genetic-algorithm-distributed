@@ -10,10 +10,10 @@ import akka.util.Timeout
 import app.ExecutionScript
 import app.ExecutionScript.*
 import com.typesafe.config.Config
+import domain.*
 import domain.Operators.*
 import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, InitialPopulation, Population}
-import domain.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
@@ -25,34 +25,15 @@ object EvolutionMaster {
 }
 
 class EvolutionMaster() extends BaseActor {
-  implicit val timeout: Timeout = Timeout(3 seconds)
+  override def receive: Receive = offline()
 
-  val cluster: Cluster = Cluster(context.system)
-
-  override def preStart(): Unit = {
-    cluster.subscribe(
-      self,
-      initialStateMode = InitialStateAsEvents,
-      classOf[MemberEvent],
-      classOf[UnreachableMember]
-    )
-  }
-
-  override def postStop(): Unit = {
-    cluster.unsubscribe(self)
-  }
-
-  override def receive: Receive = offline(Map())
-
-  private def offline(indexedWorkers: Map[Address, Vector[ActorRef]]): Receive = {
-    case MasterOnline(manager: ActorRef, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
-      val workers: Vector[ActorRef] = indexedWorkers.values.flatten.toVector
-
+  private def offline(): Receive = {
+    case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
       def initializeWorkers(): Unit = {
-        workers.foreach { worker =>
-          worker ! WorkerOnline(
+        (1 to quantityOfWorkers).foreach { _ =>
+          router ! WorkerOnline(
             self,
-            SurvivalPopulationSize((survivalLikelihood * POPULATION_SIZE / workers.size).toInt),
+            SurvivalPopulationSize((survivalLikelihood * POPULATION_SIZE / quantityOfWorkers).toInt),
             CrossoverLikelihood(crossoverLikelihood),
             MutationLikelihood(mutationLikelihood)
           )
@@ -61,26 +42,16 @@ class EvolutionMaster() extends BaseActor {
 
       def returnGeneration: Operator = { population =>
         this.distributeWork(manager, population)
-
-        context.become(this.waitingPopulations(
-          returnGeneration,
-          population.empty(),
-          1
-        ))
+        startEvolution(population)
       }
 
       def startEvolution: Operator = { population =>
-        population
-          .intoNChunks(workers.size)
-          .zip(workers)
-          .foreach { (aPopulation, aWorker) =>
-            this.distributeWork(aWorker, aPopulation)
-          }
+        this.distributeWork(router, population, 1, quantityOfWorkers)
 
         context.become(this.waitingPopulations(
           returnGeneration,
           population.empty(),
-          1
+          quantityOfWorkers
         ))
       }
 
@@ -90,31 +61,5 @@ class EvolutionMaster() extends BaseActor {
         EmptyPopulation,
         1
       ))
-
-    case MemberUp(member) if member.hasRole(WORKER_ROLE) =>
-      log.info(s"Member is up: ${member.address}")
-      (0 until QUANTITY_OF_WORKERS_PER_NODE).foreach { index =>
-        val workerSelection = context.actorSelection(s"${member.address}/user/evolutionWorker_$index")
-        workerSelection
-          .resolveOne()
-          .map(ref => (member.address, ref))
-          .pipeTo(self)
-      }
-
-    case UnreachableMember(member) if member.hasRole(WORKER_ROLE) =>
-      log.info(s"Member detected as unreachable: ${member.address}")
-      context.become(offline(indexedWorkers.removed(member.address)))
-
-    case MemberRemoved(member, previousStatus) =>
-      log.info(s"Member ${member.address} removed after $previousStatus")
-      context.become(offline(indexedWorkers.removed(member.address)))
-
-    case m: MemberEvent =>
-      log.info(s"Unrecognized member Event: $m")
-
-    case pair: (Address, ActorRef) =>
-      log.info(s"Registering worker: $pair")
-      val workersActorRefs = indexedWorkers.getOrElse(pair._1, Vector())
-      context.become(offline(indexedWorkers.updated(pair._1, pair._2 +: workersActorRefs)))
   }
 }

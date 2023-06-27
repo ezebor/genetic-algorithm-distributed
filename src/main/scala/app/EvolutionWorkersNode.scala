@@ -24,6 +24,5 @@ class EvolutionWorkersNode(port: Int) extends App {
     .withFallback(serializationConfig)
     .withFallback(mainConfig)
 
-  val system = ActorSystem("GeneticAlgorithmSystem", config)
-  (0 until QUANTITY_OF_WORKERS_PER_NODE).foreach(index => system.actorOf(EvolutionWorker.props(), s"evolutionWorker_$index"))
+  ActorSystem("GeneticAlgorithmSystem", config)
 }

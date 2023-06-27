@@ -25,7 +25,7 @@ import scala.concurrent.duration.*
 import scala.language.postfixOps
 import scala.util.Random
 
-class EvolutionMasterNode() extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
+class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJsonSupport with EvolutionRequestBodyJsonProtocol {
   val configSource = ConfigFactory.load("resources/application.conf")
   val serializationConfig = configSource.getConfig(ExecutionScript.SERIALIZATION_CONFIG)
   val mainConfig = configSource.getConfig("mainConfig")
@@ -35,6 +35,7 @@ class EvolutionMasterNode() extends App with SprayJsonSupport with EvolutionRequ
     s"""
       |akka.remote.artery.canonical.port = 2551
       |akka.cluster.roles = ["$MASTER_ROLE"]
+      |akka.actor.deployment./evolutionRouter.cluster.max-nr-of-instances-per-node = $quantityOfWorkersPerNode
       |""".stripMargin)
     .withFallback(serializationConfig)
     .withFallback(masterRouterConfig)
@@ -47,8 +48,9 @@ class EvolutionMasterNode() extends App with SprayJsonSupport with EvolutionRequ
   val generationsManager = system.actorOf(GenerationsManager.props(), "generationManager")
   val master = system.actorOf(EvolutionMaster.props(), "evolutionMaster")
   val solutionsPrinter = system.actorOf(SolutionsPrinter.props(), "solutionsPrinter")
+  val router: ActorRef = system.actorOf(FromConfig.props(EvolutionWorker.props()), "evolutionRouter")
 
-  val routesTree: Route = MasterRouteTree(generationsManager, master, solutionsPrinter)
+  val routesTree: Route = MasterRouteTree(generationsManager, master, router, solutionsPrinter, quantityOfWorkersPerNode)
 
   Http().newServerAt("localhost", 8080).bind(routesTree)
 }

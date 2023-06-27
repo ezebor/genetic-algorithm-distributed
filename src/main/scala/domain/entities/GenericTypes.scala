@@ -20,11 +20,8 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def copyWith(genes: List[Gene]): Chromosome
   def getGenes: List[Gene] = genes
 
-  // TODO: pedir el firness a los wokers: en el master ejecutar el algoritmo, y los workers calculan fitness
-  // TODO: de master a workers: le mando un individual (con coordenadas como ahora). El master recibe un double del fitness
-  // TODO: probar con muchos workers, para paralelizar el cálculo del fitness
   protected def calculateFitness: Future[Double]
-  val fitness: Future[Double] = calculateFitness
+  lazy val fitness: Future[Double] = calculateFitness
 
   def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
@@ -61,7 +58,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
     val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
 
-    val result = fitIndividuals
+    fitIndividuals
       .zipWithIndex
       .foldLeft(List[(Individual, Double)]()) { case (result, (individual, index)) =>
         result :+ (
@@ -71,8 +68,6 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
           else individual.fitness.getOrElse(0d) / totalFitness + result(index - 1)._2
         )
       }
-    println(s"Accumulated fitness list was completed with ${result.size} elements")
-    result
   }
 
   def findIndividualWhoseAccumulatedFitnessWindowIncludes(aFitness: Double): Individual = {
