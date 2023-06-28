@@ -18,11 +18,11 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
 
   override def createPopulation(individuals: Vector[JsValue]): Population = {
     val images = individuals.map { case JsArray(serializedBlocks) =>
-      val blocks = serializedBlocks.map { case serializedBlock: JsArray =>
+      val coordinates: List[Coordinate] = serializedBlocks.map { case serializedBlock: JsArray =>
         serializedBlock.elements match
           case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY)) =>
             val pixelsSourceId = (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
-            Block(
+            (
               (frameLocationIdX.intValue, frameLocationIdY.intValue),
               imageId.intValue,
               pixelsSourceId
@@ -30,7 +30,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
       }.toList
 
       Image(Success(Frame(
-        blocks
+        ImagesManager.createBlocksWith(coordinates)
       )))
     }
 

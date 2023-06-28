@@ -20,8 +20,8 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
   def copyWith(genes: List[Gene]): Chromosome
   def getGenes: List[Gene] = genes
 
-  protected def calculateFitness: Future[Double]
-  lazy val fitness: Future[Double] = calculateFitness
+  protected def calculateFitness: Double
+  lazy val fitness: Double = calculateFitness
 
   def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
@@ -158,7 +158,7 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
 
   def getTryGenes: Try[List[Gene]] = tryChromosome.map(_.getGenes)
 
-  def fitness: Try[Double] = tryChromosome.map(chromosome => Await.result(chromosome.fitness, Duration.Inf))
+  def fitness: Try[Double] = tryChromosome.map(_.fitness)
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     val tryChildrenChromosomes: Try[(Chromosome, Chromosome)] = for {

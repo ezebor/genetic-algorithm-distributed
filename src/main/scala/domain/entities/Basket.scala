@@ -19,7 +19,7 @@ case class ItemsList(items: List[Item])(implicit customRandom: Random = random) 
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case items: List[Item] => ItemsList(items)
 
-  protected override def calculateFitness: Future[Double] = Future{
+  protected override def calculateFitness: Double = {
     if(items.size >= 5 || items.size <= 2) 0.1
     else items.map{ case Item(_, price, satisfaction) =>
       if(price > satisfaction) 0

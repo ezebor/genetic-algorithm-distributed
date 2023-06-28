@@ -17,8 +17,9 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Random, Success, Try}
 
 type Id = (Int, Int)
+type Coordinate = (Id, Int, Id)
 
-case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id)(implicit customRandom: Random = random) extends Gene {
+case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, fitness: Double)(implicit customRandom: Random = random) extends Gene {
   override def mutate: Gene = this
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
@@ -34,28 +35,25 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def copyWith(genes: List[Gene]): Chromosome = genes match
     case aBlocks: List[Block] => Frame(aBlocks)
 
-  protected override def calculateFitness: Future[Double] = {
-    val sum = blocks
-      .foldLeft(Future(0d)) { case (totalFutureFitness, Block(_, imageId, pixelsSourceId)) =>
-        for {
-          totalFitness <- totalFutureFitness
-          nextFitness <- ImagesManager.ssim(imageId, pixelsSourceId)
-        } yield totalFitness + nextFitness
-      }
-
-    sum.map(futureSum => futureSum / blocks.size)
-  }
+  protected override def calculateFitness: Double = blocks
+    .foldLeft(0d) { case (totalFitness, Block(_, _, _, aFitness)) =>
+      totalFitness + aFitness
+    }
 
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
   
-  override def mutate: Chromosome = copyWith(
-    blocks
+  override def mutate: Chromosome = {
+    val coordinates: List[Coordinate] = blocks
       .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _), Block(_, _, pixelsSourceId)) =>
-        Block(frameLocationId, imageId, pixelsSourceId)
+      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
+        (frameLocationId, imageId, pixelsSourceId)
       }
-  )
+
+    copyWith(
+      ImagesManager.createBlocksWith(coordinates)
+    )
+  }
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
@@ -127,10 +125,12 @@ object ImagesManager {
     )
   }
 
-  def ssim(imageId: Int, pixelsSourceId: Id): Future[Double] = Future {
+  def createBlocksWith(coordinates: List[Coordinate]): List[Block] = ???
+
+  def ssim(imageId: Int, pixelsSourceId: Id): Double = {
     val terms = generateStatisticsTerms(
       ImagesManager.pixelsAt(imageId, pixelsSourceId),
-      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId) =>
+      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId, _) =>
         ImagesManager.pixelsAt(anImageId, aPixelsSourceId)
       }
     )
@@ -147,7 +147,7 @@ object ImagesManager {
   def toImmutableImage(blocks: List[Block]): ImmutableImage = {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
-      case Block((locationX, locationY), imageId, pixelsSourceId @ (sourceX, sourceY)) <- blocks
+      case Block((locationX, locationY), imageId, pixelsSourceId @ (sourceX, sourceY), _) <- blocks
       aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
     } yield {
       immutableImage.setPixel(Pixel(
@@ -159,14 +159,14 @@ object ImagesManager {
     immutableImage
   }
 
-  def toBlocks(imageId: Int): List[Block] = blockIds
-    .map { case id: Id =>
-      Block(
-        id,
-        imageId,
-        id
-      )
-    }.toList
+  def toBlocks(imageId: Int): List[Block] = {
+    val coordinates: List[Coordinate] = blockIds
+      .map { case id: Id =>
+        (id, imageId, id)
+      }.toList
+
+    ImagesManager.createBlocksWith(coordinates)
+  }
 
   lazy val referencesImmutableImages: Map[Int, ImmutableImage] = {
     val initialImmutableImages = List(
