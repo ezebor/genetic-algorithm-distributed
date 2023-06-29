@@ -30,8 +30,8 @@ object CustomSsim extends App {
   println(
     fitness / population.images.head.frame.get.blocks.size
   )*/
-
-  val crossoverLikelihood = 0.5
+  println(population.individuals.map(_.fitness))
+  /*val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
   val survivalPopulationSize = 30
   val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
@@ -41,7 +41,7 @@ object CustomSsim extends App {
   val finalPopulation = strongestPopulation
     .fusionWith(children)
     .fusionWith(mutatedPopulation)
-  println(finalPopulation.individuals.map(_.fitness))
+  println(finalPopulation.individuals.map(_.fitness))*/
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)*/
 

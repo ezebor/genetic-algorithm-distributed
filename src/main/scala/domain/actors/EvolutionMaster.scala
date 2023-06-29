@@ -29,11 +29,12 @@ class EvolutionMaster() extends BaseActor {
 
   private def offline(): Receive = {
     case MasterOnline(manager: ActorRef, router: ActorRef, quantityOfWorkers: Int, survivalLikelihood: Double, crossoverLikelihood: Double, mutationLikelihood: Double) =>
+      val survivalPopulationSize = (survivalLikelihood * POPULATION_SIZE).toInt
       def initializeWorkers(): Unit = {
         (1 to quantityOfWorkers).foreach { _ =>
           router ! WorkerOnline(
             self,
-            SurvivalPopulationSize((survivalLikelihood * POPULATION_SIZE / quantityOfWorkers).toInt),
+            SurvivalPopulationSize(survivalPopulationSize),
             CrossoverLikelihood(crossoverLikelihood),
             MutationLikelihood(mutationLikelihood)
           )
@@ -42,15 +43,19 @@ class EvolutionMaster() extends BaseActor {
 
       def returnGeneration: Operator = { population =>
         this.distributeWork(manager, population)
+        log.info(s"Starting evolution over a population with size = ${population.individuals.size}")
         startEvolution(population)
       }
 
       def startEvolution: Operator = { population =>
-        this.distributeWork(router, population, 1, quantityOfWorkers)
+        val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+        this.distributeWork(router, strongestPopulation, 1, quantityOfWorkers)
 
         context.become(this.waitingPopulations(
           returnGeneration,
-          population.empty(),
+          strongestPopulation
+            .mutate(mutationLikelihood)
+            .fusionWith(strongestPopulation),
           quantityOfWorkers
         ))
       }

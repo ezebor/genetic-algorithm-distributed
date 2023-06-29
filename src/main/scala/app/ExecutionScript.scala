@@ -13,11 +13,11 @@ object ExecutionScript {
   val DIMENSION_BLOCK_SIZE: Int = 11
 
   val QUANTITY_OF_NODES: Int = 2
-  val QUANTITY_OF_WORKERS_PER_NODE: Int = 1
+  val QUANTITY_OF_WORKERS_PER_NODE: Int = 10
   val POPULATION_SIZE: Int = 200
   val QUANTITY_OF_WORKERS: Int = QUANTITY_OF_WORKERS_PER_NODE * QUANTITY_OF_NODES
 }
 
-object MasterNode extends EvolutionMasterNode(2)
+object MasterNode extends EvolutionMasterNode(ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE)
 object WorkersNode1 extends EvolutionWorkersNode(2561)
 object WorkersNode2 extends EvolutionWorkersNode(2562)
