@@ -43,17 +43,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
     case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
   
-  override def mutate: Chromosome = {
-    val coordinates: List[Coordinate] = blocks
-      .zip(customRandom.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
-        (frameLocationId, imageId, pixelsSourceId)
-      }
-
-    copyWith(
-      ImagesManager.toBlocks(coordinates)
-    )
-  }
+  override def mutate: Chromosome = this
 }
 
 case class Image(frame: Try[Frame])(implicit customRandom: Random = random) extends Individual(frame)(customRandom) {
@@ -275,4 +265,20 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   })
 
   override def empty(): Population = ImagesPopulation(List[Image]())
+
+  override def mutate(mutationLikelihood: Double): Population = {
+    val blocks = super.mutate(mutationLikelihood).individuals.flatMap { case image: Image =>
+      image.frame.get.blocks
+    }
+
+    val coordinates: List[Coordinate] = blocks
+      .zip(random.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
+      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
+        (frameLocationId, imageId, pixelsSourceId)
+      }
+
+    copyWith(
+      ImagesManager.toImages(coordinates)
+    )
+  }
 }
