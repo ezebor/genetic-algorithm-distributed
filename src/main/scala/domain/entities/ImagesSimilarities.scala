@@ -37,7 +37,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
 
   protected override def calculateFitness: Double = blocks
     .foldLeft(0d) { case (totalFitness, Block(_, _, _, aFitness)) =>
-      totalFitness + aFitness
+      totalFitness + aFitness / blocks.size
     }
 
   override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
@@ -51,7 +51,7 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
       }
 
     copyWith(
-      ImagesManager.createBlocksWith(coordinates)
+      ImagesManager.toBlocks(coordinates)
     )
   }
 }
@@ -70,71 +70,103 @@ object ImagesManager {
   private val C2: Double = Math.pow(K2 * L, 2)
   private val C3: Double = C2 / 2
 
-  private def luminance(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(meanA, meansB, _, _, _) => meansB.map { meanB =>
-      (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)
-    }.sum
-  private def contrast(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationsB, _) => standardDeviationsB.map { standardDeviationB =>
-      (2 * standardDeviationA * standardDeviationB + C2) / (Math.pow(standardDeviationA, 2) + Math.pow(standardDeviationB, 2) + C2)
-    }.sum
-  private def structure(terms: StatisticsTerms): Double = terms match
-    case StatisticsTerms(_, _, standardDeviationA, standardDeviationsB, covariances) => standardDeviationsB.indices.map { referenceIndex =>
-      (covariances(referenceIndex) + C3) / (standardDeviationA * standardDeviationsB(referenceIndex) + C3)
-    }.sum
+  private def luminance(terms: StatisticsTerms): Vector[Double] = terms match
+    case StatisticsTerms((meansA, meansB), _) => meansA.map { meanA =>
+      meansB.map(meanB => (2 * meanA * meanB + C1) / (Math.pow(meanA, 2) + Math.pow(meanB, 2) + C1)).sum
+    }
+  private def contrast(terms: StatisticsTerms): Vector[Double] = terms match
+    case StatisticsTerms(_, (variancesA, variancesB, _)) => variancesA.map { varianceA =>
+      variancesB.map(varianceB => (2 * varianceA * varianceB + C2) / (Math.pow(varianceA, 2) + Math.pow(varianceB, 2) + C2)).sum
+    }
+  private def structure(terms: StatisticsTerms): Vector[Double] = terms match
+    case StatisticsTerms(_, (variancesA, variancesB, covariances)) => variancesA.indices.map { case index =>
+      (covariances(index) + C3) / variancesB.map(varianceB => variancesA(index) * varianceB + C3).sum
+    }.toVector
 
-  private case class StatisticsTerms(meanA: Double, meansB: Vector[Double], standardDeviationA: Double, standardDeviationsB: Vector[Double], covariances: Vector[Double])
+  private case class StatisticsTerms(means: (Vector[Double], Vector[Double]), variances: (Vector[Double], Vector[Double], Vector[Double]))
 
-  private def generateStatisticsTerms(pixelsA: Vector[Pixel], pixelsB: Vector[Vector[Pixel]]): StatisticsTerms = {
-    val size = pixelsA.size
-    val initialValues = pixelsB.map(_ => 0d)
-
-    val (sumPixelsA, sumPixelsB) = pixelsA.indices.foldLeft((0d, initialValues)) { case ((totalSumPixelsA, totalSumPixelsB), index) =>
+  private def generateStatisticsTerms(pixelsA: Vector[Vector[Pixel]], pixelsB: Vector[Vector[Pixel]]): StatisticsTerms = {
+    val size = pixelsA.head.size
+    val sumPixels: (Vector[Double], Vector[Double]) = pixelsA.head.indices.foldLeft(pixelsA.map(_ => 0d), pixelsB.map(_ => 0d)) { case ((totalSumPixelsA, totalSumPixelsB), pixelIndex) =>
       (
-        totalSumPixelsA + pixelsA(index).argb,
-        pixelsB
-          .indices
-          .map(referenceIndex => totalSumPixelsB(referenceIndex) + pixelsB(referenceIndex)(index).argb)
-          .toVector
+        totalSumPixelsA.indices.map(referenceIndex => totalSumPixelsA(referenceIndex) + pixelsA(referenceIndex)(pixelIndex).argb).toVector,
+        totalSumPixelsB.indices.map(referenceIndex => totalSumPixelsB(referenceIndex) + pixelsB(referenceIndex)(pixelIndex).argb).toVector
       )
     }
 
-    val meanA = sumPixelsA / size
-    val meansB = sumPixelsB.map(sumB => sumB / size)
+    val means: (Vector[Double], Vector[Double]) = (
+      sumPixels._1.map(_ / size),
+      sumPixels._2.map(_ / size)
+    )
 
-    val (varianceA, variancesB, covariances) = pixelsA.indices.foldLeft((0d, initialValues, initialValues)) { case ((totalVarianceA, totalVariancesB, totalCovariances), index) =>
+    val variances: (Vector[Double], Vector[Double], Vector[Double]) = pixelsA.head.indices.foldLeft(pixelsA.map(_ => 0d), pixelsB.map(_ => 0d), pixelsA.map(_ => 0d)) { case ((totalVariancesA, totalVariancesB, totalCovariances), pixelIndex) =>
       (
-        totalVarianceA + Math.pow(pixelsA(index).argb - meanA, 2) / (size - 1),
-        pixelsB
-          .indices
-          .map(referenceIndex => totalVariancesB(referenceIndex) + Math.pow(pixelsB(referenceIndex)(index).argb - meansB(referenceIndex), 2) / (size - 1))
-          .toVector,
-        pixelsB
-          .indices
-          .map(referenceIndex => totalCovariances(referenceIndex) + (pixelsA(index).argb - meanA) * (pixelsB(referenceIndex)(index).argb - meansB(referenceIndex)) / (size - 1))
-          .toVector
+        totalVariancesA.indices.map (referenceIndex => totalVariancesA(referenceIndex) + Math.pow(pixelsA(referenceIndex)(pixelIndex).argb - means._1(referenceIndex), 2) / (size - 1)).toVector,
+        totalVariancesB.indices.map (referenceIndex => totalVariancesB(referenceIndex) + Math.pow(pixelsB(referenceIndex)(pixelIndex).argb - means._2(referenceIndex), 2) / (size - 1)).toVector,
+        totalVariancesA.indices.map {referenceIndex =>
+          totalCovariances(referenceIndex) + pixelsB.indices.map(pixelsBIndex => (pixelsA(referenceIndex)(pixelIndex).argb - means._1(referenceIndex)) * (pixelsB(pixelsBIndex)(pixelIndex).argb - means._2(pixelsBIndex)) / (size - 1)).sum
+        }.toVector
       )
     }
 
     StatisticsTerms(
-      meanA,
-      meansB,
-      Math.sqrt(varianceA),
-      variancesB.map(varianceB => Math.sqrt(varianceB)),
-      covariances,
+      means,
+      (
+        variances._1.map(value => Math.sqrt(value)),
+        variances._2.map(value => Math.sqrt(value)),
+        variances._3
+      )
     )
   }
 
-  def createBlocksWith(coordinates: List[Coordinate]): List[Block] = ???
+  def toBlocks(coordinates: List[Coordinate]): List[Block] = {
+    val groupedCoordinates: List[(Id, List[Coordinate])] = coordinates
+      .groupBy { case (frameLocationId, _, _) => frameLocationId}
+      .toList
+
+    val statisticsPerCoordinate = groupedCoordinates.map { case (frameLocationId, aCoordinates) =>
+      val referencesPixels = referencesImmutableImages.keys.map { case imageId =>
+        ImagesManager.pixelsAt(imageId, frameLocationId)
+      }.toVector
+
+      val targetPixels = aCoordinates.map { case (_, imageId, pixelsSourceId) =>
+        ImagesManager.pixelsAt(imageId, pixelsSourceId)
+      }.toVector
+
+      val terms = generateStatisticsTerms(
+        targetPixels,
+        referencesPixels
+      )
+
+      (
+        aCoordinates.toVector,
+        luminance(terms),
+        contrast(terms),
+        structure(terms)
+      )
+    }
+
+    statisticsPerCoordinate.flatMap { case (aCoordinates, luminance, contrast, structure) =>
+      aCoordinates.indices.map{ index =>
+        val aCoordinate = aCoordinates(index)
+        Block(
+          aCoordinate._1,
+          aCoordinate._2,
+          aCoordinate._3,
+          luminance(index) * contrast(index) * structure(index)
+        )
+      }
+    }
+  }
 
   def ssim(imageId: Int, pixelsSourceId: Id): Double = {
     val terms = generateStatisticsTerms(
-      ImagesManager.pixelsAt(imageId, pixelsSourceId),
+      Vector(ImagesManager.pixelsAt(imageId, pixelsSourceId)),
       ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId, _) =>
         ImagesManager.pixelsAt(anImageId, aPixelsSourceId)
       }
     )
-    luminance(terms) * contrast(terms) * structure(terms)
+    luminance(terms).head * contrast(terms).head * structure(terms).head
   }
 
   lazy val blockIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
@@ -159,14 +191,10 @@ object ImagesManager {
     immutableImage
   }
 
-  def toBlocks(imageId: Int): List[Block] = {
-    val coordinates: List[Coordinate] = blockIds
-      .map { case id: Id =>
-        (id, imageId, id)
-      }.toList
-
-    ImagesManager.createBlocksWith(coordinates)
-  }
+  def toCoordinates(imageId: Int): List[Coordinate] = blockIds
+    .map { case id: Id =>
+      (id, imageId, id)
+    }.toList
 
   lazy val referencesImmutableImages: Map[Int, ImmutableImage] = {
     val initialImmutableImages = List(
@@ -196,17 +224,28 @@ object ImagesManager {
       .toMap
   }
 
-  lazy val referencesImages: List[Image] = referencesImmutableImages
-    .toList
-    .map { case (imageId, _) =>
+  lazy val referencesImages: List[Image] = {
+    val coordinates = referencesImmutableImages
+      .toList
+      .flatMap { case (imageId, _) =>
+        toCoordinates(imageId)
+      }
+
+    toImages(coordinates)
+  }
+
+  def toImages(coordinates: List[Coordinate]): List[Image] = toBlocks(coordinates)
+    .groupBy(_.imageId)
+    .map { case (_, blocks) =>
       Image(
         Success(
           Frame(
-            toBlocks(imageId)
+            blocks
           )
         )
       )
     }
+    .toList
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
     .flatMap { case Image(Success(Frame(blocks))) =>
