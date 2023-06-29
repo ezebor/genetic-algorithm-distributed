@@ -51,6 +51,7 @@ class EvolutionMaster() extends BaseActor {
       def startEvolution: Operator = { population =>
         this.distributeWork(router, population, 1, quantityOfWorkers)
 
+        // TODO: hacer en future la mutación y mandarla con pipe como mensaje
         val mutants = population.mutate(mutationLikelihood)
         log.info(s"[${mutants.individuals.size}] Mutants generated")
 
