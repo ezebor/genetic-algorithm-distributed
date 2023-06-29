@@ -30,7 +30,7 @@ object CustomSsim extends App {
   println(
     fitness / population.images.head.frame.get.blocks.size
   )*/
-  println(population.individuals.map(_.fitness))
+  println(population.mutate(0.3).fusionWith(population).individuals.map(_.fitness))
   /*val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
   val survivalPopulationSize = 30

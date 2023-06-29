@@ -11,7 +11,7 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.routing.FromConfig
 import akka.util.Timeout
-import app.ExecutionScript.QUANTITY_OF_NODES
+import app.ExecutionScript.{QUANTITY_OF_NODES, QUANTITY_OF_WORKERS}
 import com.typesafe.config.ConfigFactory
 import domain.*
 import domain.Operators.*
@@ -46,7 +46,7 @@ object MasterRouteTree extends Parallel with SprayJsonSupport with EvolutionRequ
         ) =>
           solutionsPrinter ? PrinterOnline
           generationsManager ? ManagerOnline(solutionsPrinter, master, solutionsPopulationsSize, maxQuantityOfGenerationsWithoutImprovements)
-          master ? MasterOnline(generationsManager, router, QUANTITY_OF_NODES * quantityOfWorkersPerNode, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
+          master ? MasterOnline(generationsManager, router, QUANTITY_OF_WORKERS, survivalLikelihood, crossoverLikelihood, mutationLikelihood)
           this.distributeWork(
             master,
             InitialPopulation(ExecutionScript.INDIVIDUAL_TYPE_NAME)
