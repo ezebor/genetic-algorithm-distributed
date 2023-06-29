@@ -221,10 +221,10 @@ object ImagesManager {
         toCoordinates(imageId)
       }
 
-    toImages(coordinates)
+    coordinatesToImages(coordinates)
   }
 
-  def toImages(coordinates: List[Coordinate]): List[Image] = toBlocks(coordinates)
+  def blocksToImages(blocks: List[Block]): List[Image] = blocks
     .groupBy(_.imageId)
     .map { case (_, blocks) =>
       Image(
@@ -236,6 +236,8 @@ object ImagesManager {
       )
     }
     .toList
+
+  def coordinatesToImages(coordinates: List[Coordinate]): List[Image] = blocksToImages(toBlocks(coordinates))
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
     .flatMap { case Image(Success(Frame(blocks))) =>
@@ -278,7 +280,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       }
 
     copyWith(
-      ImagesManager.toImages(coordinates)
+      ImagesManager.coordinatesToImages(coordinates)
     )
   }
 }

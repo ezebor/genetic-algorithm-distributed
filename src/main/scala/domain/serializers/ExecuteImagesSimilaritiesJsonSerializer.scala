@@ -17,20 +17,21 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   }
 
   override def createPopulation(individuals: Vector[JsValue]): Population = {
-    val coordinates: List[Coordinate] = individuals.flatMap { case JsArray(serializedBlocks) =>
+    val blocks: List[Block] = individuals.flatMap { case JsArray(serializedBlocks) =>
       serializedBlocks.map { case serializedBlock: JsArray =>
         serializedBlock.elements match
-          case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY)) =>
+          case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY), JsNumber(fitness)) =>
             val pixelsSourceId = (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
-            (
+            Block(
               (frameLocationIdX.intValue, frameLocationIdY.intValue),
               imageId.intValue,
-              pixelsSourceId
+              pixelsSourceId,
+              fitness.doubleValue
             )
       }
     }.toList
 
-    ImagesPopulation(ImagesManager.toImages(coordinates))
+    ImagesPopulation(ImagesManager.blocksToImages(blocks))
   }
 
   override protected def serializeGenes(genes: Vector[Gene]): JsValue = JsArray(
@@ -41,6 +42,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
         JsNumber(aBlock.imageId),
         JsNumber(aBlock.pixelsSourceId._1),
         JsNumber(aBlock.pixelsSourceId._2),
+        JsNumber(aBlock.fitness),
       )
     }
   )

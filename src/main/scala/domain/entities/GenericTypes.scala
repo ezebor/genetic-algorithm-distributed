@@ -2,7 +2,7 @@ package domain.entities
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import app.ExecutionScript
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE, QUANTITY_OF_WORKER_NODES}
+import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_WORKERS_PER_NODE}
 import com.sksamuel.scrimage.ImmutableImage
 import domain.entities.AlgorithmConfig.*
 import domain.exceptions.{EmptyAccumulatedFitnessListException, IllegalChunkSizeException}
