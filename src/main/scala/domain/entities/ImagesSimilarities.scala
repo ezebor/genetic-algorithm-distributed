@@ -33,7 +33,21 @@ case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, fitness:
 
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
-    case aBlocks: List[Block] => Frame(aBlocks)
+    case aBlocks: List[Block] => {
+      val indexedBlocks = blocks.groupBy(_.frameLocationId)
+
+      def mergeBlocks(newBlocks: List[Block]): List[Block] = {
+        val mergedBlocks = newBlocks.foldLeft(indexedBlocks) { case (result, nextBlock) =>
+          result.updated(nextBlock.frameLocationId, List(nextBlock))
+        }
+        mergedBlocks
+          .values
+          .toList
+          .flatten
+      }
+
+      Frame(mergeBlocks(aBlocks))
+    }
 
   protected override def calculateFitness: Double = blocks
     .foldLeft(0d) { case (totalFitness, Block(_, _, _, aFitness)) =>
