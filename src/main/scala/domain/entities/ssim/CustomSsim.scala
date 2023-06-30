@@ -30,7 +30,8 @@ object CustomSsim extends App {
   println(
     fitness / population.images.head.frame.get.blocks.size
   )*/
-  println(population.mutate(0.3).fusionWith(population).individuals.map(_.fitness))
+
+  println(population.individuals.map(a => BigDecimal(a.fitness.get).setScale(2, BigDecimal.RoundingMode.HALF_DOWN).toDouble))
   /*val crossoverLikelihood = 0.5
   val mutationLikelihood = 0.1
   val survivalPopulationSize = 30
