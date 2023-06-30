@@ -31,9 +31,9 @@ class GenerationsManager() extends BaseActor {
             manageBuiltGeneration(generationId + 1, quantityOfGenerationsWithoutImprovements + 1, solutions)
           else if (quantityOfGenerationsWithoutImprovements == maxQuantityOfGenerationsWithoutImprovements) {
             printSolutions(solutions)
-            doNothing
+            terminate
           }
-          else doNothing
+          else terminate
         }
         
         context.become(this.waitingPopulations(
@@ -50,7 +50,9 @@ class GenerationsManager() extends BaseActor {
         )
       }
 
-      def doNothing: Operator = { _ => }
+      def terminate: Operator = { _ =>
+        evolutionMaster ! PoisonPill
+      }
 
       context.become(this.waitingPopulations(
         manageBuiltGeneration(1, 0, EmptyPopulation),
