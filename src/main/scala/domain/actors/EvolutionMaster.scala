@@ -16,9 +16,10 @@ import domain.entities.AlgorithmConfig.random
 import domain.entities.{EmptyPopulation, Individual, InitialPopulation, Population}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import scala.util.Random
+import scala.util.{Random, Success}
 
 object EvolutionMaster {
   def props(): Props = Props(new EvolutionMaster())
@@ -49,17 +50,21 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def startEvolution: Operator = { population =>
-        this.distributeWork(router, population, 1, quantityOfWorkers)
-
-        // TODO: hacer en future la mutación y mandarla con pipe como mensaje
-        val mutants = population.mutate(mutationLikelihood)
-        log.info(s"[${mutants.individuals.size}] Mutants generated")
-
         context.become(this.waitingPopulations(
           returnGeneration,
-          mutants,
-          quantityOfWorkers
+          population.empty(),
+          quantityOfWorkers + 1
         ))
+
+        this.distributeWork(router, population, 1, quantityOfWorkers)
+
+        Future {
+          val mutants = population.mutate(mutationLikelihood)
+          log.info(s"[${mutants.individuals.size}] Mutants generated")
+          mutants
+        }.onComplete {
+          case Success(mutants: Population) => this.distributeWork(self, mutants)
+        }
       }
 
       initializeWorkers()
