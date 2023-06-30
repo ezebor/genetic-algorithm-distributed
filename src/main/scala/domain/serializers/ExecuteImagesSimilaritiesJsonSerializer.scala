@@ -35,6 +35,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   }
 
   override protected def serializeGenes(genes: Vector[Gene]): JsValue = JsArray(
+    // TODO: agrupar bloques por image id, y devolver un object con key imageID
     genes.map { case aBlock: Block =>
       JsArray(
         JsNumber(aBlock.frameLocationId._1),

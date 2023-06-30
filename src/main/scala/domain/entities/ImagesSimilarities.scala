@@ -139,11 +139,13 @@ object ImagesManager {
     statisticsPerCoordinate.flatMap { case (aCoordinates, luminance, contrast, structure) =>
       aCoordinates.indices.map{ index =>
         val aCoordinate = aCoordinates(index)
+        val fitness = luminance(index) * contrast(index) * structure(index)
+        val roundedFitness = BigDecimal(fitness).setScale(2, BigDecimal.RoundingMode.HALF_DOWN).toDouble
         Block(
           aCoordinate._1,
           aCoordinate._2,
           aCoordinate._3,
-          luminance(index) * contrast(index) * structure(index)
+          roundedFitness
         )
       }
     }
