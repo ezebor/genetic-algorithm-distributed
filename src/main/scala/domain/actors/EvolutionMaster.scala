@@ -56,10 +56,11 @@ class EvolutionMaster() extends BaseActor {
           quantityOfWorkers + 1
         ))
 
-        this.distributeWork(router, population, 1, quantityOfWorkers)
+        val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+        this.distributeWork(router, strongestPopulation, 1, quantityOfWorkers)
 
         Future {
-          val mutants = population.mutate(mutationLikelihood)
+          val mutants = strongestPopulation.mutate(mutationLikelihood)
           log.info(s"[${mutants.individuals.size}] Mutants generated")
           mutants
         }.onComplete {

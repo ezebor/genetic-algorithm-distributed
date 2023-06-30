@@ -22,13 +22,14 @@ class EvolutionWorker() extends BaseActor {
   private def offline: Receive = {
     case WorkerOnline(evolutionMaster, SurvivalPopulationSize(survivalPopulationSize), CrossoverLikelihood(crossoverLikelihood), MutationLikelihood(mutationLikelihood)) =>
       def startEvolution: Operator = { population =>
-        val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        val populationLookingForReproduction = strongestPopulation.randomSubPopulation(strongestPopulation.individuals.size / 2)
+        val populationLookingForReproduction = population.randomSubPopulation(population.individuals.size / 2)
         val children = populationLookingForReproduction.crossoverWith(population, crossoverLikelihood)
 
         this.distributeWork(
           evolutionMaster,
-          strongestPopulation.fusionWith(children)
+          population
+            .fusionWith(children)
+            .selectStrongerPopulation(survivalPopulationSize)
         )
 
         context.become(this.waitingPopulations(
