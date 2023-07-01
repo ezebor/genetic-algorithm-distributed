@@ -291,14 +291,18 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       image.frame.get.blocks
     }
 
-    val coordinates: List[Coordinate] = blocks
-      .zip(random.shuffle[Block, IndexedSeq[Block]](blocks.toIndexedSeq))
-      .map { case (Block(frameLocationId, imageId, _, _), Block(_, _, pixelsSourceId, _)) =>
-        (frameLocationId, imageId, pixelsSourceId)
-      }
+    val mixedFrameLocationIds = random.shuffle[Id, IndexedSeq[Id]](ImagesManager.frameLocationIds).toVector
+
+    val mixedCoordinates: List[Coordinate] = blocks.foldLeft(List[Coordinate](), 0) { case ((coordinates, index), Block(_, imageSourceId, pixelsSourceId, _)) =>
+      val fixedIndex = index % mixedFrameLocationIds.size
+      (
+        (mixedFrameLocationIds(fixedIndex), imageSourceId, pixelsSourceId) :: coordinates,
+        fixedIndex + 1
+      )
+    }._1
 
     copyWith(
-      ImagesManager.coordinatesToImages(coordinates)
+      ImagesManager.coordinatesToImages(mixedCoordinates)
     )
   }
 }
