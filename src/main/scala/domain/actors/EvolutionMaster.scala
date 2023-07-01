@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import scala.util.{Random, Success}
+import scala.util.{Failure, Random, Success}
 
 object EvolutionMaster {
   def props(): Props = Props(new EvolutionMaster())
@@ -65,6 +65,9 @@ class EvolutionMaster() extends BaseActor {
           mutants
         }.onComplete {
           case Success(mutants: Population) => this.distributeWork(self, mutants)
+          case Failure(exception) => 
+            log.info(s"No mutant generated. Exception: ${exception.getMessage}")
+            this.distributeWork(self, strongestPopulation.empty())
         }
       }
 
