@@ -61,7 +61,7 @@ class EvolutionMaster() extends BaseActor {
 
         Future {
           val mutants = strongestPopulation.mutate(mutationLikelihood)
-          log.info(s"[${mutants.individuals.size}] Mutants generated")
+          log.info(s"Mutants generated: [${mutants.individuals.size}]")
           mutants
         }.onComplete {
           case Success(mutants: Population) => this.distributeWork(self, mutants)

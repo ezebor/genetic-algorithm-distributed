@@ -19,10 +19,10 @@ import scala.util.{Random, Success, Try}
 type Id = (Int, Int)
 type Coordinate = (Id, Int, Id)
 
-case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, fitness: Double)(implicit customRandom: Random = random) extends Gene {
+case class Block(frameLocationId: Id, imageSourceId: Int, pixelsSourceId: Id, fitness: Double)(implicit customRandom: Random = random) extends Gene {
   override def mutate: Gene = this
 
-  override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageId}, pixels source id: ${pixelsSourceId}"
+  override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageSourceId}, pixels source id: ${pixelsSourceId}"
   
   def pixelWithFixedLocation(pixel: Pixel): Pixel = Pixel(
     pixel.x % DIMENSION_BLOCK_SIZE + frameLocationId._1,
@@ -33,7 +33,15 @@ case class Block(frameLocationId: Id, imageId: Int, pixelsSourceId: Id, fitness:
 
 case class Frame(blocks: List[Block])(implicit customRandom: Random = random) extends Chromosome(blocks)(customRandom) {
   override def copyWith(genes: List[Gene]): Chromosome = genes match
-    case aBlocks: List[Block] => {
+    case aBlocks: List[Block] => Frame(aBlocks)
+
+  protected override def calculateFitness: Double = blocks
+    .foldLeft(0d) { case (totalFitness, Block(_, _, _, aFitness)) =>
+      totalFitness + aFitness / blocks.size
+    }
+
+  override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
+    case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => {
       val indexedBlocks = blocks.groupBy(_.frameLocationId)
 
       def mergeBlocks(newBlocks: List[Block]): List[Block] = {
@@ -46,16 +54,8 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
           .flatten
       }
 
-      Frame(mergeBlocks(aBlocks))
+      (mergeBlocks(leftChildGenes), mergeBlocks(rightChildGenes))
     }
-
-  protected override def calculateFitness: Double = blocks
-    .foldLeft(0d) { case (totalFitness, Block(_, _, _, aFitness)) =>
-      totalFitness + aFitness / blocks.size
-    }
-
-  override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
-    case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => (blocks ::: leftChildGenes, blocks ::: rightChildGenes)
   
   override def mutate: Chromosome = this
 }
@@ -175,7 +175,7 @@ object ImagesManager {
     luminance(terms).head * contrast(terms).head * structure(terms).head
   }
 
-  lazy val blockIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
+  lazy val frameLocationIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
     .flatMap(x => (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE).map(_ => x))
     .zip(
       (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE)
@@ -197,7 +197,7 @@ object ImagesManager {
     immutableImage
   }
 
-  def toCoordinates(imageId: Int): List[Coordinate] = blockIds
+  def toCoordinates(imageId: Int): List[Coordinate] = frameLocationIds
     .map { case id: Id =>
       (id, imageId, id)
     }.toList
@@ -240,18 +240,20 @@ object ImagesManager {
     coordinatesToImages(coordinates)
   }
 
-  def blocksToImages(blocks: List[Block]): List[Image] = blocks
-    .groupBy(_.imageId)
-    .map { case (_, blocks) =>
+  def blocksToImages(blocks: List[Block]): List[Image] = {
+    val indexedBlocks = blocks
+      .toVector
+      .groupBy(_.frameLocationId)
+      .values
+
+    indexedBlocks.head.indices.map { index =>
       Image(
         Success(
-          Frame(
-            blocks
-          )
+          Frame(indexedBlocks.map(_(index)).toList)
         )
       )
-    }
-    .toList
+    }.toList
+  }
 
   def coordinatesToImages(coordinates: List[Coordinate]): List[Image] = blocksToImages(toBlocks(coordinates))
 

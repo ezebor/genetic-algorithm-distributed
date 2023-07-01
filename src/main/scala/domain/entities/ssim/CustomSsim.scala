@@ -31,18 +31,40 @@ object CustomSsim extends App {
     fitness / population.images.head.frame.get.blocks.size
   )*/
 
-  println(population.individuals.map(_.fitness.get))
-  /*val crossoverLikelihood = 0.5
-  val mutationLikelihood = 0.1
-  val survivalPopulationSize = 30
-  val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-  val populationLookingForReproduction = strongestPopulation.randomSubPopulation(strongestPopulation.individuals.size / 2)
-  val children = populationLookingForReproduction.crossoverWith(strongestPopulation, crossoverLikelihood)
-  val mutatedPopulation = strongestPopulation.mutate(mutationLikelihood)
-  val finalPopulation = strongestPopulation
-    .fusionWith(children)
-    .fusionWith(mutatedPopulation)
-  println(finalPopulation.individuals.map(_.fitness))*/
+  println(ImagesManager.frameLocationIds.size)
+  val crossoverLikelihood = 0.5
+  val mutationLikelihood = 0.3
+  val survivalPopulationSize = (0.8 * POPULATION_SIZE).toInt
+  var finalPopulation: Population = population
+  (1 to 10).foreach { _ =>
+    val strongestPopulation = finalPopulation.selectStrongerPopulation(survivalPopulationSize)
+    val populationLookingForReproduction = strongestPopulation.randomSubPopulation(strongestPopulation.individuals.size / 2)
+    val children = populationLookingForReproduction.crossoverWith(strongestPopulation, crossoverLikelihood)
+    val mutatedPopulation = finalPopulation.mutate(mutationLikelihood)
+    finalPopulation = strongestPopulation
+      .fusionWith(children)
+      .fusionWith(mutatedPopulation)
+    println(finalPopulation.individuals.map(_.fitness.get))
+  }
+
+  finalPopulation match
+    case aPopulation: ImagesPopulation => {
+      aPopulation.images.zipWithIndex.map { case (image, index) =>
+        val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+        val frame = image.frame
+        frame match
+          case Success(Frame(blocks)) => {
+            for {
+              case aBlock @ Block(_, imageId, pixelsSourceId, _) <- blocks
+              aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
+            } yield {
+              newImage.setPixel(aBlock.pixelWithFixedLocation(aPixel))
+            }
+          }
+        newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${index}.png")
+      }
+    }
+
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)*/
 

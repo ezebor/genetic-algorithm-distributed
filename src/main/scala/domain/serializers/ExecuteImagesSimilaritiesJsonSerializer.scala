@@ -40,7 +40,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
       JsArray(
         JsNumber(aBlock.frameLocationId._1),
         JsNumber(aBlock.frameLocationId._2),
-        JsNumber(aBlock.imageId),
+        JsNumber(aBlock.imageSourceId),
         JsNumber(aBlock.pixelsSourceId._1),
         JsNumber(aBlock.pixelsSourceId._2),
         JsNumber(aBlock.fitness),
