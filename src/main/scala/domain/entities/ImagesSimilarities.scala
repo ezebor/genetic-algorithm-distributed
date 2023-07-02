@@ -204,8 +204,8 @@ object ImagesManager {
 
   lazy val referencesImmutableImages: Map[Int, ImmutableImage] = {
     val initialImmutableImages = List(
-      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
-      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/charmander.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/megastarraptor.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE),
+      ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/lucario.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     )
 
     val immutableImagesVariants = initialImmutableImages.flatMap { reference =>
