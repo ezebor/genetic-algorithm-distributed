@@ -25,7 +25,6 @@ class GenerationsManager() extends BaseActor {
               if (solutions.individuals.size == solutionsPopulationSize) solutions.individuals.dropRight(1)
               else solutions.individuals
             })
-            printSolutions(population.copyWith(List(population.bestIndividual)))
             manageBuiltGeneration(generationId + 1, 0, newSolutions)
           }
           else if (quantityOfGenerationsWithoutImprovements < maxQuantityOfGenerationsWithoutImprovements)
