@@ -38,8 +38,7 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
 }
 trait Gene(fitness: Double)(implicit random: Random) {
   def mutate: Gene
-
-  def isHealthy: Boolean = fitness >= 0.99
+  def isHealthy: Boolean
 }
 
 object AlgorithmConfig {
@@ -125,7 +124,9 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   }
   
   def mutate(mutationLikelihood: Double): Population = {
-    val individualsToMutate = individuals.filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
+    val individualsToMutate = individuals
+      .filterNot(_.isHealthy)
+      .filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
     copyWith(
       individualsToMutate.map(individual => individual.mutate)
     )
@@ -150,6 +151,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
 object Individual {
   def emptyIndividual(exception: RuntimeException): Individual = new Individual(Failure(exception)) {
     override protected def copyWith(chromosome: Try[Chromosome]): Individual = emptyIndividual(exception)
+    override def isHealthy: Boolean = false
   }
 }
 
@@ -161,6 +163,8 @@ trait Individual(tryChromosome: Try[Chromosome])(implicit random: Random) {
   def getTryGenes: Try[List[Gene]] = tryChromosome.map(_.getGenes)
 
   def fitness: Try[Double] = tryChromosome.map(_.fitness)
+
+  def isHealthy: Boolean
 
   def crossoverWith(couple: Individual, crossoverLikelihood: Double): List[Individual] = {
     val tryChildrenChromosomes: Try[(Chromosome, Chromosome)] = for {

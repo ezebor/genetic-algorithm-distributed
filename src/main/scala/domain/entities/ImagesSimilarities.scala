@@ -21,6 +21,7 @@ type Coordinate = (Id, Int, Id)
 
 case class Block(frameLocationId: Id, imageSourceId: Int, pixelsSourceId: Id, fitness: Double)(implicit customRandom: Random = random) extends Gene(fitness) {
   override def mutate: Gene = this
+  override def isHealthy: Boolean = fitness >= 0.99
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageSourceId}, pixels source id: ${pixelsSourceId}"
   
@@ -64,6 +65,8 @@ case class Image(frame: Try[Frame])(implicit customRandom: Random = random) exte
   override protected def copyWith(chromosome: Try[Chromosome]): Individual = chromosome match
     case Success(aFrame: Frame) =>
       Image(Success(aFrame))
+
+  override def isHealthy: Boolean = frame.map(_.fitness).getOrElse(0d) >= 0.99
 }
 
 object ImagesManager {
@@ -302,7 +305,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def empty(): Population = ImagesPopulation(List[Image]())
 
   override def mutate(mutationLikelihood: Double): Population = {
-    val blocks = super.mutate(mutationLikelihood)
+    val blocks = super.mutate(mutationLikelihood )
       .individuals
       .flatMap { case image: Image =>
         image.frame.get.blocks
