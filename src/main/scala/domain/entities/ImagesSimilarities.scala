@@ -168,16 +168,6 @@ object ImagesManager {
     }
   }
 
-  def ssim(imageId: Int, pixelsSourceId: Id): Double = {
-    val terms = generateStatisticsTerms(
-      Vector(ImagesManager.pixelsAt(imageId, pixelsSourceId)),
-      ImagesManager.referencesBlocks(pixelsSourceId).toVector.map { case Block(_, anImageId, aPixelsSourceId, _) =>
-        ImagesManager.pixelsAt(anImageId, aPixelsSourceId)
-      }
-    )
-    luminance(terms).head * contrast(terms).head * structure(terms).head
-  }
-
   lazy val frameLocationIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
     .flatMap(x => (1 to DIMENSION_IMAGE_SIZE / DIMENSION_BLOCK_SIZE).map(_ => x))
     .zip(
@@ -185,7 +175,7 @@ object ImagesManager {
         .flatMap(_ => Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE))
     )
 
-  def toImmutableImage(blocks: List[Block]): ImmutableImage = {
+  def blocksToImmutableImage(blocks: List[Block]): ImmutableImage = {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
       case Block((locationX, locationY), imageId, pixelsSourceId @ (sourceX, sourceY), _) <- blocks
@@ -206,34 +196,22 @@ object ImagesManager {
     }.toList
 
   lazy val referencesImmutableImages: Map[Int, ImmutableImage] = {
-    val initialImmutableImages = List(
+    List(
       ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/paisaje.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
-    )
-
-    val immutableImagesVariants = initialImmutableImages.flatMap { reference =>
-      List(
-      )
-    }
-
-    val images: List[ImmutableImage] = initialImmutableImages ::: immutableImagesVariants
-
-    images
-      .zipWithIndex
+    ).zipWithIndex
       .map { case (immutableImage, index) =>
         (index, immutableImage)
       }
       .toMap
   }
 
-  lazy val referencesImages: List[Image] = {
-    val coordinates = referencesImmutableImages
-      .toList
-      .flatMap { case (imageId, _) =>
-        toCoordinates(imageId)
-      }
+  lazy val referencesImages: List[Image] = referencesImmutableImages.map { case (imageId, _) =>
+    blocksToSingleImage(
+      toBlocks(toCoordinates(imageId))
+    )
+  }.toList
 
-    coordinatesToImages(coordinates)
-  }
+  def blocksToSingleImage(blocks: List[Block]): Image = Image(Success(Frame(blocks)))
 
   def blocksToImages(blocks: List[Block]): List[Image] = {
     val indexedBlocks = blocks
@@ -250,8 +228,6 @@ object ImagesManager {
     }.toList
   }
 
-  def coordinatesToImages(coordinates: List[Coordinate]): List[Image] = blocksToImages(toBlocks(coordinates))
-
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
     .flatMap { case Image(Success(Frame(blocks))) =>
       blocks
@@ -259,22 +235,19 @@ object ImagesManager {
     .groupBy(_.frameLocationId)
 
   def initialPopulation(): ImagesPopulation = {
-    val blocks = ImagesPopulation(referencesImages)
-      .images
-      .flatMap(_.frame.get.blocks)
-    val mixedCoordinates = ImagesManager.mixBlocks(blocks)
-
-    val images = ImagesManager
-      .coordinatesToImages(mixedCoordinates)
-      .flatMap { case image: Image =>
-        (1 to POPULATION_SIZE / referencesImages.size).map(_ => image.copy(image.frame))
+    val images = referencesImages
+      .map(anImage => anImage.frame.get.blocks)
+      .map(aBlocks => ImagesManager.mixCoordinates(aBlocks))
+      .map { aCoordinates => 
+        blocksToSingleImage(toBlocks(aCoordinates))
       }
 
     ImagesPopulation(
-      images
+      images.flatMap { case image: Image =>
+          (1 to POPULATION_SIZE / referencesImages.size).map(_ => image.copy(image.frame))
+      }
     )
   }
-
 
   def pixelsAt(imageId: Int, pixelsSourceId: Id): Vector[Pixel] = referencesImmutableImages(imageId)
     .pixels(
@@ -285,7 +258,7 @@ object ImagesManager {
     )
     .toVector
 
-  def mixBlocks(blocks: List[Block]): List[Coordinate] = {
+  def mixCoordinates(blocks: List[Block]): List[Coordinate] = {
     val mixedFrameLocationIds = random.shuffle[Id, IndexedSeq[Id]](blocks.map(_.frameLocationId).toIndexedSeq).toVector
     blocks.foldLeft(List[Coordinate](), 0) { case ((coordinates, index), Block(_, imageSourceId, pixelsSourceId, _)) =>
       val fixedIndex = index % mixedFrameLocationIds.size
@@ -312,11 +285,13 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       }
       .groupBy(_.isHealthy)
 
-    val mixedCoordinates = ImagesManager.mixBlocks(blocks.getOrElse(false, List[Block]()))
+    val mixedCoordinates = ImagesManager.mixCoordinates(blocks.getOrElse(false, List[Block]()))
 
     copyWith(
       ImagesManager.blocksToImages(
-        blocks.getOrElse(true, List[Block]()) ::: ImagesManager.toBlocks(mixedCoordinates)
+        blocks.getOrElse(
+          true,
+          List[Block]()) ::: ImagesManager.toBlocks(mixedCoordinates)
       )
     )
   }

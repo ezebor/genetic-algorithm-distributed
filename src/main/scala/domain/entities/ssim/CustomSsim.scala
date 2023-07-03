@@ -17,9 +17,10 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Random, Success}
 
 object CustomSsim extends App {
-  val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/cyndaquil.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
+  val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
   val population = ImagesManager.initialPopulation()
+
 
   /*val fitness =  population
     .images
@@ -31,7 +32,7 @@ object CustomSsim extends App {
   println(
     fitness / population.images.head.frame.get.blocks.size
   )*/
-
+/*
   val crossoverLikelihood = 0.5
   val mutationLikelihood = 1
   val survivalPopulationSize = (0.8 * POPULATION_SIZE).toInt
@@ -46,8 +47,8 @@ object CustomSsim extends App {
       .fusionWith(children)
       .fusionWith(mutatedPopulation)
     println(finalPopulation.individuals.map(_.fitness.get))
-  }
-/*
+  }*/
+
   population match
     case aPopulation: ImagesPopulation => {
       aPopulation.images.zipWithIndex.map { case (image, index) =>
@@ -64,7 +65,7 @@ object CustomSsim extends App {
           }
         newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${index}.png")
       }
-    }*/
+    }
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)*/
