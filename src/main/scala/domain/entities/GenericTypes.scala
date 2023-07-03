@@ -25,7 +25,7 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
 
   def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
     def addGeneAccordingToLikelihood(nextGene: Gene, genes: List[Gene]): List[Gene] =
-      if(random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
+      if(nextGene.isHealthy || random.nextInt(100) + 1 <= crossoverLikelihood * 100) nextGene :: genes
       else genes
 
     (genes ::: couple.getGenes).foldLeft((List[Gene](), List[Gene]())) { (result, nextGene) =>
@@ -36,8 +36,10 @@ trait Chromosome(genes: List[Gene])(implicit random: Random) {
     }
   }
 }
-trait Gene(implicit random: Random) {
+trait Gene(fitness: Double)(implicit random: Random) {
   def mutate: Gene
+
+  def isHealthy: Boolean = fitness >= 0.99
 }
 
 object AlgorithmConfig {

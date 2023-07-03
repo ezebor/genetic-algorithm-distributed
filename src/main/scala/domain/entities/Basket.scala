@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Random, Success, Try}
 
-case class Item(name: String, price: Double, satisfaction: Double)(implicit customRandom: Random = random) extends Gene {
+case class Item(name: String, price: Double, satisfaction: Double)(implicit customRandom: Random = random) extends Gene(1) {
   override def mutate: Gene =
     Item(s"Item ${name}", customRandom.nextInt(10) + 1, customRandom.nextInt(10) + 1)
 }
