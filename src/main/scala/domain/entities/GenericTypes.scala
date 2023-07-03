@@ -124,8 +124,11 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   }
   
   def mutate(mutationLikelihood: Double): Population = {
+    // TODO: usar findIndividualWhoseAccumulatedFitnessWindowIncludes para mutar los mejores individuos
     val individualsToMutate = individuals
+      // TODO: sacar este filterNot
       .filterNot(_.isHealthy)
+      // TODO: que la comparación con el random me diga cuantos findIndividual hacer
       .filter(_ => random.nextInt(100) + 1 <= mutationLikelihood * 100)
     copyWith(
       individualsToMutate.map(individual => individual.mutate)
