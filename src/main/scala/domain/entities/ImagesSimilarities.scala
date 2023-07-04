@@ -238,7 +238,7 @@ object ImagesManager {
     val images = referencesImages
       .map(anImage => anImage.frame.get.blocks)
       .map(aBlocks => ImagesManager.mixCoordinates(aBlocks))
-      .map { aCoordinates => 
+      .map { aCoordinates =>
         blocksToSingleImage(toBlocks(aCoordinates))
       }
 
@@ -277,21 +277,31 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
 
   override def empty(): Population = ImagesPopulation(List[Image]())
 
+  // TODO: llevar lógca común de convergencia de mutación al padre
   override def mutate(mutationLikelihood: Double): Population = {
-    val blocks = super.mutate(mutationLikelihood )
-      .individuals
+    val individualsToMutate = super.mutate(mutationLikelihood).individuals
+
+    val indexedBlocks = individualsToMutate
       .flatMap { case image: Image =>
         image.frame.get.blocks
       }
       .groupBy(_.isHealthy)
 
-    val mixedCoordinates = ImagesManager.mixCoordinates(blocks.getOrElse(false, List[Block]()))
+    val indexedGoodBlocks = indexedBlocks
+      .getOrElse(true, List())
+      .groupBy(_.frameLocationId)
+    val goodBlocks = (1 to individualsToMutate.size).flatMap(_ => indexedGoodBlocks.values.flatten.toList.distinct).toList
+
+    val frameLocationsToIgnore = indexedGoodBlocks.keys.toSet
+    val badBlocks = indexedBlocks
+      .getOrElse(false, List())
+      .filterNot(aBlock => frameLocationsToIgnore.contains(aBlock.frameLocationId))
+    val mixedBadBlocks = ImagesManager.toBlocks(ImagesManager.mixCoordinates(badBlocks))
+    println(s"CANTIDAD DE WRONG BLOCKS: ${badBlocks.size}")
 
     copyWith(
       ImagesManager.blocksToImages(
-        blocks.getOrElse(
-          true,
-          List[Block]()) ::: ImagesManager.toBlocks(mixedCoordinates)
+        goodBlocks ::: mixedBadBlocks
       )
     )
   }
