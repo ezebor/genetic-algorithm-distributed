@@ -281,28 +281,50 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def mutate(mutationLikelihood: Double): Population = {
     val individualsToMutate = super.mutate(mutationLikelihood).individuals
 
-    val indexedBlocks = individualsToMutate
+    val blocksIndexedByHealthy = individualsToMutate
       .flatMap { case image: Image =>
         image.frame.get.blocks
       }
       .groupBy(_.isHealthy)
 
-    val indexedGoodBlocks = indexedBlocks
+    val goodBlocksIndexedByFrameLocationId = blocksIndexedByHealthy
       .getOrElse(true, List())
       .groupBy(_.frameLocationId)
-    val goodBlocks = (1 to individualsToMutate.size).flatMap(_ => indexedGoodBlocks.values.flatten.toList.distinct).toList
+    val goodDistinctBlocks = goodBlocksIndexedByFrameLocationId.values.map(_.head).toList
 
-    val frameLocationsToIgnore = indexedGoodBlocks.keys.toSet
-    val badBlocks = indexedBlocks
+    val badBlocksDistinctSources = blocksIndexedByHealthy
       .getOrElse(false, List())
-      .filterNot(aBlock => frameLocationsToIgnore.contains(aBlock.frameLocationId))
-    val mixedBadBlocks = ImagesManager.toBlocks(ImagesManager.mixCoordinates(badBlocks))
-    println(s"CANTIDAD DE WRONG BLOCKS: ${badBlocks.size}")
+      .groupBy(aBlock => (aBlock.imageSourceId, aBlock.pixelsSourceId))
+      .keys
+      .toSet
+      .toVector
+      .diff(goodBlocksIndexedByFrameLocationId
+        .values
+        .flatten
+        .map(aBlock => (aBlock.imageSourceId, aBlock.pixelsSourceId))
+        .toVector
+      )
+
+    val missingFrameLocationIds = ImagesManager
+      .frameLocationIds
+      .toVector
+      .diff(goodBlocksIndexedByFrameLocationId.keys.toVector)
+
+    val newCoordinates: List[Coordinate] = individualsToMutate.flatMap { _ =>
+      missingFrameLocationIds.map { case frameLocationId =>
+        val randomSource = badBlocksDistinctSources(random.nextInt(badBlocksDistinctSources.size))
+        (frameLocationId, randomSource._1, randomSource._2)
+      }.toList
+    }
+
+    val newImages = ImagesManager
+      .blocksToImages(ImagesManager.toBlocks(newCoordinates))
+      .map { case Image(Success(Frame(blocks))) =>
+        ImagesManager.blocksToSingleImage(goodDistinctBlocks ::: blocks)
+      }
 
     copyWith(
-      ImagesManager.blocksToImages(
-        goodBlocks ::: mixedBadBlocks
-      )
+      newImages
     )
   }
 }
