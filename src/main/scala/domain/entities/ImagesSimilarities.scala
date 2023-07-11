@@ -41,22 +41,26 @@ case class Frame(blocks: List[Block])(implicit customRandom: Random = random) ex
       totalFitness + aFitness / blocks.size
     }
 
-  override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = super.crossoverWith(couple, crossoverLikelihood) match
-    case (leftChildGenes: List[Block], rightChildGenes: List[Block]) => {
-      val indexedBlocks = blocks.groupBy(_.frameLocationId)
+  // TODO: llevar lógica optimizada de crossover al GenericTypes (indexado de genes). Usar trait Id
+  override def crossoverWith(couple: Chromosome, crossoverLikelihood: Double): (List[Gene], List[Gene]) = {
+    def addGeneAccordingToLikelihood(nextBlock: Block, aGenes: Map[Id, List[Block]]): Map[Id, List[Block]] =
+      if(nextBlock.isHealthy || random.nextInt(100) + 1 <= crossoverLikelihood * 100) aGenes.updated(nextBlock.frameLocationId, List(nextBlock))
+      else aGenes
 
-      def mergeBlocks(newBlocks: List[Block]): List[Block] = {
-        val mergedBlocks = newBlocks.foldLeft(indexedBlocks) { case (result, nextBlock) =>
-          result.updated(nextBlock.frameLocationId, List(nextBlock))
-        }
-        mergedBlocks
-          .values
-          .toList
-          .flatten
-      }
+    val indexedBlocks = blocks.groupBy(_.frameLocationId)
 
-      (mergeBlocks(leftChildGenes), mergeBlocks(rightChildGenes))
+    val childrenGenes = couple.getGenes.foldLeft(indexedBlocks, indexedBlocks) { case ((leftBlocks, rightBlocks), nextBlock: Block) =>
+      (
+        addGeneAccordingToLikelihood(nextBlock, leftBlocks),
+        addGeneAccordingToLikelihood(nextBlock, rightBlocks)
+      )
     }
+
+    (
+      childrenGenes._1.values.map(_.head).toList,
+      childrenGenes._2.values.map(_.head).toList
+    )
+  }
 
   override def mutate: Chromosome = this
 }
