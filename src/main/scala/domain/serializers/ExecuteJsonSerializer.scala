@@ -8,6 +8,9 @@ import domain.entities.AlgorithmConfig.random
 import spray.json.*
 
 import scala.collection.immutable.Vector
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with RootJsonFormat[Execute] {
   protected def chromosomeOf: Individual => List[Gene]
@@ -16,18 +19,24 @@ trait ExecuteJsonSerializer extends Serializer with DefaultJsonProtocol with Roo
 
   def write(command: Execute) = command match {
     case Execute(operatorName: String, population: Population) =>
-      val formattedPopulation = JsArray(
-        for {
-          case individual: Individual <- population.individuals.toVector
-          chromosome = chromosomeOf(individual).toVector
-        } yield {
-          serializeGenes(chromosome)
-        }
-      )
+
+      val futureFormattedPopulation = for {
+        case individual: Individual <- population.individuals.toVector
+        chromosome = chromosomeOf(individual).toVector
+      } yield {
+        Future(serializeGenes(chromosome))
+      }
+
+      val formattedPopulation = futureFormattedPopulation.foldLeft(Future(List[JsValue]())) { case (result, nextFutureFormattedIndividual) =>
+        for{
+          individuals <- result
+          nextFormattedIndividual <- nextFutureFormattedIndividual
+        } yield nextFormattedIndividual :: individuals
+      }
 
       JsObject(
         "operatorName" -> JsString(operatorName),
-        "population" -> formattedPopulation
+        "population" -> JsArray(Await.result(formattedPopulation, Duration.Inf).toVector)
       )
   }
 
