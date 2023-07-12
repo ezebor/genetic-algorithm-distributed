@@ -125,12 +125,24 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def selectStrongerPopulation(size: Int): Population = randomSubPopulation(size)
   
-  // TODO: paralelizar con futures
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
-    copyWith(individuals.flatMap { individual =>
-      val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
-      individual.crossoverWith(couple, crossoverLikelihood)
-    })
+    val futureGroupedChildren = individuals.map { anIndividual =>
+      Future {
+        val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())
+        anIndividual.crossoverWith(couple, crossoverLikelihood)
+      }
+    }
+
+    val futureChildren = futureGroupedChildren.foldLeft(Future(List[Individual]())) { case (result, futureNextChildren) =>
+      for {
+        children <- result
+        nextChildren <- futureNextChildren
+      } yield {
+        children ::: nextChildren
+      }
+    }
+
+    copyWith(Await.result(futureChildren, Duration.Inf))
   }
   
   def mutate(mutationLikelihood: Double): Population = copyWith(
