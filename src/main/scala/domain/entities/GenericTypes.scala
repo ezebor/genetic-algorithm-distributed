@@ -124,7 +124,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   }
   
   def selectStrongerPopulation(size: Int): Population = randomSubPopulation(size)
-  
+
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     val futureGroupedChildren = individuals.map { anIndividual =>
       Future {

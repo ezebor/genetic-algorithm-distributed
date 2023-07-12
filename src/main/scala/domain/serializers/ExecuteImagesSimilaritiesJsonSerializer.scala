@@ -9,6 +9,9 @@ import domain.Operators.*
 import domain.entities.*
 import spray.json.*
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.util.Success
 
 class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
@@ -17,21 +20,34 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
   }
 
   override def createPopulation(individuals: Vector[JsValue]): Population = {
-    val blocks: List[Block] = individuals.flatMap { case JsArray(serializedBlocks) =>
-      serializedBlocks.map { case serializedBlock: JsArray =>
-        serializedBlock.elements match
-          case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY), JsNumber(fitness)) =>
-            val pixelsSourceId = (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
-            Block(
-              (frameLocationIdX.intValue, frameLocationIdY.intValue),
-              imageId.intValue,
-              pixelsSourceId,
-              fitness.doubleValue
-            )
-      }
-    }.toList
+    val futureGroupedImages = individuals.map { case JsArray(serializedBlocks) =>
+      Future {
+        val blocks = serializedBlocks.map { case serializedBlock: JsArray =>
+          serializedBlock.elements match
+            case Seq(JsNumber(frameLocationIdX), JsNumber(frameLocationIdY), JsNumber(imageId), JsNumber(pixelsSourceIdX), JsNumber(pixelsSourceIdY), JsNumber(fitness)) =>
+              val pixelsSourceId = (pixelsSourceIdX.intValue, pixelsSourceIdY.intValue)
+              Block(
+                (frameLocationIdX.intValue, frameLocationIdY.intValue),
+                imageId.intValue,
+                pixelsSourceId,
+                fitness.doubleValue
+              )
+        }.toList
 
-    ImagesPopulation(ImagesManager.blocksToImages(blocks))
+        ImagesManager.blocksToSingleImage(blocks)
+      }
+    }
+
+    val futureImages = futureGroupedImages.foldLeft(Future(List[Image]())) { case (result, nextFutureImage) =>
+      for {
+        images <- result
+        nextImage <- nextFutureImage
+      } yield {
+        nextImage :: images
+      }
+    }
+
+    ImagesPopulation(Await.result(futureImages, Duration.Inf))
   }
 
   override protected def serializeGenes(genes: Vector[Gene]): JsValue = JsArray(
