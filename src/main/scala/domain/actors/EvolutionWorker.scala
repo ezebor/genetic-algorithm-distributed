@@ -4,7 +4,7 @@ import akka.actor.*
 import akka.cluster.ClusterEvent.*
 import akka.cluster.{Cluster, Member}
 import app.ExecutionScript
-import app.ExecutionScript.{POPULATION_SIZE, QUANTITY_OF_INDIVIDUALS_TO_DISTRIBUTE, QUANTITY_OF_WORKERS, QUANTITY_OF_WORKERS_PER_NODE}
+import app.ExecutionScript.{POPULATION_SIZE, CHUNK_SIZE, QUANTITY_OF_WORKERS, QUANTITY_OF_WORKERS_PER_NODE}
 import domain.*
 import domain.Operators.*
 import domain.entities.*
@@ -30,7 +30,7 @@ class EvolutionWorker() extends BaseActor {
           population
             .fusionWith(children)
             .selectStrongerPopulation(survivalPopulationSize),
-          QUANTITY_OF_INDIVIDUALS_TO_DISTRIBUTE
+          CHUNK_SIZE
         )
 
         context.become(this.waitingPopulations(
