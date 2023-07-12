@@ -139,11 +139,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
       |""".stripMargin
   }
 
-  lazy val bestIndividual: Individual = individuals.foldLeft(Individual.emptyIndividual(new RuntimeException())) { (firstIndividual, secondIndividual) => {
-      if (firstIndividual.fitness.getOrElse(0d) >= secondIndividual.fitness.getOrElse(0d)) firstIndividual
-      else secondIndividual
-    }
-  }
+  def bestIndividual: Individual = individuals.head
 }
 
 object Individual {
@@ -212,4 +208,5 @@ object InitialPopulation {
 case object EmptyPopulation extends Population(List()) {
   override def copyWith(newIndividuals: List[Individual]): Population = this
   override def empty(): Population = this
+  override def bestIndividual: Individual = Individual.emptyIndividual(new RuntimeException("Empty population"))
 }

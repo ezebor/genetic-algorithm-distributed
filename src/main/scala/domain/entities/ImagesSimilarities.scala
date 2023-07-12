@@ -224,9 +224,16 @@ object ImagesManager {
       .values
 
     indexedBlocks.head.indices.map { index =>
+      val frameBlocks = indexedBlocks.foldLeft(List[Block]()) { case (result, nextBlocks) =>
+        val nextBlock = nextBlocks(index)
+        if(result.isEmpty) List(nextBlock)
+        else if(nextBlock.fitness >= result.head.fitness) nextBlock :: result
+        else result ::: List(nextBlock)
+      }
+
       Image(
         Success(
-          Frame(indexedBlocks.map(_(index)).toList)
+          Frame(frameBlocks)
         )
       )
     }.toList
