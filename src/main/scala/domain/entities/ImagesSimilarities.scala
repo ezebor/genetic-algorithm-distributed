@@ -223,20 +223,25 @@ object ImagesManager {
       .groupBy(_.frameLocationId)
       .values
 
-    indexedBlocks.head.indices.map { index =>
-      val frameBlocks = indexedBlocks.foldLeft(List[Block]()) { case (result, nextBlocks) =>
-        val nextBlock = nextBlocks(index)
-        if(result.isEmpty) List(nextBlock)
-        else if(nextBlock.fitness >= result.head.fitness) nextBlock :: result
-        else result ::: List(nextBlock)
+    val futureImagesBlocks = indexedBlocks.head.indices.map { index =>
+      Future {
+        indexedBlocks.foldLeft(List[Block]()) { case (result, nextBlocks) =>
+          val nextBlock = nextBlocks(index)
+          if(result.isEmpty) List(nextBlock)
+          else if(nextBlock.fitness >= result.head.fitness) nextBlock :: result
+          else result ::: List(nextBlock)
+        }
       }
+    }
 
-      Image(
-        Success(
-          Frame(frameBlocks)
-        )
-      )
-    }.toList
+    val futureImages = futureImagesBlocks.foldLeft(Future(List[Image]())) { case (result, nextBlocks) =>
+      for {
+        images <- result
+        aBlocks <- nextBlocks
+      } yield Image(Success(Frame(aBlocks))) :: images
+    }
+
+    Await.result(futureImages, Duration.Inf)
   }
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
