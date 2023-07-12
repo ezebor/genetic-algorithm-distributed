@@ -44,7 +44,7 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def returnGeneration: Operator = { population =>
-        this.distributeWork(manager, population)
+        this.distributeWork(manager, population, population.individuals.size)
         log.info(s"Starting evolution over a population with size = ${population.individuals.size}")
         startEvolution(population)
       }
@@ -57,7 +57,7 @@ class EvolutionMaster() extends BaseActor {
         ))
 
         val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        this.distributeWork(router, strongestPopulation, 1, quantityOfWorkers)
+        this.distributeWork(router, strongestPopulation, QUANTITY_OF_INDIVIDUALS_TO_DISTRIBUTE, quantityOfWorkers)
 
         Future {
           val mutants = strongestPopulation.mutate(mutationLikelihood)
