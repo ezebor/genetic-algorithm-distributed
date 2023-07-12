@@ -56,7 +56,16 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   // TODO: lograr que no se necesiten todos los valores para construir la lista (el total), como hacer un nextDouble * 10. Al hacer el find individual, si ya lo tengo lo devuelvo, sino espero
   // TODO: no esperar a terminar de construir el accumulatedFitness si ya tengo el individuo que quiero (si ya me llegó del worker)
   lazy val accumulatedFitness: List[(Individual, Double)] = {
-    val totalFitness = individuals.foldLeft(0d)((total, individual) => total + individual.fitness.getOrElse(0d))
+    val futureTotalFitness = individuals
+      .map(anIndividual => Future(anIndividual.fitness.getOrElse(0d)))
+      .foldLeft(Future(0d)) { case (futureResult, futureFitness) =>
+        for {
+          total <- futureResult
+          fitness <- futureFitness
+        } yield total + fitness
+      }
+
+    val totalFitness = Await.result(futureTotalFitness, Duration.Inf)
     val fitIndividuals = individuals.filter(_.fitness.getOrElse(0d) > 0)
 
     fitIndividuals
