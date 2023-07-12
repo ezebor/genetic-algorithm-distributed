@@ -34,7 +34,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
               )
         }.toList
 
-        ImagesManager.blocksToSingleImage(blocks)
+        ImagesManager.blocksToImages(blocks)
       }
     }
 
@@ -43,7 +43,7 @@ class ExecuteImagesSimilaritiesJsonSerializer extends ExecuteJsonSerializer {
         images <- result
         nextImage <- nextFutureImage
       } yield {
-        nextImage :: images
+        nextImage ::: images
       }
     }
 

@@ -136,40 +136,51 @@ object ImagesManager {
       .toList
 
     val statisticsPerCoordinate = groupedCoordinates.map { case (frameLocationId, aCoordinates) =>
-      val referencesPixels = referencesImmutableImages.keys.map { case imageId =>
-        ImagesManager.pixelsAt(imageId, frameLocationId)
-      }.toVector
+      Future {
+        val referencesPixels = referencesImmutableImages.keys.map { case imageId =>
+          ImagesManager.pixelsAt(imageId, frameLocationId)
+        }.toVector
 
-      val targetPixels = aCoordinates.map { case (_, imageId, pixelsSourceId) =>
-        ImagesManager.pixelsAt(imageId, pixelsSourceId)
-      }.toVector
+        val targetPixels = aCoordinates.map { case (_, imageId, pixelsSourceId) =>
+          ImagesManager.pixelsAt(imageId, pixelsSourceId)
+        }.toVector
 
-      val terms = generateStatisticsTerms(
-        targetPixels,
-        referencesPixels
-      )
+        val terms = generateStatisticsTerms(
+          targetPixels,
+          referencesPixels
+        )
 
-      (
-        aCoordinates.toVector,
-        luminance(terms),
-        contrast(terms),
-        structure(terms)
-      )
-    }
-
-    statisticsPerCoordinate.flatMap { case (aCoordinates, luminance, contrast, structure) =>
-      aCoordinates.indices.map{ index =>
-        val aCoordinate = aCoordinates(index)
-        val fitness = luminance(index) * contrast(index) * structure(index)
-        val roundedFitness = BigDecimal(fitness).setScale(2, BigDecimal.RoundingMode.HALF_DOWN).toDouble
-        Block(
-          aCoordinate._1,
-          aCoordinate._2,
-          aCoordinate._3,
-          roundedFitness
+        (
+          aCoordinates.toVector,
+          luminance(terms),
+          contrast(terms),
+          structure(terms)
         )
       }
     }
+
+    val futureBlocks = statisticsPerCoordinate.foldLeft(Future(List[Block]())) { case (result, nextFutureCoordinates) =>
+      for {
+        blocks <- result
+        case (aCoordinates, luminance, contrast, structure) <- nextFutureCoordinates
+      } yield {
+        val nextBlocks = aCoordinates.indices.map { index =>
+          val aCoordinate = aCoordinates(index)
+          val fitness = luminance(index) * contrast(index) * structure(index)
+          val roundedFitness = BigDecimal(fitness).setScale(2, BigDecimal.RoundingMode.HALF_DOWN).toDouble
+          Block(
+            aCoordinate._1,
+            aCoordinate._2,
+            aCoordinate._3,
+            roundedFitness
+          )
+        }.toList
+
+        blocks ::: nextBlocks
+      }
+    }
+
+    Await.result(futureBlocks, Duration.Inf)
   }
 
   lazy val frameLocationIds: IndexedSeq[Id] = Range(0, DIMENSION_IMAGE_SIZE, DIMENSION_BLOCK_SIZE)
@@ -209,13 +220,11 @@ object ImagesManager {
       .toMap
   }
 
-  lazy val referencesImages: List[Image] = referencesImmutableImages.map { case (imageId, _) =>
-    blocksToSingleImage(
+  lazy val referencesImages: List[Image] = referencesImmutableImages.flatMap { case (imageId, _) =>
+    ImagesManager.blocksToImages(
       toBlocks(toCoordinates(imageId))
     )
   }.toList
-
-  def blocksToSingleImage(blocks: List[Block]): Image = Image(Success(Frame(blocks)))
 
   def blocksToImages(blocks: List[Block]): List[Image] = {
     val indexedBlocks = blocks
@@ -254,8 +263,8 @@ object ImagesManager {
     val images = referencesImages
       .map(anImage => anImage.frame.get.blocks)
       .map(aBlocks => ImagesManager.mixCoordinates(aBlocks))
-      .map { aCoordinates =>
-        blocksToSingleImage(toBlocks(aCoordinates))
+      .flatMap { aCoordinates =>
+        blocksToImages(toBlocks(aCoordinates))
       }
 
     ImagesPopulation(
@@ -351,8 +360,8 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
     } yield {
       ImagesManager
         .blocksToImages(ImagesManager.toBlocks(newCoordinates))
-        .map { case Image(Success(Frame(blocks))) =>
-          ImagesManager.blocksToSingleImage(goodDistinctBlocks ::: blocks)
+        .flatMap { case Image(Success(Frame(blocks))) =>
+          ImagesManager.blocksToImages(goodDistinctBlocks ::: blocks)
         }
     }
 
