@@ -125,6 +125,7 @@ trait Population(internalIndividuals: List[Individual])(implicit random: Random)
   
   def selectStrongerPopulation(size: Int): Population = randomSubPopulation(size)
   
+  // TODO: paralelizar con futures
   def crossoverWith(otherPopulation: Population, crossoverLikelihood: Double): Population = {
     copyWith(individuals.flatMap { individual =>
       val couple = otherPopulation.findIndividualWhoseAccumulatedFitnessWindowIncludes(random.nextDouble())

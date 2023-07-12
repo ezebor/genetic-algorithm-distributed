@@ -294,6 +294,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def empty(): Population = ImagesPopulation(List[Image]())
 
   // TODO: llevar lógca común de convergencia de mutación al padre
+  // TODO: paralelizar con futures
   override def mutate(mutationLikelihood: Double): Population = {
     val individualsToMutate = super.mutate(mutationLikelihood).individuals
 
