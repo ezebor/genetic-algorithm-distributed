@@ -304,9 +304,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
 
   // TODO: llevar lógca común de convergencia de mutación al padre
   override def mutate(mutationLikelihood: Double): Population = {
-    val individualsToMutate = super.mutate(mutationLikelihood).individuals
-
-    val blocksIndexedByHealthy = individualsToMutate
+    val blocksIndexedByHealthy = images
       .flatMap { case image: Image =>
         image.frame.get.blocks
       }
@@ -346,12 +344,12 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       missingFrameLocationIds <- missingFrameLocationIdsFuture
       badBlocksDistinctSources <- badBlocksDistinctSourcesFuture
     } yield {
-      individualsToMutate.flatMap { _ =>
+      (1 to (images.size * mutationLikelihood).toInt).flatMap { _ =>
         missingFrameLocationIds.map { case frameLocationId =>
           val randomSource = badBlocksDistinctSources(random.nextInt(badBlocksDistinctSources.size))
           (frameLocationId, randomSource._1, randomSource._2)
         }.toList
-      }
+      }.toList
     }
 
     val newImages: Future[List[Image]] = for {

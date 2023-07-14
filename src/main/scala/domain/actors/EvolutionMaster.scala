@@ -53,22 +53,13 @@ class EvolutionMaster() extends BaseActor {
         context.become(this.waitingPopulations(
           returnGeneration,
           population.empty(),
-          quantityOfWorkers + 1
+          quantityOfWorkers
         ))
 
+        log.info("Generating strongest population")
         val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
+        log.info("Distributing population to workers")
         this.distributeWork(router, strongestPopulation, CHUNK_SIZE, quantityOfWorkers)
-
-        Future {
-          val mutants = strongestPopulation.mutate(mutationLikelihood)
-          log.info(s"Mutants generated: [${mutants.individuals.size}]")
-          mutants
-        }.onComplete {
-          case Success(mutants: Population) => this.distributeWork(self, mutants, mutants.individuals.size)
-          case Failure(exception) => 
-            log.info(s"No mutant generated. Exception: ${exception.getMessage}")
-            this.distributeWork(self, strongestPopulation.empty())
-        }
       }
 
       initializeWorkers()
