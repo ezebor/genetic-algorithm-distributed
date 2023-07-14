@@ -50,16 +50,16 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def startEvolution: Operator = { population =>
-        context.become(this.waitingPopulations(
-          returnGeneration,
-          population.empty(),
-          quantityOfWorkers
-        ))
-
         log.info("Generating strongest population")
         val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
         log.info("Distributing population to workers")
         this.distributeWork(router, strongestPopulation, CHUNK_SIZE, quantityOfWorkers)
+
+        context.become(this.waitingPopulations(
+          returnGeneration,
+          strongestPopulation,
+          quantityOfWorkers
+        ))
       }
 
       initializeWorkers()

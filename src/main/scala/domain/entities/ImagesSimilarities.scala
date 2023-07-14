@@ -21,7 +21,7 @@ type Coordinate = (Id, Int, Id)
 
 case class Block(frameLocationId: Id, imageSourceId: Int, pixelsSourceId: Id, fitness: Double)(implicit customRandom: Random = random) extends Gene(fitness) {
   override def mutate: Gene = this
-  override def isHealthy: Boolean = fitness >= 0.99
+  override def isHealthy: Boolean = fitness >= 1
 
   override def toString: String = s"Block - frameLocationId: ($frameLocationId), image id: ${imageSourceId}, pixels source id: ${pixelsSourceId}"
   
@@ -232,25 +232,12 @@ object ImagesManager {
       .groupBy(_.frameLocationId)
       .values
 
-    val futureImagesBlocks = indexedBlocks.head.indices.map { index =>
-      Future {
-        indexedBlocks.foldLeft(List[Block]()) { case (result, nextBlocks) =>
-          val nextBlock = nextBlocks(index)
-          if(result.isEmpty) List(nextBlock)
-          else if(nextBlock.fitness >= result.head.fitness) nextBlock :: result
-          else result ::: List(nextBlock)
-        }
+    indexedBlocks.head.indices.map { index =>
+      val blocks = indexedBlocks.foldLeft(List[Block]()) { case (result, nextBlocks) =>
+        nextBlocks(index) :: result
       }
-    }
-
-    val futureImages = futureImagesBlocks.foldLeft(Future(List[Image]())) { case (result, nextBlocks) =>
-      for {
-        images <- result
-        aBlocks <- nextBlocks
-      } yield Image(Success(Frame(aBlocks))) :: images
-    }
-
-    Await.result(futureImages, Duration.Inf)
+      Image(Success(Frame(blocks)))
+    }.toList
   }
 
   lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
@@ -320,13 +307,13 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
         .groupBy(aBlock => (aBlock.imageSourceId, aBlock.pixelsSourceId))
         .keys
         .toSet
-        .toVector
         .diff(goodBlocksIndexedByFrameLocationId
           .values
           .flatten
           .map(aBlock => (aBlock.imageSourceId, aBlock.pixelsSourceId))
-          .toVector
+          .toSet
         )
+        .toVector
     }
 
     val missingFrameLocationIdsFuture = Future {
@@ -344,23 +331,27 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       missingFrameLocationIds <- missingFrameLocationIdsFuture
       badBlocksDistinctSources <- badBlocksDistinctSourcesFuture
     } yield {
-      (1 to (images.size * mutationLikelihood).toInt).flatMap { _ =>
-        missingFrameLocationIds.map { case frameLocationId =>
-          val randomSource = badBlocksDistinctSources(random.nextInt(badBlocksDistinctSources.size))
-          (frameLocationId, randomSource._1, randomSource._2)
+      if(missingFrameLocationIds.isEmpty || badBlocksDistinctSources.isEmpty) List()
+      else
+        (1 to (images.size * mutationLikelihood).toInt).flatMap { _ =>
+          missingFrameLocationIds.map { case frameLocationId =>
+            val randomSource = badBlocksDistinctSources(random.nextInt(badBlocksDistinctSources.size))
+            (frameLocationId, randomSource._1, randomSource._2)
+          }.toList
         }.toList
-      }.toList
     }
 
     val newImages: Future[List[Image]] = for {
       newCoordinates <- newCoordinatesFuture
       goodDistinctBlocks <- goodDistinctBlocksFuture
     } yield {
-      ImagesManager
-        .blocksToImages(ImagesManager.toBlocks(newCoordinates))
-        .flatMap { case Image(Success(Frame(blocks))) =>
-          ImagesManager.blocksToImages(goodDistinctBlocks ::: blocks)
-        }
+      if (newCoordinates.isEmpty) ImagesManager.blocksToImages(goodDistinctBlocks)
+      else
+        ImagesManager
+          .blocksToImages(ImagesManager.toBlocks(newCoordinates))
+          .flatMap { case Image(Success(Frame(blocks))) =>
+            ImagesManager.blocksToImages(goodDistinctBlocks ::: blocks)
+          }
     }
 
     copyWith(
