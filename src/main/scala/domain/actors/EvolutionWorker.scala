@@ -30,7 +30,9 @@ class EvolutionWorker() extends BaseActor {
 
         val futureMutants = Future {
           log.info("Starting mutation")
-          val mutants = population.mutate(mutationLikelihood)
+          val mutants = population
+            .mutate(mutationLikelihood)
+            .mutate(1 / mutationLikelihood)
           log.info(s"Mutants generated: [${mutants.individuals.size}]")
           mutants
         }

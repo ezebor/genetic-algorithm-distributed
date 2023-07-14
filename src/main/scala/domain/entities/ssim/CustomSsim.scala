@@ -19,7 +19,7 @@ import scala.util.{Random, Success}
 object CustomSsim extends App {
   val reference = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png").scaleTo(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
   val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
-  val population = ImagesManager.initialPopulation().mutate(1)
+  val population = ImagesManager.initialPopulation()
 
 
   /*val fitness =  population

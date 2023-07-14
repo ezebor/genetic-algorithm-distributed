@@ -334,10 +334,18 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       if(missingFrameLocationIds.isEmpty || badBlocksDistinctSources.isEmpty) List()
       else
         (1 to (images.size * mutationLikelihood).toInt).flatMap { _ =>
-          missingFrameLocationIds.map { case frameLocationId =>
-            val randomSource = badBlocksDistinctSources(random.nextInt(badBlocksDistinctSources.size))
-            (frameLocationId, randomSource._1, randomSource._2)
-          }.toList
+          missingFrameLocationIds.foldLeft(List[Coordinate](), badBlocksDistinctSources) { case ((result, sources), frameLocationId) =>
+            val randomIndex = random.nextInt(sources.size)
+            val randomSource = sources(randomIndex)
+            (
+              (frameLocationId, randomSource._1, randomSource._2) :: result,
+              sources
+                .indices
+                .filterNot(_ == randomIndex)
+                .map(anIndex => sources(anIndex))
+                .toVector
+            )
+          }._1
         }.toList
     }
 
