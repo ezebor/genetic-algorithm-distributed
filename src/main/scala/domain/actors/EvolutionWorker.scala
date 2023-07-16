@@ -30,9 +30,7 @@ class EvolutionWorker() extends BaseActor {
 
         val futureMutants = Future {
           log.info("Starting mutation")
-          val mutants = population
-            .mutate(mutationLikelihood)
-            .mutate(1 / mutationLikelihood)
+          val mutants = population.mutate(mutationLikelihood)
           log.info(s"Mutants generated: [${mutants.individuals.size}]")
           mutants
         }
@@ -46,20 +44,22 @@ class EvolutionWorker() extends BaseActor {
         val futureNewPopulation = for {
           mutants <- futureMutants
           children <- futureChildren
-        } yield children.fusionWith(mutants)
+        } yield children
+          .fusionWith(mutants)
+          .mutate(1)
 
         val newPopulation = Await.result(futureNewPopulation, Duration.Inf)
 
         log.info("Returning new population to master")
         this.distributeWork(
           evolutionMaster,
-          newPopulation.selectStrongerPopulation(survivalPopulationSize),
+          newPopulation,
           CHUNK_SIZE
         )
 
         context.become(this.waitingPopulations(
           startEvolution,
-          EmptyPopulation,
+          newPopulation,
           1
         ))
       }

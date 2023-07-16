@@ -53,4 +53,9 @@ class EvolutionMasterNode(quantityOfWorkersPerNode: Int) extends App with SprayJ
   val routesTree: Route = MasterRouteTree(generationsManager, master, router, solutionsPrinter, quantityOfWorkersPerNode)
 
   Http().newServerAt("localhost", 8080).bind(routesTree)
+  
+  ImagesManager.referencesPixels
+  ImagesManager.referencesBlocks
+  ImagesManager.referencesImmutableImages
+  ImagesManager.referencesImages
 }

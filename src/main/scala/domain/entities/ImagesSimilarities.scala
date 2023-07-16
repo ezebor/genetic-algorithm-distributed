@@ -98,6 +98,7 @@ object ImagesManager {
 
   private def generateStatisticsTerms(pixelsA: Vector[Vector[Pixel]], pixelsB: Vector[Vector[Pixel]]): StatisticsTerms = {
     val size = pixelsA.head.size
+
     val sumPixels: (Vector[Double], Vector[Double]) = pixelsA.head.indices.foldLeft(pixelsA.map(_ => 0d), pixelsB.map(_ => 0d)) { case ((totalSumPixelsA, totalSumPixelsB), pixelIndex) =>
       (
         totalSumPixelsA.indices.map(referenceIndex => totalSumPixelsA(referenceIndex) + pixelsA(referenceIndex)(pixelIndex).argb).toVector,
@@ -132,22 +133,22 @@ object ImagesManager {
 
   def toBlocks(coordinates: List[Coordinate]): List[Block] = {
     val groupedCoordinates: List[(Id, List[Coordinate])] = coordinates
-      .groupBy { case (frameLocationId, _, _) => frameLocationId}
+      .groupBy { case (frameLocationId, _, _) => frameLocationId }
       .toList
 
     val statisticsPerCoordinate = groupedCoordinates.map { case (frameLocationId, aCoordinates) =>
       Future {
-        val referencesPixels = referencesImmutableImages.keys.map { case imageId =>
-          ImagesManager.pixelsAt(imageId, frameLocationId)
+        val controlPixels = referencesImmutableImages.keys.map { case imageId =>
+          referencesPixels(imageId)(frameLocationId)
         }.toVector
 
         val targetPixels = aCoordinates.map { case (_, imageId, pixelsSourceId) =>
-          ImagesManager.pixelsAt(imageId, pixelsSourceId)
+          referencesPixels(imageId)(pixelsSourceId)
         }.toVector
 
         val terms = generateStatisticsTerms(
           targetPixels,
-          referencesPixels
+          controlPixels
         )
 
         (
@@ -175,7 +176,6 @@ object ImagesManager {
             roundedFitness
           )
         }.toList
-
         blocks ::: nextBlocks
       }
     }
@@ -194,7 +194,7 @@ object ImagesManager {
     val immutableImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
     for {
       case Block((locationX, locationY), imageId, pixelsSourceId @ (sourceX, sourceY), _) <- blocks
-      aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
+      aPixel <- referencesPixels(imageId)(pixelsSourceId)
     } yield {
       immutableImage.setPixel(Pixel(
         locationX + aPixel.x - sourceX,
@@ -220,11 +220,51 @@ object ImagesManager {
       .toMap
   }
 
-  lazy val referencesImages: List[Image] = referencesImmutableImages.flatMap { case (imageId, _) =>
-    ImagesManager.blocksToImages(
-      toBlocks(toCoordinates(imageId))
-    )
-  }.toList
+  lazy val referencesPixels: Map[Int, Map[Id, Vector[Pixel]]] = {
+    println("Creating references pixels")
+    val references = referencesBlocks.map { case (imageId, indexedBlocks) =>
+      val indexedPixels = indexedBlocks
+        .keys
+        .map { frameLocationId =>
+          frameLocationId -> referencesImmutableImages(imageId)
+            .pixels(
+              frameLocationId._1,
+              frameLocationId._2,
+              ExecutionScript.DIMENSION_BLOCK_SIZE,
+              ExecutionScript.DIMENSION_BLOCK_SIZE
+            )
+            .toVector
+        }
+        .toMap
+
+      imageId -> indexedPixels
+    }
+    println("References pixels created")
+    references
+  }
+
+  lazy val referencesBlocks: Map[Int, Map[Id, Block]] = {
+    println("Creating references blocks")
+    val references = referencesImmutableImages.map { case (imageId, _) =>
+      val indexedBlocks = toCoordinates(imageId).foldLeft(Map[Id, Block]()) { case (result, (frameLocationId, anImageSourceId, pixelsSourceId))  =>
+        result.updated(frameLocationId, Block(frameLocationId, anImageSourceId, pixelsSourceId, 1.0))
+      }
+      imageId -> indexedBlocks
+    }
+    println("References blocks created")
+    references
+  }
+
+  lazy val referencesImages: List[Image] = {
+    println("Creating references images")
+    val references = referencesBlocks.map { case (_, indexedBlocks) =>
+      blocksToSingleImage(indexedBlocks.values.toList)
+    }.toList
+    println("References images created")
+    references
+  }
+
+  def blocksToSingleImage(blocks: List[Block]): Image = Image(Success(Frame(blocks)))
 
   def blocksToImages(blocks: List[Block]): List[Image] = {
     val indexedBlocks = blocks
@@ -240,12 +280,6 @@ object ImagesManager {
     }.toList
   }
 
-  lazy val referencesBlocks: Map[Id, List[Block]] = referencesImages
-    .flatMap { case Image(Success(Frame(blocks))) =>
-      blocks
-    }
-    .groupBy(_.frameLocationId)
-
   def initialPopulation(): ImagesPopulation = {
     val images = referencesImages
       .map(anImage => anImage.frame.get.blocks)
@@ -260,15 +294,6 @@ object ImagesManager {
       }
     )
   }
-
-  def pixelsAt(imageId: Int, pixelsSourceId: Id): Vector[Pixel] = referencesImmutableImages(imageId)
-    .pixels(
-      pixelsSourceId._1,
-      pixelsSourceId._2,
-      ExecutionScript.DIMENSION_BLOCK_SIZE,
-      ExecutionScript.DIMENSION_BLOCK_SIZE
-    )
-    .toVector
 
   def mixCoordinates(blocks: List[Block]): List[Coordinate] = {
     val mixedFrameLocationIds = random.shuffle[Id, IndexedSeq[Id]](blocks.map(_.frameLocationId).toIndexedSeq).toVector
@@ -290,7 +315,9 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
   override def empty(): Population = ImagesPopulation(List[Image]())
 
   // TODO: llevar lógca común de convergencia de mutación al padre
+  // TODO: mutationLikelihood ya no es una probabilidad sino una cantidad --> renombrar
   override def mutate(mutationLikelihood: Double): Population = {
+    // TODO: hacer que la ky false tenga como mucho 2500 genes
     val blocksIndexedByHealthy = images
       .flatMap { case image: Image =>
         image.frame.get.blocks
@@ -333,7 +360,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
     } yield {
       if(missingFrameLocationIds.isEmpty || badBlocksDistinctSources.isEmpty) List()
       else
-        (1 to (images.size * mutationLikelihood).toInt).flatMap { _ =>
+        (1 to mutationLikelihood.toInt).flatMap { _ =>
           missingFrameLocationIds.foldLeft(List[Coordinate](), badBlocksDistinctSources) { case ((result, sources), frameLocationId) =>
             val randomIndex = random.nextInt(sources.size)
             val randomSource = sources(randomIndex)

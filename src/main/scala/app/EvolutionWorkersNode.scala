@@ -9,6 +9,7 @@ import akka.cluster.{Cluster, Member}
 import app.ExecutionScript.QUANTITY_OF_WORKERS_PER_NODE
 import com.typesafe.config.ConfigFactory
 import domain.actors.{EvolutionWorker, WORKER_ROLE}
+import domain.entities.ImagesManager
 
 class EvolutionWorkersNode(port: Int) extends App {
   val configSource = ConfigFactory.load("resources/application.conf")
@@ -25,4 +26,9 @@ class EvolutionWorkersNode(port: Int) extends App {
     .withFallback(mainConfig)
 
   ActorSystem("GeneticAlgorithmSystem", config)
+
+  ImagesManager.referencesPixels
+  ImagesManager.referencesBlocks
+  ImagesManager.referencesImmutableImages
+  ImagesManager.referencesImages
 }

@@ -29,7 +29,7 @@ class SolutionsPrinter extends BaseActor {
                 case Success(Frame(blocks)) =>
                   for {
                     case aBlock @ Block(_, imageId, pixelsSourceId, _) <- blocks
-                    aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
+                    aPixel <- ImagesManager.referencesPixels(imageId)(pixelsSourceId)
                   } yield {
                     newImage.setPixel(aBlock.pixelWithFixedLocation(aPixel))
                   }
