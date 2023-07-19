@@ -324,37 +324,29 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       }
       .groupBy(_.isHealthy)
 
-    val MAXIMUM_QUANTITY_OF_BAD_BLOCKS = 2000
+    val MAXIMUM_QUANTITY_OF_BAD_BLOCKS = 1000
 
     val goodBlocksIndexedByFrameLocationId = blocksIndexedByHealthy
       .getOrElse(true, List())
       .groupBy(_.frameLocationId)
 
-    val badBlocksIndexedByFrameLocationId = blocksIndexedByHealthy
-      .getOrElse(false, List())
-      .groupBy(_.frameLocationId)
-      .filterNot { case (frameLocationId, _) => goodBlocksIndexedByFrameLocationId.contains(frameLocationId)}
-
     val badBlocksDistinctSourcesFuture = Future {
-      var missingFrameLocationIds: Set[Id] = Set()
-      var missingSources: Set[(Int, Id)] = Set()
+      val missingFrameLocationIds: Vector[Id] = ImagesManager.frameLocationIds.toVector.diff(goodBlocksIndexedByFrameLocationId.keys.toVector)
+      val missingSources: Vector[(Int, Id)] = ImagesManager.frameLocationIds.toVector
+        .diff(goodBlocksIndexedByFrameLocationId.values.flatten.map(_.pixelsSourceId).toVector)
+        // TODO: no harcodear image id
+        .map(aPixelSourceId => (0, aPixelSourceId))
 
-      badBlocksIndexedByFrameLocationId.foreach { case (aFrameLocationId, aBlocks) =>
-        missingFrameLocationIds = missingFrameLocationIds + aFrameLocationId
-        aBlocks.foreach { case Block(_, imageSourceId, pixelsSourceId, _) =>
-          missingSources = missingSources + ((imageSourceId, pixelsSourceId))
-        }
-      }
-
-      // TODO: que cada nodo tome una parte diferente (ej: este todo hace take, y el otro nodo hace takeRight)
-      val frameLocationIdsToMutate = missingFrameLocationIds.toVector.take(MAXIMUM_QUANTITY_OF_BAD_BLOCKS)
-      val sourcesToMutate = missingSources.toVector.take(frameLocationIdsToMutate.size)
+      val frameLocationIdsToMutate = missingFrameLocationIds.take(MAXIMUM_QUANTITY_OF_BAD_BLOCKS)
+      val sourcesToMutate = missingSources.take(frameLocationIdsToMutate.size)
       val blocksToKeep = missingFrameLocationIds
         .drop(frameLocationIdsToMutate.size)
-        .map { aFrameLocationId =>
-          badBlocksIndexedByFrameLocationId(aFrameLocationId).head
+        .zip(missingSources.drop(frameLocationIdsToMutate.size))
+        .map { case (aFrameLocationId, (anImageSourceId, aPixelsSourceId)) =>
+          Block(aFrameLocationId, anImageSourceId, aPixelsSourceId, 0d)
         }
         .toList
+
       (
         frameLocationIdsToMutate,
         sourcesToMutate,
@@ -386,7 +378,7 @@ case class ImagesPopulation(images: List[Image]) extends Population(images) {
       goodDistinctBlocks <- goodDistinctBlocksFuture
       case (_, _, blocksToKeep) <- badBlocksDistinctSourcesFuture
     } yield {
-      if (newCoordinates.isEmpty) List(ImagesManager.blocksToSingleImage(goodDistinctBlocks))
+      if (newCoordinates.isEmpty) (1 to mutationLikelihood.toInt).map(_ => ImagesManager.blocksToSingleImage(goodDistinctBlocks)).toList
       else
         ImagesManager
           .blocksToImages(ImagesManager.toBlocks(newCoordinates))

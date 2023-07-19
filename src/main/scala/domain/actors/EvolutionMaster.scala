@@ -44,20 +44,19 @@ class EvolutionMaster() extends BaseActor {
       }
 
       def returnGeneration: Operator = { population =>
-        this.distributeWork(manager, population, population.individuals.size)
-        log.info(s"Starting evolution over a population with size = ${population.individuals.size}")
-        startEvolution(population)
+        val superMutant = population.mutate(1)
+        log.info(s"Returning population with size = ${superMutant.individuals.size} to manager")
+        this.distributeWork(manager, superMutant, population.individuals.size)
+        startEvolution(superMutant.mutate(quantityOfWorkers))
       }
 
       def startEvolution: Operator = { population =>
-        log.info("Generating strongest population")
-        val strongestPopulation = population.selectStrongerPopulation(survivalPopulationSize)
-        log.info("Distributing population to workers")
-        this.distributeWork(router, strongestPopulation, CHUNK_SIZE, quantityOfWorkers)
+        log.info(s"Spreading population of size ${population.individuals.size} among workers")
+        this.distributeWork(router, population, CHUNK_SIZE, quantityOfWorkers)
 
         context.become(this.waitingPopulations(
           returnGeneration,
-          strongestPopulation,
+          population.empty(),
           quantityOfWorkers
         ))
       }
