@@ -47,7 +47,11 @@ class EvolutionMaster() extends BaseActor {
         val superMutant = population.mutate(1)
         log.info(s"Returning population with size = ${superMutant.individuals.size} to manager")
         this.distributeWork(manager, superMutant, population.individuals.size)
-        startEvolution(superMutant.mutate(quantityOfWorkers))
+
+        val populationToSendToWorkers = (1 to quantityOfWorkers).foldLeft(superMutant.empty()) { case (result, _) =>
+          result.fusionWith(superMutant)
+        }
+        startEvolution(populationToSendToWorkers)
       }
 
       def startEvolution: Operator = { population =>
