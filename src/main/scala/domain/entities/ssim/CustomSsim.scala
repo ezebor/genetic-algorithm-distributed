@@ -21,7 +21,6 @@ object CustomSsim extends App {
   //val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
   println("EMPECE")
   val population = ImagesManager.initialPopulation()
-  println(population.mutate(100).mutate(1).individuals.map(_.fitness))
   println("TERMINE")
 
 
@@ -52,7 +51,7 @@ object CustomSsim extends App {
     println(finalPopulation.individuals.map(_.fitness.get))
   }*/
 
- /* population match
+  population match
     case aPopulation: ImagesPopulation => {
       aPopulation.images.zipWithIndex.map { case (image, index) =>
         val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -61,14 +60,14 @@ object CustomSsim extends App {
           case Success(Frame(blocks)) => {
             for {
               case aBlock @ Block(_, imageId, pixelsSourceId, _) <- blocks
-              aPixel <- ImagesManager.pixelsAt(imageId, pixelsSourceId)
+              aPixel <- ImagesManager.referencesPixels(imageId)(pixelsSourceId)
             } yield {
               newImage.setPixel(aBlock.pixelWithFixedLocation(aPixel))
             }
           }
         newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${index}.png")
       }
-    }*/
+    }
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)*/
