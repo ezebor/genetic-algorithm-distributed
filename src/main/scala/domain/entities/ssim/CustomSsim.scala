@@ -12,6 +12,7 @@ import domain.entities.*
 import domain.serializers.ExecuteImagesSimilaritiesJsonSerializer
 
 import java.awt.Color
+import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.util.{Random, Success}
@@ -21,6 +22,34 @@ object CustomSsim extends App {
   //val comp = ImmutableImage.loader().fromFile("src/main/scala/resources/ssim/fusionfire.png")
   println("EMPECE")
   val population = ImagesManager.initialPopulation()
+
+  val referenceImage = ImagesManager.referencesImmutableImages(0)
+  val brainteaser = ImagesManager.blocksToImmutableImage(population.images.head.frame.get.blocks)
+
+  @tailrec
+  def findPixelIndex(aPixel: Pixel, pixels: Array[Pixel], index: Int = 0): Int = {
+    if(pixels(index).argb == aPixel.argb) index
+    else findPixelIndex(aPixel, pixels, index + 1)
+  }
+
+  var referencesPixels = referenceImage.pixels()
+  val brainteaserPixels = brainteaser.pixels()
+
+  val newPixels = (0 to 39999/*brainteaserPixels.length*/).map { case index =>
+    val aPixel = brainteaserPixels(index)
+    val targetIndex = findPixelIndex(aPixel, referencesPixels)
+    val referencePixel = referencesPixels(targetIndex)
+    val newPixel = Pixel(referencePixel.x, referencePixel.y, aPixel.argb)
+
+    referencesPixels = referencesPixels.take(targetIndex).concat(referencesPixels.drop(targetIndex + 1))
+
+    println(s"ENCONTRE UN PIXEL. las referencias bajaron a ${referencesPixels.length} pixels")
+
+    newPixel
+  }.toArray
+
+  val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE, newPixels)
+
   println("TERMINE")
 
 
@@ -51,7 +80,7 @@ object CustomSsim extends App {
     println(finalPopulation.individuals.map(_.fitness.get))
   }*/
 
-  population match
+  /*population match
     case aPopulation: ImagesPopulation => {
       aPopulation.images.zipWithIndex.map { case (image, index) =>
         val newImage = ImmutableImage.create(DIMENSION_IMAGE_SIZE, DIMENSION_IMAGE_SIZE)
@@ -67,7 +96,7 @@ object CustomSsim extends App {
           }
         newImage.output(PngWriter.NoCompression, s"src/main/scala/resources/ssim/result_${index}.png")
       }
-    }
+    }*/
 
   //val population2 = population.crossoverWith(population, 0.5)
   //.mutate(0.5)*/
